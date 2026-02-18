@@ -1,0 +1,2377 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MManager - Gestion Mosquée Meximieux</title>
+    <style>
+        :root {
+            --color-primary: #1a6b6d;
+            --color-primary-light: #2c9e9e;
+            --color-primary-hover: #145555;
+            --color-primary-bg: #e6f7f7;
+            --color-secondary: #edf2f7;
+            --color-success: #38a169;
+            --color-success-bg: #c6f6d5;
+            --color-warning: #d69e2e;
+            --color-warning-bg: #feebc8;
+            --color-danger: #e53e3e;
+            --color-danger-bg: #fed7d7;
+            --color-text: #2d3748;
+            --color-text-light: #718096;
+            --color-border: #e2e8f0;
+            --color-bg: #f0f4f8;
+            --color-white: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.12);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.25s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ===== LAYOUT ===== */
+        .app-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #1a3a4a 0%, #1a6b6d 100%);
+            color: white;
+            padding: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+        }
+
+        .sidebar-nav .nav-section {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.4);
+            padding: 16px 12px 8px;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            color: rgba(255,255,255,0.75);
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-weight: 600;
+        }
+
+        .nav-item .icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .nav-item .nav-badge {
+            margin-left: auto;
+            background: var(--color-danger);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background: var(--color-white);
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--color-border);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .top-bar h2 {
+            font-size: 20px;
+            color: var(--color-text);
+            font-weight: 600;
+        }
+
+        .top-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-content {
+            padding: 24px 30px;
+        }
+
+        /* ===== CARDS ===== */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: var(--color-white);
+            padding: 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--color-primary);
+            transition: var(--transition);
+        }
+
+        .metric-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .metric-card.success { border-left-color: var(--color-success); }
+        .metric-card.warning { border-left-color: var(--color-warning); }
+        .metric-card.danger { border-left-color: var(--color-danger); }
+
+        .metric-card .metric-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-text-light);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .metric-card .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+
+        .metric-card .metric-sub {
+            font-size: 12px;
+            color: var(--color-text-light);
+            margin-top: 4px;
+        }
+
+        /* ===== TABLES ===== */
+        .panel {
+            background: var(--color-white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .panel-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .panel-body {
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        .panel-body.padded {
+            padding: 24px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            padding: 8px 14px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            min-width: 220px;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-bg);
+        }
+
+        .filter-select {
+            padding: 8px 14px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th {
+            text-align: left;
+            padding: 12px 16px;
+            background: var(--color-secondary);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-text-light);
+            border-bottom: 2px solid var(--color-border);
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        table th:hover {
+            background: #e2e8f0;
+        }
+
+        table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 14px;
+        }
+
+        table tr:hover {
+            background: var(--color-bg);
+        }
+
+        table .text-right {
+            text-align: right;
+        }
+
+        table .text-center {
+            text-align: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-light);
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        /* ===== BADGES ===== */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-success { background: var(--color-success-bg); color: #22543d; }
+        .badge-warning { background: var(--color-warning-bg); color: #744210; }
+        .badge-danger { background: var(--color-danger-bg); color: #742a2a; }
+        .badge-info { background: var(--color-primary-bg); color: var(--color-primary); }
+
+        .type-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .type-entree { background: var(--color-success-bg); color: #22543d; }
+        .type-sortie { background: var(--color-danger-bg); color: #742a2a; }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn-primary { background: var(--color-primary); color: white; }
+        .btn-primary:hover { background: var(--color-primary-hover); }
+
+        .btn-success { background: var(--color-success); color: white; }
+        .btn-success:hover { background: #2f855a; }
+
+        .btn-warning { background: var(--color-warning); color: white; }
+
+        .btn-danger { background: var(--color-danger); color: white; }
+        .btn-danger:hover { background: #c53030; }
+
+        .btn-secondary { background: var(--color-secondary); color: var(--color-text); }
+        .btn-secondary:hover { background: #e2e8f0; }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--color-primary);
+            border: 1px solid var(--color-primary);
+        }
+        .btn-outline:hover { background: var(--color-primary-bg); }
+
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        /* ===== MODALS ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--color-white);
+            padding: 0;
+            border-radius: var(--radius);
+            max-width: 650px;
+            width: 92%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: modalSlide 0.25s ease;
+        }
+
+        @keyframes modalSlide {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--color-border);
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: var(--color-secondary);
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover { background: var(--color-danger-bg); color: var(--color-danger); }
+
+        .modal-body { padding: 24px; }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            position: sticky;
+            bottom: 0;
+            background: white;
+        }
+
+        /* ===== FORMS ===== */
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--color-text);
+        }
+
+        .form-group label .required { color: var(--color-danger); }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-bg);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            padding: 14px 20px;
+            border-radius: var(--radius-sm);
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: var(--shadow-md);
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+        }
+
+        .toast-success { background: var(--color-success); }
+        .toast-error { background: var(--color-danger); }
+        .toast-warning { background: var(--color-warning); }
+        .toast-info { background: var(--color-primary); }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* ===== CONFIRM DIALOG ===== */
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-overlay.active { display: flex; }
+        .confirm-box {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius);
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+        }
+        .confirm-box h3 { margin-bottom: 12px; }
+        .confirm-box p { color: var(--color-text-light); margin-bottom: 24px; }
+        .confirm-box .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
+        /* ===== PAGINATION ===== */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-top: 1px solid var(--color-border);
+            font-size: 13px;
+            color: var(--color-text-light);
+        }
+        .pagination-buttons { display: flex; gap: 4px; }
+        .pagination-buttons button {
+            padding: 6px 12px;
+            border: 1px solid var(--color-border);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .pagination-buttons button.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+        .pagination-buttons button:hover:not(.active) { background: var(--color-secondary); }
+
+        /* ===== DETAIL VIEW ===== */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .detail-item {
+            padding: 10px;
+            background: var(--color-bg);
+            border-radius: var(--radius-sm);
+        }
+        .detail-item .detail-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--color-text-light);
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        .detail-item .detail-value {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        /* ===== MISC ===== */
+        .amount-positive { color: var(--color-success); font-weight: 600; }
+        .amount-negative { color: var(--color-danger); font-weight: 600; }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--color-border);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .cheque-item, .child-item {
+            background: var(--color-bg);
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .cheque-item .remove-cheque, .child-item .remove-child {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: none; border: none;
+            color: var(--color-danger);
+            cursor: pointer; font-size: 18px;
+        }
+
+        .mobile-toggle {
+            display: none;
+            background: none; border: none;
+            font-size: 24px; cursor: pointer; padding: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .mobile-toggle { display: block; }
+            .form-row { grid-template-columns: 1fr; }
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .page-content { padding: 16px; }
+            .top-bar { padding: 12px 16px; }
+        }
+
+        @media print {
+            .sidebar, .top-bar, .action-buttons, .toolbar, .btn, .modal-overlay { display: none !important; }
+            .main-content { margin-left: 0; }
+            .panel { box-shadow: none; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div style="font-size: 36px; margin-bottom: 8px;">🕌</div>
+                <h1>MManager</h1>
+                <div class="subtitle">Mosquée Meximieux</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">Principal</div>
+                <button class="nav-item active" onclick="showSection('dashboard', this)">
+                    <span class="icon">📊</span> Tableau de bord
+                </button>
+                <button class="nav-item" onclick="showSection('tresorerie', this)">
+                    <span class="icon">💰</span> Trésorerie
+                </button>
+                <div class="nav-section">Gestion</div>
+                <button class="nav-item" onclick="showSection('cotisations', this)">
+                    <span class="icon">👥</span> Adhérents & Cotisations
+                    <span class="nav-badge" id="navBadgeRetard"></span>
+                </button>
+                <button class="nav-item" onclick="showSection('ecole', this)">
+                    <span class="icon">🎓</span> École
+                </button>
+                <div class="nav-section">Outils</div>
+                <button class="nav-item" onclick="showSection('rapports', this)">
+                    <span class="icon">📄</span> Rapports & Exports
+                </button>
+                <button class="nav-item" onclick="showSection('parametres', this)">
+                    <span class="icon">⚙️</span> Paramètres
+                </button>
+            </nav>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                    <h2 id="pageTitle">Tableau de bord</h2>
+                </div>
+                <div class="top-bar-actions">
+                    <span style="font-size: 13px; color: var(--color-text-light);" id="currentDate"></span>
+                </div>
+            </div>
+
+            <div class="page-content">
+
+                <!-- ==================== DASHBOARD ==================== -->
+                <div id="section-dashboard" class="section active">
+                    <div class="dashboard-grid" id="dashboardCards"></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;" id="dashboardCharts"></div>
+                    <div class="panel">
+                        <div class="panel-header"><h3>📋 Dernières transactions</h3></div>
+                        <div class="panel-body">
+                            <table>
+                                <thead><tr>
+                                    <th>Date</th><th>Type</th><th>Libellé</th><th>Fonds</th><th>Mode</th><th class="text-right">Montant</th>
+                                </tr></thead>
+                                <tbody id="dashboardRecentTx"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== TRÉSORERIE ==================== -->
+                <div id="section-tresorerie" class="section" style="display:none;">
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="openModal('modalTransaction')">➕ Nouvelle transaction</button>
+                        <button class="btn btn-outline" onclick="openModal('modalRemise')">📝 Remise de chèques</button>
+                        <button class="btn btn-outline" onclick="openModal('modalDepot')">💵 Dépôt espèces</button>
+                    </div>
+                    <div class="dashboard-grid" id="tresorerieCards"></div>
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>📋 Toutes les transactions</h3>
+                            <div class="toolbar">
+                                <input type="text" class="search-input" placeholder="🔍 Rechercher..." id="searchTx" oninput="renderTransactions()">
+                                <select class="filter-select" id="filterTxType" onchange="renderTransactions()">
+                                    <option value="">Tous types</option>
+                                    <option value="entree">Entrées</option>
+                                    <option value="sortie">Sorties</option>
+                                </select>
+                                <select class="filter-select" id="filterTxFonds" onchange="renderTransactions()"></select>
+                                <select class="filter-select" id="filterTxCompte" onchange="renderTransactions()">
+                                    <option value="">Tous comptes</option>
+                                    <option value="banque">Banque</option>
+                                    <option value="caisse">Caisse</option>
+                                </select>
+                                <select class="filter-select" id="filterTxPeriod" onchange="renderTransactions()">
+                                    <option value="">Toutes périodes</option>
+                                    <option value="month">Ce mois</option>
+                                    <option value="quarter">Ce trimestre</option>
+                                    <option value="year">Cette année</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <table>
+                                <thead><tr>
+                                    <th onclick="sortTransactions('date')">Date ↕</th>
+                                    <th>Compte</th><th>Type</th><th>Libellé</th><th>Fonds</th><th>Mode</th>
+                                    <th class="text-right" onclick="sortTransactions('montant')">Montant ↕</th>
+                                    <th class="text-center">Actions</th>
+                                </tr></thead>
+                                <tbody id="txTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination" id="txPagination"></div>
+                    </div>
+                </div>
+
+                <!-- ==================== COTISATIONS ==================== -->
+                <div id="section-cotisations" class="section" style="display:none;">
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="openModal('modalAdherent')">➕ Nouvel adhérent</button>
+                        <button class="btn btn-success" onclick="openModal('modalPaiementCotisation')">💳 Encaisser cotisation</button>
+                        <button class="btn btn-outline" onclick="exportAdherentsCSV()">📥 Exporter CSV</button>
+                    </div>
+                    <div class="dashboard-grid" id="cotisationsCards"></div>
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>👥 Liste des adhérents</h3>
+                            <div class="toolbar">
+                                <input type="text" class="search-input" placeholder="🔍 Rechercher un adhérent..." id="searchAdh" oninput="renderAdherents()">
+                                <select class="filter-select" id="filterAdhStatus" onchange="renderAdherents()">
+                                    <option value="">Tous</option>
+                                    <option value="ajour">À jour</option>
+                                    <option value="encours">En cours</option>
+                                    <option value="retard">En retard</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <table>
+                                <thead><tr>
+                                    <th onclick="sortAdherents('nom')">Nom ↕</th><th>Prénom</th><th>Téléphone</th><th>Email</th>
+                                    <th class="text-right">Annuel</th><th class="text-right">Payé</th><th class="text-right">Reste</th>
+                                    <th>Statut</th><th class="text-center">Actions</th>
+                                </tr></thead>
+                                <tbody id="adhTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== ÉCOLE ==================== -->
+                <div id="section-ecole" class="section" style="display:none;">
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="openModal('modalFamille')">➕ Nouvelle famille</button>
+                        <button class="btn btn-success" onclick="openModal('modalPaiementEcole')">💳 Encaisser paiement</button>
+                        <button class="btn btn-outline" onclick="exportEcoleCSV()">📥 Exporter CSV</button>
+                    </div>
+                    <div class="dashboard-grid" id="ecoleCards"></div>
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>👨‍👩‍👧‍👦 Suivi par famille</h3>
+                            <div class="toolbar">
+                                <input type="text" class="search-input" placeholder="🔍 Rechercher..." id="searchFam" oninput="renderFamilles()">
+                                <select class="filter-select" id="filterFamStatus" onchange="renderFamilles()">
+                                    <option value="">Tous</option>
+                                    <option value="ajour">À jour</option>
+                                    <option value="partiel">Partiel</option>
+                                    <option value="retard">En retard</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <table>
+                                <thead><tr>
+                                    <th onclick="sortFamilles('nom')">Famille ↕</th><th>Téléphone</th>
+                                    <th class="text-center">Enfants</th><th class="text-right">Total dû</th>
+                                    <th class="text-right">Versé</th><th class="text-right">Reste</th>
+                                    <th>Progression</th><th>Statut</th><th class="text-center">Actions</th>
+                                </tr></thead>
+                                <tbody id="famTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== RAPPORTS ==================== -->
+                <div id="section-rapports" class="section" style="display:none;">
+                    <div class="panel">
+                        <div class="panel-header"><h3>📊 Rapports et exports</h3></div>
+                        <div class="panel-body padded">
+                            <div class="form-row" style="margin-bottom: 20px;">
+                                <div class="form-group">
+                                    <label>Date début</label>
+                                    <input type="date" class="form-control" id="rapportDateDebut">
+                                </div>
+                                <div class="form-group">
+                                    <label>Date fin</label>
+                                    <input type="date" class="form-control" id="rapportDateFin">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                                <button class="btn btn-primary" onclick="renderRapports(); toast('Rapport actualisé','info');">📊 Actualiser la synthèse</button>
+                                <button class="btn btn-primary" onclick="generateRapportAG()">📄 Rapport AG (impression)</button>
+                                <button class="btn btn-secondary" onclick="exportTransactionsCSV()">💾 Transactions (CSV)</button>
+                                <button class="btn btn-secondary" onclick="exportAdherentsCSV()">👥 Adhérents (CSV)</button>
+                                <button class="btn btn-secondary" onclick="exportEcoleCSV()">🎓 École (CSV)</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header"><h3>📈 Synthèse par fonds</h3></div>
+                        <div class="panel-body">
+                            <table>
+                                <thead><tr><th>Fonds</th><th class="text-right">Recettes</th><th class="text-right">Dépenses</th><th class="text-right">Solde</th></tr></thead>
+                                <tbody id="rapportFondsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header"><h3>📅 Détail mensuel</h3></div>
+                        <div class="panel-body">
+                            <table>
+                                <thead><tr><th>Mois</th><th class="text-right">Recettes</th><th class="text-right">Dépenses</th><th class="text-right">Solde</th><th class="text-right">Cumul</th></tr></thead>
+                                <tbody id="rapportMensuelBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== PARAMÈTRES ==================== -->
+                <div id="section-parametres" class="section" style="display:none;">
+                    <div class="panel">
+                        <div class="panel-header"><h3>⚙️ Paramètres généraux</h3></div>
+                        <div class="panel-body padded">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nom de la mosquée</label>
+                                    <input type="text" class="form-control" id="paramNomMosquee" value="Mosquée Meximieux">
+                                </div>
+                                <div class="form-group">
+                                    <label>Année en cours</label>
+                                    <input type="number" class="form-control" id="paramAnnee" value="2026">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Solde initial banque (€)</label>
+                                    <input type="number" step="0.01" class="form-control" id="paramSoldeBanque" value="108489.88">
+                                </div>
+                                <div class="form-group">
+                                    <label>Solde initial caisse (€)</label>
+                                    <input type="number" step="0.01" class="form-control" id="paramSoldeCaisse" value="2345.50">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Fonds personnalisés (un par ligne)</label>
+                                <textarea class="form-control" id="paramFonds" rows="6">Fonctionnement
+Entretien/Travaux
+Irchad
+Éducation
+Cotisations
+Projets
+Zakat
+Événementiel
+Dons</textarea>
+                            </div>
+                            <button class="btn btn-primary" onclick="saveParams()">💾 Sauvegarder les paramètres</button>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header"><h3>💾 Sauvegarde & Restauration</h3></div>
+                        <div class="panel-body padded">
+                            <p style="color: var(--color-text-light); margin-bottom: 16px;">
+                                Toutes les données sont stockées dans votre navigateur (localStorage). 
+                                <strong>Pensez à exporter régulièrement une sauvegarde JSON.</strong>
+                            </p>
+                            <div class="action-buttons">
+                                <button class="btn btn-primary" onclick="exportAllData()">📥 Exporter tout (JSON)</button>
+                                <button class="btn btn-warning" onclick="document.getElementById('importFile').click()">📤 Importer (JSON)</button>
+                                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importAllData(event)">
+                                <button class="btn btn-danger" onclick="confirmResetAll()">🗑️ Réinitialiser tout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Modal Transaction -->
+    <div id="modalTransaction" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTransactionTitle">➕ Nouvelle transaction</h2>
+                <button class="modal-close" onclick="closeModal('modalTransaction')">×</button>
+            </div>
+            <form id="formTransaction" onsubmit="event.preventDefault(); saveTransaction();">
+                <div class="modal-body">
+                    <input type="hidden" id="txEditId">
+                    <div class="form-group">
+                        <label>Date <span class="required">*</span></label>
+                        <input type="date" class="form-control" id="txDate" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Type <span class="required">*</span></label>
+                            <select class="form-control" id="txType" required>
+                                <option value="entree">Entrée (recette)</option>
+                                <option value="sortie">Sortie (dépense)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Compte <span class="required">*</span></label>
+                            <select class="form-control" id="txCompte" required>
+                                <option value="banque">Banque</option>
+                                <option value="caisse">Caisse</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Libellé <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="txLibelle" required placeholder="Ex: Cotisation M. Dupont, Facture EDF...">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Fonds <span class="required">*</span></label>
+                            <select class="form-control" id="txFonds" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Mode de paiement <span class="required">*</span></label>
+                            <select class="form-control" id="txMode" required>
+                                <option value="virement">Virement</option>
+                                <option value="cheque">Chèque</option>
+                                <option value="cb">Carte bancaire</option>
+                                <option value="especes">Espèces</option>
+                                <option value="prelevement">Prélèvement</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Montant (€) <span class="required">*</span></label>
+                            <input type="number" step="0.01" min="0.01" class="form-control" id="txMontant" required placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Référence / N° pièce</label>
+                            <input type="text" class="form-control" id="txReference" placeholder="CHQ-001, VIR-xxx...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea class="form-control" id="txNotes" rows="2" placeholder="Informations complémentaires..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modalTransaction')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Remise -->
+    <div id="modalRemise" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>📝 Remise de chèques</h2>
+                <button class="modal-close" onclick="closeModal('modalRemise')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Date de la remise <span class="required">*</span></label>
+                    <input type="date" class="form-control" id="remiseDate">
+                </div>
+                <h4 style="margin-bottom: 10px;">Chèques :</h4>
+                <div id="remiseChequesContainer"></div>
+                <button type="button" class="btn btn-secondary" onclick="addRemiseCheque()" style="width: 100%; margin: 10px 0;">+ Ajouter un chèque</button>
+                <div style="background: var(--color-primary-bg); padding: 12px; border-radius: var(--radius-sm); margin-top: 10px;">
+                    <strong>Total remise : <span id="remiseTotal">0,00 €</span></strong>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalRemise')">Annuler</button>
+                <button class="btn btn-primary" onclick="validerRemise()">✅ Valider la remise</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Dépôt -->
+    <div id="modalDepot" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>💵 Dépôt d'espèces en banque</h2>
+                <button class="modal-close" onclick="closeModal('modalDepot')">×</button>
+            </div>
+            <form id="formDepot" onsubmit="event.preventDefault(); validerDepot();">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Date <span class="required">*</span></label>
+                        <input type="date" class="form-control" id="depotDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Montant (€) <span class="required">*</span></label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" id="depotMontant" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Provenance</label>
+                        <textarea class="form-control" id="depotProvenance" rows="3" placeholder="Caisse du vendredi, kermesse, dons..."></textarea>
+                    </div>
+                    <div style="background: var(--color-warning-bg); padding: 10px; border-radius: var(--radius-sm); font-size: 13px;">
+                        ⚠️ Ce dépôt transfère des espèces de la <strong>caisse</strong> vers la <strong>banque</strong>.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modalDepot')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">💵 Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Adhérent -->
+    <div id="modalAdherent" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalAdherentTitle">➕ Nouvel adhérent</h2>
+                <button class="modal-close" onclick="closeModal('modalAdherent')">×</button>
+            </div>
+            <form id="formAdherent" onsubmit="event.preventDefault(); saveAdherent();">
+                <div class="modal-body">
+                    <input type="hidden" id="adhEditId">
+                    <div class="form-row">
+                        <div class="form-group"><label>Nom <span class="required">*</span></label><input type="text" class="form-control" id="adhNom" required></div>
+                        <div class="form-group"><label>Prénom <span class="required">*</span></label><input type="text" class="form-control" id="adhPrenom" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Téléphone</label><input type="tel" class="form-control" id="adhTel" placeholder="06 12 34 56 78"></div>
+                        <div class="form-group"><label>Email</label><input type="email" class="form-control" id="adhEmail"></div>
+                    </div>
+                    <div class="form-group"><label>Adresse</label><textarea class="form-control" id="adhAdresse" rows="2"></textarea></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Cotisation annuelle (€) <span class="required">*</span></label><input type="number" step="0.01" class="form-control" id="adhMontant" required value="150"></div>
+                        <div class="form-group"><label>Périodicité <span class="required">*</span></label>
+                            <select class="form-control" id="adhPeriodicite" required>
+                                <option value="annuel">Annuel (1 fois/an)</option>
+                                <option value="semestriel">Semestriel (2 fois/an)</option>
+                                <option value="trimestriel">Trimestriel (4 fois/an)</option>
+                                <option value="mensuel">Mensuel (12 fois/an)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Mode préféré</label>
+                            <select class="form-control" id="adhModePref">
+                                <option value="virement">Virement</option><option value="cheque">Chèque</option>
+                                <option value="cb">Carte bancaire</option><option value="especes">Espèces</option>
+                                <option value="prelevement">Prélèvement</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Date début cotisation</label>
+                            <input type="date" class="form-control" id="adhDateDebut" placeholder="Début année en cours si vide">
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Notes</label><textarea class="form-control" id="adhNotes" rows="2"></textarea></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modalAdherent')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Paiement Cotisation -->
+    <div id="modalPaiementCotisation" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>💳 Encaisser cotisation</h2>
+                <button class="modal-close" onclick="closeModal('modalPaiementCotisation')">×</button>
+            </div>
+            <form id="formPaiementCotisation" onsubmit="event.preventDefault(); savePaiementCotisation();">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Adhérent <span class="required">*</span></label>
+                        <select class="form-control" id="paiCotAdherent" required onchange="onPaiCotAdherentChange()"><option value="">Sélectionner...</option></select>
+                    </div>
+                    <div id="paiCotInfo" style="display:none; background: var(--color-primary-bg); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px;"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Montant (€) <span class="required">*</span></label><input type="number" step="0.01" min="0.01" class="form-control" id="paiCotMontant" required></div>
+                        <div class="form-group"><label>Date <span class="required">*</span></label><input type="date" class="form-control" id="paiCotDate" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Mode <span class="required">*</span></label>
+                            <select class="form-control" id="paiCotMode" required>
+                                <option value="virement">Virement</option><option value="cheque">Chèque</option>
+                                <option value="cb">CB</option><option value="especes">Espèces</option><option value="prelevement">Prélèvement</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Compte</label>
+                            <select class="form-control" id="paiCotCompte"><option value="banque">Banque</option><option value="caisse">Caisse</option></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modalPaiementCotisation')">Annuler</button>
+                    <button type="submit" class="btn btn-success">💳 Encaisser</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Famille -->
+    <div id="modalFamille" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalFamilleTitle">➕ Nouvelle famille</h2>
+                <button class="modal-close" onclick="closeModal('modalFamille')">×</button>
+            </div>
+            <form id="formFamille" onsubmit="event.preventDefault(); saveFamille();">
+                <div class="modal-body">
+                    <input type="hidden" id="famEditId">
+                    <div class="form-group"><label>Nom de famille <span class="required">*</span></label><input type="text" class="form-control" id="famNom" required placeholder="MARTIN"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Téléphone</label><input type="tel" class="form-control" id="famTel" placeholder="06 12 34 56 78"></div>
+                        <div class="form-group"><label>Email</label><input type="email" class="form-control" id="famEmail"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Périodicité de paiement <span class="required">*</span></label>
+                            <select class="form-control" id="famPeriodicite" required>
+                                <option value="annuel">Annuel (1 fois/an)</option>
+                                <option value="semestriel">Semestriel (2 fois/an)</option>
+                                <option value="trimestriel">Trimestriel (4 fois/an)</option>
+                                <option value="mensuel">Mensuel (12 fois/an)</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Date début année scolaire</label>
+                            <input type="date" class="form-control" id="famDateDebut" placeholder="Début année si vide">
+                        </div>
+                    </div>
+                    <h4 style="margin: 16px 0 10px;">👶 Enfants inscrits</h4>
+                    <div id="familleEnfantsContainer"></div>
+                    <button type="button" class="btn btn-secondary" onclick="addChildField()" style="width: 100%; margin: 10px 0;">+ Ajouter un enfant</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modalFamille')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Paiement École -->
+    <div id="modalPaiementEcole" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>💳 Encaisser paiement école</h2>
+                <button class="modal-close" onclick="closeModal('modalPaiementEcole')">×</button>
+            </div>
+            <form id="formPaiementEcole" onsubmit="event.preventDefault(); savePaiementEcole();">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Famille <span class="required">*</span></label>
+                        <select class="form-control" id="paiEcoleFamille" required onchange="onPaiEcoleFamilleChange()"><option value="">Sélectionner...</option></select>
+                    </div>
+                    <div id="paiEcoleInfo" style="display:none; background: var(--color-primary-bg); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px;"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Montant (€) <span class="required">*</span></label><input type="number" step="0.01" min="0.01" class="form-control" id="paiEcoleMontant" required></div>
+                        <div class="form-group"><label>Date <span class="required">*</span></label><input type="date" class="form-control" id="paiEcoleDate" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Mode <span class="required">*</span></label>
+                            <select class="form-control" id="paiEcoleMode" required>
+                                <option value="virement">Virement</option><option value="cheque">Chèque</option>
+                                <option value="cb">CB</option><option value="especes">Espèces</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Compte</label>
+                            <select class="form-control" id="paiEcoleCompte"><option value="banque">Banque</option><option value="caisse">Caisse</option></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modalPaiementEcole')">Annuler</button>
+                    <button type="submit" class="btn btn-success">💳 Encaisser</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Détail Adhérent -->
+    <div id="modalDetailAdherent" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header"><h2>👤 Fiche adhérent</h2><button class="modal-close" onclick="closeModal('modalDetailAdherent')">×</button></div>
+            <div class="modal-body" id="detailAdherentContent"></div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalDetailAdherent')">Fermer</button></div>
+        </div>
+    </div>
+
+    <!-- Modal Détail Famille -->
+    <div id="modalDetailFamille" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header"><h2>👨‍👩‍👧‍👦 Fiche famille</h2><button class="modal-close" onclick="closeModal('modalDetailFamille')">×</button></div>
+            <div class="modal-body" id="detailFamilleContent"></div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalDetailFamille')">Fermer</button></div>
+        </div>
+    </div>
+
+    <!-- Confirm -->
+    <div id="confirmDialog" class="confirm-overlay">
+        <div class="confirm-box">
+            <h3 id="confirmTitle">Confirmer</h3>
+            <p id="confirmMessage">Êtes-vous sûr ?</p>
+            <div class="confirm-actions">
+                <button class="btn btn-secondary" onclick="closeConfirm()">Annuler</button>
+                <button class="btn btn-danger" onclick="executeConfirm()">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+    // ============================================================
+    // DATA LAYER
+    // ============================================================
+    const SK = { tx: 'mm_transactions', adh: 'mm_adherents', fam: 'mm_familles', par: 'mm_params' };
+    const DEF_PARAMS = {
+        nomMosquee: 'Mosquée Meximieux', annee: 2026,
+        soldeBanqueInitial: 108489.88, soldeCaisseInitial: 2345.50,
+        fonds: ['Fonctionnement','Entretien/Travaux','Irchad','Éducation','Cotisations','Projets','Zakat','Événementiel','Dons']
+    };
+
+    function load(k) { try { const d = localStorage.getItem(k); return d ? JSON.parse(d) : null; } catch(e) { return null; } }
+    function save(k, d) { localStorage.setItem(k, JSON.stringify(d)); }
+    function gid() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+
+    let transactions = load(SK.tx) || [];
+    let adherents = load(SK.adh) || [];
+    let familles = load(SK.fam) || [];
+    let params = load(SK.par) || { ...DEF_PARAMS };
+
+    let txSortField = 'date', txSortDir = -1;
+    let adhSortField = 'nom', adhSortDir = 1;
+    let famSortField = 'nom', famSortDir = 1;
+    let txPage = 1; const TX_PP = 20;
+    let confirmCallback = null;
+
+    // ============================================================
+    // UTILITIES
+    // ============================================================
+    const fmt = n => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
+    const fmtDate = s => s ? new Date(s).toLocaleDateString('fr-FR') : '-';
+    const today = () => new Date().toISOString().split('T')[0];
+    const monthName = m => ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'][m];
+    const esc = s => s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+
+    // ============================================================
+    // TOAST & CONFIRM
+    // ============================================================
+    function toast(msg, type='success') {
+        const icons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+        const c = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = `toast toast-${type}`;
+        el.innerHTML = `<span>${icons[type]||''}</span> ${esc(msg)}`;
+        c.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+    }
+
+    function showConfirm(title, msg, cb) {
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmMessage').textContent = msg;
+        confirmCallback = cb;
+        document.getElementById('confirmDialog').classList.add('active');
+    }
+    function closeConfirm() { document.getElementById('confirmDialog').classList.remove('active'); confirmCallback = null; }
+    function executeConfirm() { if (confirmCallback) confirmCallback(); closeConfirm(); }
+
+    // ============================================================
+    // NAVIGATION
+    // ============================================================
+    const titles = { dashboard:'Tableau de bord', tresorerie:'Trésorerie', cotisations:'Adhérents & Cotisations', ecole:'École', rapports:'Rapports & Exports', parametres:'Paramètres' };
+
+    function showSection(id, btn) {
+        document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+        document.getElementById('section-' + id).style.display = 'block';
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        document.getElementById('pageTitle').textContent = titles[id] || id;
+        document.getElementById('sidebar').classList.remove('open');
+        refreshAll();
+    }
+
+    // ============================================================
+    // MODALS
+    // ============================================================
+    function openModal(id) {
+        document.getElementById(id).classList.add('active');
+        // Auto-setup
+        if (id === 'modalTransaction' && !document.getElementById('txEditId').value) {
+            document.getElementById('formTransaction').reset();
+            document.getElementById('txDate').value = today();
+            document.getElementById('modalTransactionTitle').textContent = '➕ Nouvelle transaction';
+            populateFondsSelects();
+        }
+        if (id === 'modalAdherent' && !document.getElementById('adhEditId').value) {
+            document.getElementById('formAdherent').reset();
+            document.getElementById('adhMontant').value = 150;
+            document.getElementById('modalAdherentTitle').textContent = '➕ Nouvel adhérent';
+        }
+        if (id === 'modalFamille') {
+            const c = document.getElementById('familleEnfantsContainer');
+            if (c.children.length === 0 && !document.getElementById('famEditId').value) {
+                document.getElementById('formFamille').reset();
+                document.getElementById('modalFamilleTitle').textContent = '➕ Nouvelle famille';
+                addChildField();
+            }
+        }
+        if (id === 'modalPaiementCotisation') {
+            document.getElementById('formPaiementCotisation').reset();
+            document.getElementById('paiCotDate').value = today();
+            document.getElementById('paiCotInfo').style.display = 'none';
+        }
+        if (id === 'modalPaiementEcole') {
+            document.getElementById('formPaiementEcole').reset();
+            document.getElementById('paiEcoleDate').value = today();
+            document.getElementById('paiEcoleInfo').style.display = 'none';
+        }
+        if (id === 'modalRemise') {
+            document.getElementById('remiseDate').value = today();
+            if (document.getElementById('remiseChequesContainer').children.length === 0) addRemiseCheque();
+        }
+        if (id === 'modalDepot') {
+            document.getElementById('formDepot').reset();
+            document.getElementById('depotDate').value = today();
+        }
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+        m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); });
+    });
+
+    // ============================================================
+    // PARAMS
+    // ============================================================
+    function loadParams() {
+        document.getElementById('paramNomMosquee').value = params.nomMosquee;
+        document.getElementById('paramAnnee').value = params.annee;
+        document.getElementById('paramSoldeBanque').value = params.soldeBanqueInitial;
+        document.getElementById('paramSoldeCaisse').value = params.soldeCaisseInitial;
+        document.getElementById('paramFonds').value = params.fonds.join('\n');
+    }
+
+    function saveParams() {
+        params.nomMosquee = document.getElementById('paramNomMosquee').value;
+        params.annee = parseInt(document.getElementById('paramAnnee').value);
+        params.soldeBanqueInitial = parseFloat(document.getElementById('paramSoldeBanque').value) || 0;
+        params.soldeCaisseInitial = parseFloat(document.getElementById('paramSoldeCaisse').value) || 0;
+        params.fonds = document.getElementById('paramFonds').value.split('\n').map(f => f.trim()).filter(f => f);
+        save(SK.par, params);
+        populateFondsSelects();
+        refreshAll();
+        toast('Paramètres sauvegardés');
+    }
+
+    function populateFondsSelects() {
+        ['txFonds','filterTxFonds'].forEach(id => {
+            const s = document.getElementById(id);
+            if (!s) return;
+            const v = s.value;
+            s.innerHTML = id === 'filterTxFonds' ? '<option value="">Tous fonds</option>' : '<option value="">Sélectionner...</option>';
+            params.fonds.forEach(f => { s.innerHTML += `<option value="${esc(f)}">${esc(f)}</option>`; });
+            s.value = v;
+        });
+    }
+
+    // ============================================================
+    // BALANCE CALCULATIONS
+    // ============================================================
+    function getBalances() {
+        let b = params.soldeBanqueInitial, c = params.soldeCaisseInitial;
+        transactions.forEach(tx => {
+            const m = parseFloat(tx.montant) || 0;
+            const s = tx.type === 'entree' ? 1 : -1;
+            if (tx.compte === 'banque') b += s * m; else c += s * m;
+        });
+        return { banque: b, caisse: c, total: b + c };
+    }
+
+    function getMonthTotals() {
+        const now = new Date(), y = now.getFullYear(), mo = now.getMonth();
+        let rec = 0, dep = 0;
+        transactions.forEach(tx => {
+            const d = new Date(tx.date);
+            if (d.getFullYear() === y && d.getMonth() === mo) {
+                if (tx.type === 'entree') rec += parseFloat(tx.montant)||0;
+                else dep += parseFloat(tx.montant)||0;
+            }
+        });
+        return { recettes: rec, depenses: dep };
+    }
+
+    function getPaiAdh(id) {
+        return transactions.filter(tx => tx.type === 'entree' && tx.adherentId === id && tx.fonds === 'Cotisations')
+            .reduce((s, tx) => s + (parseFloat(tx.montant)||0), 0);
+    }
+
+    function getPaiFam(id) {
+        return transactions.filter(tx => tx.type === 'entree' && tx.familleId === id && tx.fonds === 'Éducation')
+            .reduce((s, tx) => s + (parseFloat(tx.montant)||0), 0);
+    }
+
+    // Calcule le montant qui devrait être payé à la date actuelle selon la périodicité
+    function getMontantDuADate(montantAnnuel, periodicite, dateDebut) {
+        const now = new Date();
+        const debut = dateDebut ? new Date(dateDebut) : new Date(now.getFullYear(), 0, 1); // Début d'année si pas de date
+        
+        if (debut > now) return 0; // Pas encore commencé
+        
+        // Calculer le nombre de mois écoulés depuis le début
+        const moisEcoules = (now.getFullYear() - debut.getFullYear()) * 12 + (now.getMonth() - debut.getMonth()) + 1;
+        
+        if (moisEcoules <= 0) return 0;
+        
+        switch(periodicite) {
+            case 'mensuel':
+                // Montant mensuel * nombre de mois écoulés (max 12)
+                return (montantAnnuel / 12) * Math.min(moisEcoules, 12);
+            case 'trimestriel':
+                // Si on est dans le trimestre 1 (jan-mar), on doit 1/4, trimestre 2 (avr-jun) = 2/4, etc.
+                const trimestresEcoules = Math.ceil(moisEcoules / 3);
+                return (montantAnnuel / 4) * Math.min(trimestresEcoules, 4);
+            case 'semestriel':
+                // Si on est dans le semestre 1 (jan-jun), on doit 1/2, semestre 2 (jul-dec) = 2/2
+                const semestresEcoules = Math.ceil(moisEcoules / 6);
+                return (montantAnnuel / 2) * Math.min(semestresEcoules, 2);
+            case 'annuel':
+            default:
+                // Si on est dans l'année, on doit tout
+                return montantAnnuel;
+        }
+    }
+
+    // Calcule le statut basé sur le montant payé vs montant dû à date
+    function getStatutPaiement(paye, montantAnnuel, montantDuADate) {
+        if (paye >= montantAnnuel) return { code: 'ajour', label: 'À jour', class: 'badge-success' };
+        if (paye >= montantDuADate) return { code: 'ajour', label: 'À jour', class: 'badge-success' };
+        if (paye > 0) {
+            // Si on a payé quelque chose mais pas assez pour être à jour
+            if (paye < montantDuADate * 0.5) return { code: 'retard', label: 'En retard', class: 'badge-danger' };
+            return { code: 'encours', label: 'En cours', class: 'badge-warning' };
+        }
+        return { code: 'retard', label: 'En retard', class: 'badge-danger' };
+    }
+
+    function getTotalFam(f) { return (f.enfants||[]).reduce((s, e) => s + (parseFloat(e.montant)||0), 0); }
+
+    function getResteEnc() {
+        const rc = adherents.reduce((s, a) => {
+            const d = parseFloat(a.montant)||0, p = getPaiAdh(a.id);
+            const duADate = getMontantDuADate(d, a.periodicite || 'annuel', a.dateDebut);
+            return s + Math.max(0, duADate - p);
+        }, 0);
+        const re = familles.reduce((s, f) => {
+            const t = getTotalFam(f), p = getPaiFam(f.id);
+            const duADate = getMontantDuADate(t, f.periodicite || 'annuel', f.dateDebut);
+            return s + Math.max(0, duADate - p);
+        }, 0);
+        return { cotisations: rc, ecole: re, total: rc + re };
+    }
+
+    // ============================================================
+    // DASHBOARD
+    // ============================================================
+    function renderDashboard() {
+        const bal = getBalances(), mt = getMonthTotals(), reste = getResteEnc();
+        const adhOk = adherents.filter(a => {
+            const d = parseFloat(a.montant)||0, p = getPaiAdh(a.id);
+            const duADate = getMontantDuADate(d, a.periodicite || 'annuel', a.dateDebut);
+            return p >= duADate;
+        }).length;
+
+        document.getElementById('dashboardCards').innerHTML = `
+            <div class="metric-card"><div class="metric-label">💰 Solde Banque</div><div class="metric-value">${fmt(bal.banque)}</div><div class="metric-sub">Compte bancaire</div></div>
+            <div class="metric-card success"><div class="metric-label">💵 Solde Caisse</div><div class="metric-value">${fmt(bal.caisse)}</div><div class="metric-sub">Espèces</div></div>
+            <div class="metric-card"><div class="metric-label">📊 Solde Total</div><div class="metric-value">${fmt(bal.total)}</div><div class="metric-sub">Banque + Caisse</div></div>
+            <div class="metric-card ${reste.total > 0 ? 'warning' : 'success'}"><div class="metric-label">⏳ Reste à encaisser</div><div class="metric-value">${fmt(reste.total)}</div><div class="metric-sub">Cotis: ${fmt(reste.cotisations)} | École: ${fmt(reste.ecole)}</div></div>
+        `;
+
+        document.getElementById('dashboardCharts').innerHTML = `
+            <div style="background:white; border-radius:var(--radius); padding:24px; box-shadow:var(--shadow-sm);">
+                <h4 style="font-size:14px; color:var(--color-text-light); margin-bottom:16px; text-transform:uppercase; letter-spacing:0.5px;">📈 Recettes du mois : <span class="amount-positive">${fmt(mt.recettes)}</span></h4>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                    <div>
+                        <div style="font-size:13px; color:var(--color-text-light);">Adhérents à jour</div>
+                        <div style="font-size:28px; font-weight:700;">${adhOk} / ${adherents.length}</div>
+                        <div class="progress-bar" style="margin-top:6px;"><div class="progress-fill" style="width:${adherents.length > 0 ? (adhOk/adherents.length*100) : 0}%; background:var(--color-success);"></div></div>
+                    </div>
+                    <div>
+                        <div style="font-size:13px; color:var(--color-text-light);">Familles école</div>
+                        <div style="font-size:28px; font-weight:700;">${familles.length}</div>
+                        <div style="font-size:12px; color:var(--color-text-light);">${familles.reduce((s,f)=>s+(f.enfants||[]).length,0)} élèves</div>
+                    </div>
+                </div>
+            </div>
+            <div style="background:white; border-radius:var(--radius); padding:24px; box-shadow:var(--shadow-sm);">
+                <h4 style="font-size:14px; color:var(--color-text-light); margin-bottom:16px; text-transform:uppercase; letter-spacing:0.5px;">📉 Dépenses du mois : <span class="amount-negative">${fmt(mt.depenses)}</span></h4>
+                <div style="margin-top:16px;">
+                    <div style="font-size:13px; color:var(--color-text-light);">Solde du mois</div>
+                    <div style="font-size:28px; font-weight:700;" class="${mt.recettes - mt.depenses >= 0 ? 'amount-positive' : 'amount-negative'}">${fmt(mt.recettes - mt.depenses)}</div>
+                    <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill" style="width:${mt.recettes+mt.depenses > 0 ? (mt.recettes/(mt.recettes+mt.depenses)*100) : 50}%; background:var(--color-success);"></div></div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--color-text-light); margin-top:4px;"><span>Recettes</span><span>Dépenses</span></div>
+                </div>
+            </div>
+        `;
+
+        const recent = [...transactions].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 10);
+        const tb = document.getElementById('dashboardRecentTx');
+        tb.innerHTML = recent.length === 0
+            ? '<tr><td colspan="6" class="empty-state"><div class="icon">📋</div>Aucune transaction</td></tr>'
+            : recent.map(tx => `<tr>
+                <td>${fmtDate(tx.date)}</td>
+                <td><span class="type-tag type-${tx.type}">${tx.type === 'entree' ? 'Entrée' : 'Sortie'}</span></td>
+                <td>${esc(tx.libelle)}</td>
+                <td><span class="badge badge-info">${esc(tx.fonds)}</span></td>
+                <td>${esc(tx.mode)}</td>
+                <td class="text-right ${tx.type === 'entree' ? 'amount-positive' : 'amount-negative'}">${tx.type === 'entree' ? '+' : '-'}${fmt(tx.montant)}</td>
+            </tr>`).join('');
+
+        const retard = adherents.filter(a => getPaiAdh(a.id) < (parseFloat(a.montant)||0)).length;
+        const badge = document.getElementById('navBadgeRetard');
+        if (badge) badge.textContent = retard > 0 ? retard : '';
+    }
+
+    // ============================================================
+    // TRANSACTIONS
+    // ============================================================
+    function renderTransactions() {
+        const search = (document.getElementById('searchTx')?.value || '').toLowerCase();
+        const ft = document.getElementById('filterTxType')?.value;
+        const ff = document.getElementById('filterTxFonds')?.value;
+        const fc = document.getElementById('filterTxCompte')?.value;
+        const fp = document.getElementById('filterTxPeriod')?.value;
+        const now = new Date();
+
+        let list = transactions.filter(tx => {
+            if (search && !tx.libelle.toLowerCase().includes(search) && !tx.fonds.toLowerCase().includes(search) && !(tx.reference||'').toLowerCase().includes(search)) return false;
+            if (ft && tx.type !== ft) return false;
+            if (ff && tx.fonds !== ff) return false;
+            if (fc && tx.compte !== fc) return false;
+            if (fp) {
+                const d = new Date(tx.date);
+                if (fp === 'month' && (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear())) return false;
+                if (fp === 'quarter' && (Math.floor(d.getMonth()/3) !== Math.floor(now.getMonth()/3) || d.getFullYear() !== now.getFullYear())) return false;
+                if (fp === 'year' && d.getFullYear() !== now.getFullYear()) return false;
+            }
+            return true;
+        });
+
+        list.sort((a,b) => {
+            let va, vb;
+            if (txSortField === 'date') { va = a.date; vb = b.date; }
+            else if (txSortField === 'montant') { va = parseFloat(a.montant); vb = parseFloat(b.montant); }
+            else { va = a[txSortField]; vb = b[txSortField]; }
+            return (va < vb ? -1 : va > vb ? 1 : 0) * txSortDir;
+        });
+
+        const total = list.length, tp = Math.max(1, Math.ceil(total / TX_PP));
+        if (txPage > tp) txPage = tp;
+        const page = list.slice((txPage-1)*TX_PP, txPage*TX_PP);
+
+        const tb = document.getElementById('txTableBody');
+        tb.innerHTML = page.length === 0
+            ? '<tr><td colspan="8" class="empty-state"><div class="icon">💰</div>Aucune transaction</td></tr>'
+            : page.map(tx => `<tr>
+                <td>${fmtDate(tx.date)}</td>
+                <td>${tx.compte === 'banque' ? '🏦 Banque' : '💵 Caisse'}</td>
+                <td><span class="type-tag type-${tx.type}">${tx.type === 'entree' ? 'Entrée' : 'Sortie'}</span></td>
+                <td>${esc(tx.libelle)}${tx.reference ? `<br><small style="color:var(--color-text-light)">Réf: ${esc(tx.reference)}</small>` : ''}</td>
+                <td><span class="badge badge-info">${esc(tx.fonds)}</span></td>
+                <td>${esc(tx.mode)}</td>
+                <td class="text-right ${tx.type === 'entree' ? 'amount-positive' : 'amount-negative'}">${tx.type === 'entree' ? '+' : '-'}${fmt(tx.montant)}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-secondary" onclick="editTransaction('${tx.id}')">✏️</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteTransaction('${tx.id}')">🗑️</button>
+                </td>
+            </tr>`).join('');
+
+        let pb = '';
+        for (let i = 1; i <= tp; i++) pb += `<button class="${i === txPage ? 'active' : ''}" onclick="txPage=${i}; renderTransactions();">${i}</button>`;
+        document.getElementById('txPagination').innerHTML = `<span>${total} transaction(s) - Page ${txPage}/${tp}</span><div class="pagination-buttons">${pb}</div>`;
+
+        const bal = getBalances();
+        const tE = list.filter(t => t.type==='entree').reduce((s,t) => s+(parseFloat(t.montant)||0), 0);
+        const tS = list.filter(t => t.type==='sortie').reduce((s,t) => s+(parseFloat(t.montant)||0), 0);
+        document.getElementById('tresorerieCards').innerHTML = `
+            <div class="metric-card"><div class="metric-label">🏦 Solde Banque</div><div class="metric-value">${fmt(bal.banque)}</div></div>
+            <div class="metric-card success"><div class="metric-label">💵 Solde Caisse</div><div class="metric-value">${fmt(bal.caisse)}</div></div>
+            <div class="metric-card success"><div class="metric-label">📈 Entrées (filtre)</div><div class="metric-value amount-positive">${fmt(tE)}</div></div>
+            <div class="metric-card danger"><div class="metric-label">📉 Sorties (filtre)</div><div class="metric-value amount-negative">${fmt(tS)}</div></div>
+        `;
+    }
+
+    function sortTransactions(f) { if (txSortField===f) txSortDir*=-1; else { txSortField=f; txSortDir=-1; } renderTransactions(); }
+
+    function editTransaction(id) {
+        const tx = transactions.find(t => t.id === id); if (!tx) return;
+        document.getElementById('txEditId').value = tx.id;
+        document.getElementById('txDate').value = tx.date;
+        document.getElementById('txType').value = tx.type;
+        document.getElementById('txCompte').value = tx.compte;
+        document.getElementById('txLibelle').value = tx.libelle;
+        populateFondsSelects();
+        setTimeout(() => { document.getElementById('txFonds').value = tx.fonds; }, 0);
+        document.getElementById('txMode').value = tx.mode;
+        document.getElementById('txMontant').value = tx.montant;
+        document.getElementById('txReference').value = tx.reference || '';
+        document.getElementById('txNotes').value = tx.notes || '';
+        document.getElementById('modalTransactionTitle').textContent = '✏️ Modifier la transaction';
+        openModal('modalTransaction');
+    }
+
+    function saveTransaction() {
+        const eid = document.getElementById('txEditId').value;
+        const d = {
+            id: eid || gid(),
+            date: document.getElementById('txDate').value,
+            type: document.getElementById('txType').value,
+            compte: document.getElementById('txCompte').value,
+            libelle: document.getElementById('txLibelle').value,
+            fonds: document.getElementById('txFonds').value,
+            mode: document.getElementById('txMode').value,
+            montant: parseFloat(document.getElementById('txMontant').value),
+            reference: document.getElementById('txReference').value,
+            notes: document.getElementById('txNotes').value
+        };
+        if (!d.fonds) { toast('Sélectionnez un fonds', 'error'); return; }
+        if (eid) { const i = transactions.findIndex(t => t.id === eid); if (i >= 0) transactions[i] = d; toast('Transaction modifiée'); }
+        else { transactions.push(d); toast('Transaction enregistrée'); }
+        save(SK.tx, transactions);
+        closeModal('modalTransaction');
+        document.getElementById('txEditId').value = '';
+        refreshAll();
+    }
+
+    function deleteTransaction(id) {
+        showConfirm('Supprimer', 'Supprimer cette transaction ?', () => {
+            transactions = transactions.filter(t => t.id !== id);
+            save(SK.tx, transactions); toast('Transaction supprimée'); refreshAll();
+        });
+    }
+
+    // ============================================================
+    // REMISE DE CHÈQUES
+    // ============================================================
+    function addRemiseCheque() {
+        const c = document.getElementById('remiseChequesContainer');
+        const n = c.children.length + 1;
+        const div = document.createElement('div');
+        div.className = 'cheque-item';
+        div.innerHTML = `
+            <button type="button" class="remove-cheque" onclick="this.parentElement.remove(); updateRemiseTotal();">×</button>
+            <h4 style="margin-bottom:10px;">Chèque #${n}</h4>
+            <div class="form-row">
+                <div class="form-group"><label>Payeur</label><input type="text" class="form-control cheque-nom" placeholder="Nom"></div>
+                <div class="form-group"><label>Montant (€)</label><input type="number" step="0.01" class="form-control cheque-montant" placeholder="0.00" oninput="updateRemiseTotal()"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Fonds</label><select class="form-control cheque-fonds">${params.fonds.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join('')}</select></div>
+                <div class="form-group"><label>N° chèque</label><input type="text" class="form-control cheque-ref" placeholder="N°"></div>
+            </div>`;
+        c.appendChild(div);
+    }
+
+    function updateRemiseTotal() {
+        let t = 0;
+        document.querySelectorAll('.cheque-montant').forEach(m => t += parseFloat(m.value)||0);
+        document.getElementById('remiseTotal').textContent = fmt(t);
+    }
+
+    function validerRemise() {
+        const date = document.getElementById('remiseDate').value;
+        if (!date) { toast('Indiquez la date', 'error'); return; }
+        const items = document.querySelectorAll('#remiseChequesContainer .cheque-item');
+        let count = 0;
+        items.forEach(it => {
+            const nom = it.querySelector('.cheque-nom').value;
+            const m = parseFloat(it.querySelector('.cheque-montant').value);
+            const fonds = it.querySelector('.cheque-fonds').value;
+            const ref = it.querySelector('.cheque-ref').value;
+            if (nom && m > 0) {
+                transactions.push({ id: gid(), date, type:'entree', compte:'banque', libelle:`Chèque - ${nom}`, fonds, mode:'cheque', montant:m, reference: ref || `Remise ${fmtDate(date)}`, notes:`Remise de chèques` });
+                count++;
+            }
+        });
+        if (!count) { toast('Aucun chèque valide', 'error'); return; }
+        save(SK.tx, transactions);
+        closeModal('modalRemise');
+        document.getElementById('remiseChequesContainer').innerHTML = '';
+        toast(`${count} chèque(s) enregistré(s)`);
+        refreshAll();
+    }
+
+    // ============================================================
+    // DÉPÔT ESPÈCES
+    // ============================================================
+    function validerDepot() {
+        const date = document.getElementById('depotDate').value;
+        const m = parseFloat(document.getElementById('depotMontant').value);
+        const prov = document.getElementById('depotProvenance').value;
+        if (!date || !m) { toast('Remplissez les champs', 'error'); return; }
+        const ref = `DEP-${Date.now()}`;
+        transactions.push({ id:gid(), date, type:'sortie', compte:'caisse', libelle:'Dépôt espèces en banque', fonds:'Fonctionnement', mode:'especes', montant:m, reference:ref, notes:prov });
+        transactions.push({ id:gid(), date, type:'entree', compte:'banque', libelle:'Dépôt espèces de la caisse', fonds:'Fonctionnement', mode:'especes', montant:m, reference:ref, notes:prov });
+        save(SK.tx, transactions);
+        closeModal('modalDepot');
+        toast(`Dépôt de ${fmt(m)} enregistré`);
+        refreshAll();
+    }
+
+    // ============================================================
+    // ADHÉRENTS
+    // ============================================================
+    function renderAdherents() {
+        const search = (document.getElementById('searchAdh')?.value||'').toLowerCase();
+        const fs = document.getElementById('filterAdhStatus')?.value;
+        let list = adherents.filter(a => {
+            if (search && !a.nom.toLowerCase().includes(search) && !a.prenom.toLowerCase().includes(search) && !(a.tel||'').includes(search) && !(a.email||'').toLowerCase().includes(search)) return false;
+            if (fs) {
+                const p = getPaiAdh(a.id), d = parseFloat(a.montant)||0;
+                const duADate = getMontantDuADate(d, a.periodicite || 'annuel', a.dateDebut);
+                const statut = getStatutPaiement(p, d, duADate);
+                if (fs !== statut.code) return false;
+            }
+            return true;
+        });
+        list.sort((a,b) => (a[adhSortField]||'').localeCompare(b[adhSortField]||'') * adhSortDir);
+
+        const tb = document.getElementById('adhTableBody');
+        tb.innerHTML = list.length === 0
+            ? '<tr><td colspan="9" class="empty-state"><div class="icon">👥</div>Aucun adhérent</td></tr>'
+            : list.map(a => {
+                const p = getPaiAdh(a.id), d = parseFloat(a.montant)||0;
+                const duADate = getMontantDuADate(d, a.periodicite || 'annuel', a.dateDebut);
+                const r = Math.max(0, duADate - p); // Reste basé sur ce qui est dû maintenant
+                const statut = getStatutPaiement(p, d, duADate);
+                return `<tr>
+                    <td><strong>${esc(a.nom)}</strong></td><td>${esc(a.prenom)}</td><td>${esc(a.tel||'-')}</td><td>${esc(a.email||'-')}</td>
+                    <td class="text-right">${fmt(d)}</td><td class="text-right amount-positive">${fmt(p)}</td>
+                    <td class="text-right ${r > 0 ? 'amount-negative' : ''}">${fmt(r)}</td>
+                    <td><span class="badge ${statut.class}" title="Dû à date: ${fmt(duADate)}">${statut.label}</span></td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-secondary" onclick="viewAdherent('${a.id}')">👁️</button>
+                        <button class="btn btn-sm btn-secondary" onclick="editAdherent('${a.id}')">✏️</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteAdherent('${a.id}')">🗑️</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+        const tot = adherents.length;
+        const ok = adherents.filter(a => {
+            const d = parseFloat(a.montant)||0, p = getPaiAdh(a.id);
+            const duADate = getMontantDuADate(d, a.periodicite || 'annuel', a.dateDebut);
+            return p >= duADate; // À jour si payé >= dû à date
+        }).length;
+        const rc = adherents.reduce((s,a) => {
+            const d = parseFloat(a.montant)||0, p = getPaiAdh(a.id);
+            const duADate = getMontantDuADate(d, a.periodicite || 'annuel', a.dateDebut);
+            return s + Math.max(0, duADate - p); // Reste à payer maintenant
+        }, 0);
+        const tc = adherents.reduce((s,a) => s + (parseFloat(a.montant)||0), 0);
+        document.getElementById('cotisationsCards').innerHTML = `
+            <div class="metric-card"><div class="metric-label">👥 Total</div><div class="metric-value">${tot}</div></div>
+            <div class="metric-card success"><div class="metric-label">✅ À jour</div><div class="metric-value">${ok}</div><div class="progress-bar"><div class="progress-fill" style="width:${tot>0?(ok/tot*100):0}%; background:var(--color-success);"></div></div></div>
+            <div class="metric-card danger"><div class="metric-label">⚠️ Retard/En cours</div><div class="metric-value">${tot - ok}</div></div>
+            <div class="metric-card warning"><div class="metric-label">💰 Reste</div><div class="metric-value">${fmt(rc)}</div><div class="metric-sub">sur ${fmt(tc)}</div></div>
+        `;
+
+        const sel = document.getElementById('paiCotAdherent');
+        sel.innerHTML = '<option value="">Sélectionner...</option>';
+        adherents.forEach(a => {
+            const d = parseFloat(a.montant)||0, p = getPaiAdh(a.id);
+            const duADate = getMontantDuADate(d, a.periodicite || 'annuel', a.dateDebut);
+            const r = Math.max(0, duADate - p);
+            sel.innerHTML += `<option value="${a.id}">${esc(a.nom)} ${esc(a.prenom)} (Reste: ${fmt(r)})</option>`;
+        });
+    }
+
+    function sortAdherents(f) { if (adhSortField===f) adhSortDir*=-1; else { adhSortField=f; adhSortDir=1; } renderAdherents(); }
+
+    function saveAdherent() {
+        const eid = document.getElementById('adhEditId').value;
+        const d = {
+            id: eid || gid(),
+            nom: document.getElementById('adhNom').value.toUpperCase(),
+            prenom: document.getElementById('adhPrenom').value,
+            tel: document.getElementById('adhTel').value,
+            email: document.getElementById('adhEmail').value,
+            adresse: document.getElementById('adhAdresse').value,
+            montant: parseFloat(document.getElementById('adhMontant').value)||0,
+            periodicite: document.getElementById('adhPeriodicite').value,
+            dateDebut: document.getElementById('adhDateDebut').value || `${new Date().getFullYear()}-01-01`,
+            modePref: document.getElementById('adhModePref').value,
+            notes: document.getElementById('adhNotes').value,
+            dateCreation: eid ? (adherents.find(a=>a.id===eid)?.dateCreation || today()) : today()
+        };
+        if (eid) { const i = adherents.findIndex(a=>a.id===eid); if (i>=0) adherents[i]=d; toast('Adhérent modifié'); }
+        else { adherents.push(d); toast('Adhérent ajouté'); }
+        save(SK.adh, adherents);
+        closeModal('modalAdherent');
+        document.getElementById('adhEditId').value = '';
+        refreshAll();
+    }
+
+    function editAdherent(id) {
+        const a = adherents.find(x=>x.id===id); if (!a) return;
+        document.getElementById('adhEditId').value = a.id;
+        document.getElementById('adhNom').value = a.nom;
+        document.getElementById('adhPrenom').value = a.prenom;
+        document.getElementById('adhTel').value = a.tel||'';
+        document.getElementById('adhEmail').value = a.email||'';
+        document.getElementById('adhAdresse').value = a.adresse||'';
+        document.getElementById('adhMontant').value = a.montant;
+        document.getElementById('adhPeriodicite').value = a.periodicite || 'annuel';
+        document.getElementById('adhDateDebut').value = a.dateDebut || '';
+        document.getElementById('adhModePref').value = a.modePref||'virement';
+        document.getElementById('adhNotes').value = a.notes||'';
+        document.getElementById('modalAdherentTitle').textContent = '✏️ Modifier';
+        openModal('modalAdherent');
+    }
+
+    function deleteAdherent(id) {
+        showConfirm('Supprimer', 'Supprimer cet adhérent ? Les paiements sont conservés.', () => {
+            adherents = adherents.filter(a=>a.id!==id);
+            save(SK.adh, adherents); toast('Adhérent supprimé'); refreshAll();
+        });
+    }
+
+    function viewAdherent(id) {
+        const a = adherents.find(x=>x.id===id); if (!a) return;
+        const p = getPaiAdh(a.id);
+        const d = parseFloat(a.montant)||0;
+        const duADate = getMontantDuADate(d, a.periodicite || 'annuel', a.dateDebut);
+        const r = Math.max(0, duADate - p);
+        const txs = transactions.filter(tx=>tx.adherentId===a.id).sort((a,b)=>b.date.localeCompare(a.date));
+        const statut = getStatutPaiement(p, d, duADate);
+        const perioLabel = { mensuel:'Mensuel', trimestriel:'Trimestriel', semestriel:'Semestriel', annuel:'Annuel' }[a.periodicite||'annuel'];
+        document.getElementById('detailAdherentContent').innerHTML = `
+            <div class="detail-grid">
+                <div class="detail-item"><div class="detail-label">Nom</div><div class="detail-value">${esc(a.nom)}</div></div>
+                <div class="detail-item"><div class="detail-label">Prénom</div><div class="detail-value">${esc(a.prenom)}</div></div>
+                <div class="detail-item"><div class="detail-label">Tél</div><div class="detail-value">${esc(a.tel||'-')}</div></div>
+                <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value">${esc(a.email||'-')}</div></div>
+                <div class="detail-item"><div class="detail-label">Cotisation</div><div class="detail-value">${fmt(a.montant)}</div></div>
+                <div class="detail-item"><div class="detail-label">Statut</div><div class="detail-value"><span class="badge ${sc}">${st}</span></div></div>
+                <div class="detail-item"><div class="detail-label">Payé</div><div class="detail-value amount-positive">${fmt(p)}</div></div>
+                <div class="detail-item"><div class="detail-label">Reste</div><div class="detail-value ${r>0?'amount-negative':''}">${fmt(r)}</div></div>
+            </div>
+            ${a.adresse ? `<div class="detail-item" style="margin-bottom:12px;"><div class="detail-label">Adresse</div><div class="detail-value">${esc(a.adresse)}</div></div>` : ''}
+            <h4 style="margin:16px 0 8px;">Historique paiements</h4>
+            ${txs.length === 0 ? '<p style="color:var(--color-text-light);">Aucun paiement</p>' :
+            `<table><thead><tr><th>Date</th><th>Mode</th><th class="text-right">Montant</th></tr></thead>
+            <tbody>${txs.map(tx=>`<tr><td>${fmtDate(tx.date)}</td><td>${esc(tx.mode)}</td><td class="text-right amount-positive">${fmt(tx.montant)}</td></tr>`).join('')}</tbody></table>`}
+        `;
+        openModal('modalDetailAdherent');
+    }
+
+    function onPaiCotAdherentChange() {
+        const id = document.getElementById('paiCotAdherent').value;
+        const info = document.getElementById('paiCotInfo');
+        if (!id) { info.style.display='none'; return; }
+        const a = adherents.find(x=>x.id===id); if (!a) { info.style.display='none'; return; }
+        const p = getPaiAdh(a.id);
+        const d = parseFloat(a.montant)||0;
+        const duADate = getMontantDuADate(d, a.periodicite || 'annuel', a.dateDebut);
+        const r = Math.max(0, duADate - p);
+        const perioLabel = { mensuel:'mensuel', trimestriel:'trimestriel', semestriel:'semestriel', annuel:'annuel' }[a.periodicite||'annuel'];
+        info.style.display='block';
+        info.innerHTML = `<strong>${esc(a.nom)} ${esc(a.prenom)}</strong> (Paiement ${perioLabel})<br>Annuel: ${fmt(d)} | Dû à ce jour: ${fmt(duADate)} | Payé: ${fmt(p)} | <strong>Reste: ${fmt(r)}</strong>`;
+        document.getElementById('paiCotMontant').value = r > 0 ? r : '';
+    }
+
+    function savePaiementCotisation() {
+        const aId = document.getElementById('paiCotAdherent').value;
+        if (!aId) { toast('Sélectionnez un adhérent', 'error'); return; }
+        const a = adherents.find(x=>x.id===aId); if (!a) return;
+        const m = parseFloat(document.getElementById('paiCotMontant').value);
+        const date = document.getElementById('paiCotDate').value;
+        if (!m || !date) { toast('Remplissez tous les champs', 'error'); return; }
+        transactions.push({
+            id:gid(), date, type:'entree', compte: document.getElementById('paiCotCompte').value,
+            libelle:`Cotisation ${a.nom} ${a.prenom}`, fonds:'Cotisations',
+            mode: document.getElementById('paiCotMode').value, montant:m, reference:'', notes:'', adherentId:aId
+        });
+        save(SK.tx, transactions);
+        closeModal('modalPaiementCotisation');
+        toast(`${fmt(m)} encaissé pour ${a.nom} ${a.prenom}`);
+        refreshAll();
+    }
+
+    // ============================================================
+    // FAMILLES / ÉCOLE
+    // ============================================================
+    function addChildField(pre) {
+        const c = document.getElementById('familleEnfantsContainer');
+        const n = c.children.length + 1;
+        const div = document.createElement('div');
+        div.className = 'child-item';
+        const niveaux = ['Maternelle','CP','CE1','CE2','CM1','CM2','6ème','5ème','4ème','3ème','Adulte'];
+        div.innerHTML = `
+            <button type="button" class="remove-child" onclick="this.parentElement.remove();">×</button>
+            <h4 style="margin-bottom:10px;">Enfant #${n}</h4>
+            <div class="form-row">
+                <div class="form-group"><label>Prénom</label><input type="text" class="form-control enfant-prenom" value="${esc(pre?.prenom||'')}" required></div>
+                <div class="form-group"><label>Niveau</label><select class="form-control enfant-niveau">${niveaux.map(nv=>`<option ${pre?.niveau===nv?'selected':''}>${nv}</option>`).join('')}</select></div>
+            </div>
+            <div class="form-group"><label>Montant annuel (€)</label><input type="number" step="0.01" class="form-control enfant-montant" value="${pre?.montant||300}"></div>`;
+        c.appendChild(div);
+    }
+
+    function renderFamilles() {
+        const search = (document.getElementById('searchFam')?.value||'').toLowerCase();
+        const fs = document.getElementById('filterFamStatus')?.value;
+        let list = familles.filter(f => {
+            if (search && !f.nom.toLowerCase().includes(search) && !(f.tel||'').includes(search)) return false;
+            if (fs) {
+                const t = getTotalFam(f), p = getPaiFam(f.id);
+                const duADate = getMontantDuADate(t, f.periodicite || 'annuel', f.dateDebut);
+                const statut = getStatutPaiement(p, t, duADate);
+                // Adapter les codes de statut: ajour/encours/retard au lieu de ajour/partiel/retard
+                let code = statut.code;
+                if (code === 'encours' && fs === 'partiel') return true;
+                if (fs !== code && !(fs === 'partiel' && code === 'encours')) return false;
+            }
+            return true;
+        });
+        list.sort((a,b) => a.nom.localeCompare(b.nom) * famSortDir);
+
+        const tb = document.getElementById('famTableBody');
+        tb.innerHTML = list.length === 0
+            ? '<tr><td colspan="9" class="empty-state"><div class="icon">🎓</div>Aucune famille</td></tr>'
+            : list.map(f => {
+                const t = getTotalFam(f), p = getPaiFam(f.id);
+                const duADate = getMontantDuADate(t, f.periodicite || 'annuel', f.dateDebut);
+                const r = Math.max(0, duADate - p);
+                const pct = duADate > 0 ? (p/duADate*100) : 0;
+                const statut = getStatutPaiement(p, t, duADate);
+                const st = statut.label === 'En cours' ? 'Partiel' : statut.label; // Garder 'Partiel' pour les familles
+                return `<tr>
+                    <td><strong>Famille ${esc(f.nom)}</strong></td><td>${esc(f.tel||'-')}</td>
+                    <td class="text-center">${(f.enfants||[]).length}</td>
+                    <td class="text-right">${fmt(t)}</td><td class="text-right amount-positive">${fmt(p)}</td>
+                    <td class="text-right ${r>0?'amount-negative':''}">${fmt(r)}</td>
+                    <td><div class="progress-bar" style="min-width:80px;"><div class="progress-fill" style="width:${pct}%; background:${pct>=100?'var(--color-success)':pct>0?'var(--color-warning)':'var(--color-danger)'};"></div></div><span style="font-size:11px;color:var(--color-text-light);">${Math.round(pct)}%</span></td>
+                    <td><span class="badge ${sc}">${st}</span></td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-secondary" onclick="viewFamille('${f.id}')">👁️</button>
+                        <button class="btn btn-sm btn-secondary" onclick="editFamille('${f.id}')">✏️</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteFamille('${f.id}')">🗑️</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+        const tf = familles.length, te = familles.reduce((s,f)=>s+(f.enfants||[]).length,0);
+        const td = familles.reduce((s,f)=>s+getTotalFam(f),0);
+        const tdDate = familles.reduce((s,f)=>s+getMontantDuADate(getTotalFam(f), f.periodicite||'annuel', f.dateDebut),0);
+        const tp = familles.reduce((s,f)=>s+getPaiFam(f.id),0);
+        document.getElementById('ecoleCards').innerHTML = `
+            <div class="metric-card"><div class="metric-label">👨‍👩‍👧‍👦 Familles</div><div class="metric-value">${tf}</div></div>
+            <div class="metric-card"><div class="metric-label">👶 Élèves</div><div class="metric-value">${te}</div></div>
+            <div class="metric-card success"><div class="metric-label">💰 Total dû</div><div class="metric-value">${fmt(td)}</div><div class="metric-sub">Versé: ${fmt(tp)}</div></div>
+            <div class="metric-card ${td-tp > 0 ? 'warning' : 'success'}"><div class="metric-label">⏳ Reste</div><div class="metric-value">${fmt(Math.max(0,td-tp))}</div><div class="progress-bar"><div class="progress-fill" style="width:${td>0?(tp/td*100):0}%; background:var(--color-success);"></div></div></div>
+        `;
+
+        const sel = document.getElementById('paiEcoleFamille');
+        sel.innerHTML = '<option value="">Sélectionner...</option>';
+        familles.forEach(f => {
+            const t = getTotalFam(f), p = getPaiFam(f.id);
+            const duADate = getMontantDuADate(t, f.periodicite || 'annuel', f.dateDebut);
+            const r = Math.max(0, duADate - p);
+            sel.innerHTML += `<option value="${f.id}">Famille ${esc(f.nom)} (${(f.enfants||[]).length} enf. - Reste: ${fmt(r)})</option>`;
+        });
+    }
+
+    function sortFamilles(f) { if (famSortField===f) famSortDir*=-1; else { famSortField=f; famSortDir=1; } renderFamilles(); }
+
+    function saveFamille() {
+        const eid = document.getElementById('famEditId').value;
+        const els = document.querySelectorAll('#familleEnfantsContainer .child-item');
+        const enf = [];
+        els.forEach(el => {
+            const pr = el.querySelector('.enfant-prenom').value;
+            const nv = el.querySelector('.enfant-niveau').value;
+            const m = parseFloat(el.querySelector('.enfant-montant').value)||0;
+            if (pr) enf.push({ prenom:pr, niveau:nv, montant:m });
+        });
+        if (!enf.length) { toast('Ajoutez au moins un enfant', 'error'); return; }
+        const d = {
+            id: eid || gid(),
+            nom: document.getElementById('famNom').value.toUpperCase(),
+            tel: document.getElementById('famTel').value,
+            email: document.getElementById('famEmail').value,
+            periodicite: document.getElementById('famPeriodicite').value,
+            dateDebut: document.getElementById('famDateDebut').value || `${new Date().getFullYear()}-09-01`, // Année scolaire septembre
+            enfants: enf,
+            dateCreation: eid ? (familles.find(f=>f.id===eid)?.dateCreation || today()) : today()
+        };
+        if (eid) { const i = familles.findIndex(f=>f.id===eid); if (i>=0) familles[i]=d; toast('Famille modifiée'); }
+        else { familles.push(d); toast('Famille ajoutée'); }
+        save(SK.fam, familles);
+        closeModal('modalFamille');
+        document.getElementById('famEditId').value = '';
+        document.getElementById('familleEnfantsContainer').innerHTML = '';
+        refreshAll();
+    }
+
+    function editFamille(id) {
+        const f = familles.find(x=>x.id===id); if (!f) return;
+        document.getElementById('famEditId').value = f.id;
+        document.getElementById('famNom').value = f.nom;
+        document.getElementById('famTel').value = f.tel||'';
+        document.getElementById('famEmail').value = f.email||'';
+        document.getElementById('famPeriodicite').value = f.periodicite || 'annuel';
+        document.getElementById('famDateDebut').value = f.dateDebut || '';
+        document.getElementById('familleEnfantsContainer').innerHTML = '';
+        (f.enfants||[]).forEach(e => addChildField(e));
+        document.getElementById('modalFamilleTitle').textContent = '✏️ Modifier';
+        openModal('modalFamille');
+    }
+
+    function deleteFamille(id) {
+        showConfirm('Supprimer', 'Supprimer cette famille ?', () => {
+            familles = familles.filter(f=>f.id!==id);
+            save(SK.fam, familles); toast('Famille supprimée'); refreshAll();
+        });
+    }
+
+    function viewFamille(id) {
+        const f = familles.find(x=>x.id===id); if (!f) return;
+        const t = getTotalFam(f), p = getPaiFam(f.id);
+        const duADate = getMontantDuADate(t, f.periodicite || 'annuel', f.dateDebut);
+        const r = Math.max(0, duADate - p);
+        const statut = getStatutPaiement(p, t, duADate);
+        const perioLabel = { mensuel:'Mensuel', trimestriel:'Trimestriel', semestriel:'Semestriel', annuel:'Annuel' }[f.periodicite||'annuel'];
+        const txs = transactions.filter(tx=>tx.familleId===f.id).sort((a,b)=>b.date.localeCompare(a.date));
+        document.getElementById('detailFamilleContent').innerHTML = `
+            <div class="detail-grid">
+                <div class="detail-item"><div class="detail-label">Famille</div><div class="detail-value">${esc(f.nom)}</div></div>
+                <div class="detail-item"><div class="detail-label">Tél</div><div class="detail-value">${esc(f.tel||'-')}</div></div>
+                <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value">${esc(f.email||'-')}</div></div>
+                <div class="detail-item"><div class="detail-label">Enfants</div><div class="detail-value">${(f.enfants||[]).length}</div></div>
+                <div class="detail-item"><div class="detail-label">Total annuel</div><div class="detail-value">${fmt(t)}</div></div>
+                <div class="detail-item"><div class="detail-label">Périodicité</div><div class="detail-value">${perioLabel}</div></div>
+                <div class="detail-item"><div class="detail-label">Dû à ce jour</div><div class="detail-value">${fmt(duADate)}</div></div>
+                <div class="detail-item"><div class="detail-label">Statut</div><div class="detail-value"><span class="badge ${statut.class}">${statut.label === 'En cours' ? 'Partiel' : statut.label}</span></div></div>
+                <div class="detail-item"><div class="detail-label">Payé</div><div class="detail-value amount-positive">${fmt(p)}</div></div>
+                <div class="detail-item"><div class="detail-label">Reste à payer</div><div class="detail-value ${r>0?'amount-negative':''}">${fmt(r)}</div></div>
+            </div>
+            <h4 style="margin:16px 0 8px;">👶 Enfants</h4>
+            <table><thead><tr><th>Prénom</th><th>Niveau</th><th class="text-right">Montant</th></tr></thead>
+            <tbody>${(f.enfants||[]).map(e=>`<tr><td>${esc(e.prenom)}</td><td>${esc(e.niveau)}</td><td class="text-right">${fmt(e.montant)}</td></tr>`).join('')}</tbody></table>
+            <h4 style="margin:16px 0 8px;">Historique paiements</h4>
+            ${txs.length === 0 ? '<p style="color:var(--color-text-light);">Aucun paiement</p>' :
+            `<table><thead><tr><th>Date</th><th>Mode</th><th class="text-right">Montant</th></tr></thead>
+            <tbody>${txs.map(tx=>`<tr><td>${fmtDate(tx.date)}</td><td>${esc(tx.mode)}</td><td class="text-right amount-positive">${fmt(tx.montant)}</td></tr>`).join('')}</tbody></table>`}
+        `;
+        openModal('modalDetailFamille');
+    }
+
+    function onPaiEcoleFamilleChange() {
+        const id = document.getElementById('paiEcoleFamille').value;
+        const info = document.getElementById('paiEcoleInfo');
+        if (!id) { info.style.display='none'; return; }
+        const f = familles.find(x=>x.id===id); if (!f) { info.style.display='none'; return; }
+        const t = getTotalFam(f), p = getPaiFam(f.id);
+        const duADate = getMontantDuADate(t, f.periodicite || 'annuel', f.dateDebut);
+        const r = Math.max(0, duADate - p);
+        const perioLabel = { mensuel:'mensuel', trimestriel:'trimestriel', semestriel:'semestriel', annuel:'annuel' }[f.periodicite||'annuel'];
+        info.style.display='block';
+        info.innerHTML = `<strong>Famille ${esc(f.nom)}</strong> - ${(f.enfants||[]).length} enfant(s) (Paiement ${perioLabel})<br>Annuel: ${fmt(t)} | Dû à ce jour: ${fmt(duADate)} | Versé: ${fmt(p)} | <strong>Reste: ${fmt(r)}</strong>`;
+        document.getElementById('paiEcoleMontant').value = r > 0 ? r : '';
+    }
+
+    function savePaiementEcole() {
+        const fId = document.getElementById('paiEcoleFamille').value;
+        if (!fId) { toast('Sélectionnez une famille', 'error'); return; }
+        const f = familles.find(x=>x.id===fId); if (!f) return;
+        const m = parseFloat(document.getElementById('paiEcoleMontant').value);
+        const date = document.getElementById('paiEcoleDate').value;
+        if (!m || !date) { toast('Remplissez les champs', 'error'); return; }
+        transactions.push({
+            id:gid(), date, type:'entree', compte: document.getElementById('paiEcoleCompte').value,
+            libelle:`Paiement école - Famille ${f.nom}`, fonds:'Éducation',
+            mode: document.getElementById('paiEcoleMode').value, montant:m, reference:'', notes:'', familleId:fId
+        });
+        save(SK.tx, transactions);
+        closeModal('modalPaiementEcole');
+        toast(`${fmt(m)} encaissé - Famille ${f.nom}`);
+        refreshAll();
+    }
+
+    // ============================================================
+    // RAPPORTS
+    // ============================================================
+    function renderRapports() {
+        const d1 = document.getElementById('rapportDateDebut')?.value;
+        const d2 = document.getElementById('rapportDateFin')?.value;
+        let list = transactions;
+        if (d1) list = list.filter(tx => tx.date >= d1);
+        if (d2) list = list.filter(tx => tx.date <= d2);
+
+        const fd = {};
+        params.fonds.forEach(f => fd[f] = { r:0, d:0 });
+        list.forEach(tx => {
+            if (!fd[tx.fonds]) fd[tx.fonds] = { r:0, d:0 };
+            if (tx.type === 'entree') fd[tx.fonds].r += parseFloat(tx.montant)||0;
+            else fd[tx.fonds].d += parseFloat(tx.montant)||0;
+        });
+
+        let tr = 0, td = 0;
+        document.getElementById('rapportFondsBody').innerHTML = Object.entries(fd).map(([f,v]) => {
+            tr += v.r; td += v.d;
+            const s = v.r - v.d;
+            return `<tr><td><strong>${esc(f)}</strong></td>
+                <td class="text-right amount-positive">${v.r > 0 ? fmt(v.r) : '-'}</td>
+                <td class="text-right amount-negative">${v.d > 0 ? fmt(v.d) : '-'}</td>
+                <td class="text-right ${s>=0?'amount-positive':'amount-negative'}" style="font-weight:700;">${fmt(s)}</td></tr>`;
+        }).join('') + `<tr style="background:var(--color-secondary);font-weight:bold;">
+            <td>TOTAL</td><td class="text-right amount-positive">${fmt(tr)}</td>
+            <td class="text-right amount-negative">${fmt(td)}</td>
+            <td class="text-right" style="font-size:16px;${(tr-td)>=0?'color:var(--color-success)':'color:var(--color-danger)'}">${fmt(tr-td)}</td></tr>`;
+
+        const md = {};
+        list.forEach(tx => {
+            const dt = new Date(tx.date);
+            const k = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+            if (!md[k]) md[k] = { r:0, d:0 };
+            if (tx.type === 'entree') md[k].r += parseFloat(tx.montant)||0;
+            else md[k].d += parseFloat(tx.montant)||0;
+        });
+
+        let cum = 0;
+        const sk = Object.keys(md).sort();
+        document.getElementById('rapportMensuelBody').innerHTML = sk.length === 0
+            ? '<tr><td colspan="5" class="empty-state">Aucune donnée</td></tr>'
+            : sk.map(k => {
+                const v = md[k], s = v.r - v.d; cum += s;
+                const [y, m] = k.split('-');
+                return `<tr><td>${monthName(parseInt(m)-1)} ${y}</td>
+                    <td class="text-right amount-positive">${fmt(v.r)}</td>
+                    <td class="text-right amount-negative">${fmt(v.d)}</td>
+                    <td class="text-right ${s>=0?'amount-positive':'amount-negative'}">${fmt(s)}</td>
+                    <td class="text-right" style="font-weight:700;${cum>=0?'color:var(--color-success)':'color:var(--color-danger)'}">${fmt(cum)}</td></tr>`;
+            }).join('');
+    }
+
+    function generateRapportAG() {
+        renderRapports();
+        const bal = getBalances(), reste = getResteEnc();
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>Rapport AG - ${esc(params.nomMosquee)}</title>
+        <style>body{font-family:'Segoe UI',Arial,sans-serif;padding:40px;color:#333;}h1{color:#1a6b6d;border-bottom:3px solid #1a6b6d;padding-bottom:10px;}h2{color:#1a6b6d;margin-top:30px;}table{width:100%;border-collapse:collapse;margin:15px 0;}th{background:#edf2f7;padding:10px;text-align:left;border:1px solid #ddd;font-size:12px;}td{padding:8px 10px;border:1px solid #ddd;font-size:13px;}.r{text-align:right;}.p{color:#38a169;}.n{color:#e53e3e;}.t{background:#edf2f7;font-weight:bold;}</style></head><body>
+        <h1>🕌 ${esc(params.nomMosquee)}</h1>
+        <p><strong>Rapport AG</strong> - Généré le ${new Date().toLocaleDateString('fr-FR')}</p>
+        <h2>1. Situation financière</h2>
+        <table><tr><td>Banque</td><td class="r">${fmt(bal.banque)}</td></tr><tr><td>Caisse</td><td class="r">${fmt(bal.caisse)}</td></tr><tr class="t"><td>TOTAL</td><td class="r">${fmt(bal.total)}</td></tr><tr><td>Reste cotisations</td><td class="r">${fmt(reste.cotisations)}</td></tr><tr><td>Reste école</td><td class="r">${fmt(reste.ecole)}</td></tr></table>
+        <h2>2. Adhérents (${adherents.length})</h2>
+        <table><thead><tr><th>Nom</th><th>Prénom</th><th class="r">Cotisation</th><th class="r">Payé</th><th class="r">Reste</th></tr></thead>
+        <tbody>${adherents.map(a=>{const p=getPaiAdh(a.id),r=Math.max(0,(parseFloat(a.montant)||0)-p);return `<tr><td>${esc(a.nom)}</td><td>${esc(a.prenom)}</td><td class="r">${fmt(a.montant)}</td><td class="r p">${fmt(p)}</td><td class="r ${r>0?'n':''}">${fmt(r)}</td></tr>`;}).join('')}</tbody></table>
+        <h2>3. École (${familles.length} familles)</h2>
+        <table><thead><tr><th>Famille</th><th class="r">Enfants</th><th class="r">Dû</th><th class="r">Versé</th><th class="r">Reste</th></tr></thead>
+        <tbody>${familles.map(f=>{const t=getTotalFam(f),p=getPaiFam(f.id),r=Math.max(0,t-p);return `<tr><td>${esc(f.nom)}</td><td class="r">${(f.enfants||[]).length}</td><td class="r">${fmt(t)}</td><td class="r p">${fmt(p)}</td><td class="r ${r>0?'n':''}">${fmt(r)}</td></tr>`;}).join('')}</tbody></table>
+        <h2>4. Synthèse par fonds</h2>
+        ${document.querySelector('#rapportFondsBody')?.closest('table')?.outerHTML||''}
+        <br><p style="text-align:center;color:#999;font-size:12px;">Généré par MManager</p></body></html>`);
+        w.document.close(); w.print();
+        toast('Rapport AG ouvert', 'info');
+    }
+
+    // ============================================================
+    // EXPORTS CSV
+    // ============================================================
+    function dlCSV(name, rows) {
+        const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(';')).join('\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        a.download = name; a.click();
+    }
+
+    function exportTransactionsCSV() {
+        const rows = [['Date','Type','Compte','Libellé','Fonds','Mode','Montant','Réf','Notes']];
+        transactions.sort((a,b)=>a.date.localeCompare(b.date)).forEach(tx => {
+            rows.push([fmtDate(tx.date), tx.type==='entree'?'Entrée':'Sortie', tx.compte, tx.libelle, tx.fonds, tx.mode, (tx.type==='entree'?'':'-')+tx.montant, tx.reference, tx.notes]);
+        });
+        dlCSV(`transactions_${today()}.csv`, rows);
+        toast('Export transactions téléchargé');
+    }
+
+    function exportAdherentsCSV() {
+        const rows = [['Nom','Prénom','Tél','Email','Adresse','Cotisation','Payé','Reste','Statut']];
+        adherents.forEach(a => {
+            const p = getPaiAdh(a.id), r = Math.max(0, (parseFloat(a.montant)||0)-p);
+            rows.push([a.nom, a.prenom, a.tel, a.email, a.adresse, a.montant, p, r, r<=0?'À jour':(p>0?'En cours':'En retard')]);
+        });
+        dlCSV(`adherents_${today()}.csv`, rows);
+        toast('Export adhérents téléchargé');
+    }
+
+    function exportEcoleCSV() {
+        const rows = [['Famille','Tél','Email','Nb enfants','Enfants','Total dû','Versé','Reste','Statut']];
+        familles.forEach(f => {
+            const t = getTotalFam(f), p = getPaiFam(f.id), r = Math.max(0, t-p);
+            rows.push([f.nom, f.tel, f.email, (f.enfants||[]).length, (f.enfants||[]).map(e=>`${e.prenom}(${e.niveau})`).join(', '), t, p, r, r<=0?'À jour':(p>0?'Partiel':'En retard')]);
+        });
+        dlCSV(`ecole_${today()}.csv`, rows);
+        toast('Export école téléchargé');
+    }
+
+    // ============================================================
+    // BACKUP
+    // ============================================================
+    function exportAllData() {
+        const d = { version:'2.0', date:new Date().toISOString(), params, transactions, adherents, familles };
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type:'application/json' }));
+        a.download = `mmanager_backup_${today()}.json`; a.click();
+        toast('Sauvegarde téléchargée');
+    }
+
+    function importAllData(ev) {
+        const file = ev.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const d = JSON.parse(e.target.result);
+                if (d.transactions) { transactions = d.transactions; save(SK.tx, transactions); }
+                if (d.adherents) { adherents = d.adherents; save(SK.adh, adherents); }
+                if (d.familles) { familles = d.familles; save(SK.fam, familles); }
+                if (d.params) { params = d.params; save(SK.par, params); loadParams(); }
+                refreshAll();
+                toast('Données importées');
+            } catch(err) { toast('Fichier invalide', 'error'); }
+        };
+        reader.readAsText(file);
+        ev.target.value = '';
+    }
+
+    function confirmResetAll() {
+        showConfirm('⚠️ Réinitialisation', 'TOUTES les données seront supprimées. IRRÉVERSIBLE !', () => {
+            transactions=[]; adherents=[]; familles=[]; params={...DEF_PARAMS};
+            save(SK.tx, transactions); save(SK.adh, adherents); save(SK.fam, familles); save(SK.par, params);
+            loadParams(); refreshAll();
+            toast('Données réinitialisées', 'warning');
+        });
+    }
+
+    // ============================================================
+    // REFRESH & INIT
+    // ============================================================
+    function refreshAll() { renderDashboard(); renderTransactions(); renderAdherents(); renderFamilles(); renderRapports(); }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('fr-FR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        const yr = new Date().getFullYear();
+        document.getElementById('rapportDateDebut').value = `${yr}-01-01`;
+        document.getElementById('rapportDateFin').value = `${yr}-12-31`;
+        loadParams();
+        populateFondsSelects();
+        document.getElementById('rapportDateDebut').addEventListener('change', renderRapports);
+        document.getElementById('rapportDateFin').addEventListener('change', renderRapports);
+        refreshAll();
+        console.log('🕌 MManager v2.0 initialisé');
+    });
+    </script>
+</body>
+</html>
