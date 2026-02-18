@@ -1,0 +1,80 @@
+version: '3.8'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Mosquée Manager — Docker Compose
+# Usage :
+#   Dev local  : docker-compose up -d db backend
+#   Prod       : docker-compose --profile prod up -d
+#
+# Variables requises : voir .env.example → copier en .env et adapter
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── PostgreSQL 16 ────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"  # Exposé uniquement en dev (à retirer en prod)
+
+  # ── Backend Django ────────────────────────────────────────────────────────────
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    # En prod, remplacer par : gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app          # Hot-reload en dev
+      - static_files:/app/staticfiles
+
+  # ── Cloudflare Tunnel (prod uniquement) ──────────────────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - backend
+    profiles:
+      - prod
+
+  # ── Backup quotidien (prod uniquement) ───────────────────────────────────────
+  backup:
+    image: postgres:16-alpine
+    restart: "no"
+    # Installation openssl (non inclus dans l'image de base alpine) + lancement du script
+    entrypoint: ["sh", "-c", "apk add --no-cache openssl && /scripts/backup.sh"]
+    env_file:
+      - .env
+    volumes:
+      - ./backups:/backups
+      - ./scripts:/scripts
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - prod
+
+volumes:
+  postgres_data:
+  static_files:

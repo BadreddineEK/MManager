@@ -1,0 +1,2 @@
+# Dossier de stockage des backups locaux (chiffrés)
+# Les fichiers .enc et .sql sont ignorés par git (voir .gitignore)

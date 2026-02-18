@@ -1,0 +1,25 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Mosquée Manager — Dépendances Python (versions épinglées pour reproductibilité)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Framework principal ────────────────────────────────────────────────────────
+Django==5.1.5
+djangorestframework==3.15.2
+
+# ── Authentification JWT ──────────────────────────────────────────────────────
+djangorestframework-simplejwt==5.3.1
+
+# ── Configuration via .env ───────────────────────────────────────────────────
+django-environ==0.11.2
+
+# ── Base de données PostgreSQL ────────────────────────────────────────────────
+psycopg2-binary==2.9.9
+
+# ── CORS ─────────────────────────────────────────────────────────────────────
+django-cors-headers==4.3.1
+
+# ── Import/Export Excel & CSV ─────────────────────────────────────────────────
+openpyxl==3.1.3
+
+# ── Serveur WSGI prod (optionnel en MVP, remplace runserver) ──────────────────
+gunicorn==21.2.0
