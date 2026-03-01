@@ -63,6 +63,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # RBAC multi-tenant : doit être après AuthenticationMiddleware
+    "core.middleware.MosqueRBACMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
