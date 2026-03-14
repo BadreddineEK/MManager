@@ -996,6 +996,47 @@
             <option value="per_family">Par famille</option>
           </select>
         </div>
+
+        <!-- ── SAUVEGARDE / RESTAURATION ─────────────────────────── -->
+        <div class="settings-section">
+          <h3>💾 Sauvegarde &amp; Restauration</h3>
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:18px;line-height:1.6;">
+            Exportez l'intégralité des données de votre mosquée en un fichier <strong>ZIP</strong>
+            contenant 8 fichiers CSV (familles, enfants, paiements école, adhérents, cotisations,
+            trésorerie…). Vous pouvez ensuite restaurer ce fichier pour réimporter les données
+            manquantes <em>(fusion — aucun doublon n'est créé)</em>.
+          </p>
+
+          <!-- Export -->
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="backupExport()">
+              ⬇️ Télécharger la sauvegarde (ZIP)
+            </button>
+            <span id="backup-export-status" style="font-size:0.8rem;color:var(--muted);"></span>
+          </div>
+
+          <!-- Import -->
+          <div style="background:var(--bg);border:1.5px dashed var(--border);border-radius:10px;padding:20px;">
+            <p style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:10px;">
+              📤 Restaurer depuis un fichier ZIP
+            </p>
+            <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">
+              Sélectionnez un fichier <code>.zip</code> généré par cette application.
+              Les enregistrements existants ne seront pas écrasés.
+            </p>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <input type="file" id="backup-file-input" accept=".zip"
+                     style="width:auto;margin:0;font-size:0.82rem;"
+                     onchange="backupImportPreview()" />
+              <button class="btn btn-success" id="backup-import-btn"
+                      onclick="backupImport()" disabled>
+                ↑ Importer
+              </button>
+            </div>
+            <div id="backup-import-status" style="margin-top:12px;font-size:0.82rem;"></div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -2484,6 +2525,111 @@ async function exportFile(resource, format) {
   const ext = format === 'excel' ? 'xlsx' : 'pdf';
   a.download = `${resource}_${new Date().toISOString().slice(0,10)}.${ext}`;
   a.click();
+}
+
+// ── Backup Export ─────────────────────────────────────────────────────────────
+
+async function backupExport() {
+  const statusEl = document.getElementById('backup-export-status');
+  statusEl.textContent = '⏳ Génération en cours…';
+  try {
+    const res = await fetch(`${API}/backup/export/`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('access')}` }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      statusEl.textContent = '❌ ' + (err.detail || 'Erreur lors de l\'export');
+      return;
+    }
+    // Récupère le nom de fichier depuis Content-Disposition si présent
+    const cd = res.headers.get('Content-Disposition') || '';
+    const match = cd.match(/filename="?([^"]+)"?/);
+    const filename = match ? match[1] : `backup_${new Date().toISOString().slice(0,10)}.zip`;
+
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    statusEl.textContent = `✅ Sauvegarde téléchargée : ${filename}`;
+  } catch (e) {
+    statusEl.textContent = '❌ Erreur réseau : ' + e.message;
+  }
+}
+
+// ── Backup Import ─────────────────────────────────────────────────────────────
+
+function backupImportPreview() {
+  const input = document.getElementById('backup-file-input');
+  const btn   = document.getElementById('backup-import-btn');
+  const statusEl = document.getElementById('backup-import-status');
+  if (input.files && input.files[0]) {
+    btn.disabled = false;
+    statusEl.textContent = `📂 Fichier sélectionné : ${input.files[0].name}`;
+    statusEl.style.color = 'var(--muted)';
+  } else {
+    btn.disabled = true;
+    statusEl.textContent = '';
+  }
+}
+
+async function backupImport() {
+  const input    = document.getElementById('backup-file-input');
+  const statusEl = document.getElementById('backup-import-status');
+  const btn      = document.getElementById('backup-import-btn');
+
+  if (!input.files || !input.files[0]) {
+    statusEl.textContent = '⚠️ Sélectionnez d\'abord un fichier ZIP.';
+    return;
+  }
+  const file = input.files[0];
+  if (!confirm(`Importer "${file.name}" ?\n\nLes données existantes ne seront pas écrasées. Les nouvelles données seront fusionnées.`)) return;
+
+  btn.disabled = true;
+  statusEl.innerHTML = '⏳ Import en cours, veuillez patienter…';
+  statusEl.style.color = 'var(--muted)';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${API}/backup/import/`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('access')}` },
+      body: formData,
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      statusEl.innerHTML = `<span style="color:var(--red);">❌ ${data.detail || 'Erreur lors de l\'import'}</span>`;
+      btn.disabled = false;
+      return;
+    }
+
+    // Rapport de succès
+    const c = data.created || {};
+    const lines = Object.entries(c).map(([k, v]) =>
+      `<li><strong>${v}</strong> ${k.replace(/_/g,' ')}</li>`
+    ).join('');
+
+    statusEl.innerHTML = `
+      <div style="background:var(--green-soft);border:1px solid #86efac;border-radius:8px;padding:14px;color:#14532d;">
+        <strong>✅ Import terminé — ${data.total_created} enregistrement(s) créé(s)</strong>
+        <ul style="margin-top:8px;padding-left:18px;font-size:0.8rem;">${lines}</ul>
+        ${data.errors && data.errors.length ? `<details style="margin-top:8px;font-size:0.76rem;"><summary>${data.errors.length} avertissement(s)</summary><ul>${data.errors.map(e=>`<li>${e}</li>`).join('')}</ul></details>` : ''}
+      </div>`;
+
+    // Reset input
+    input.value = '';
+    btn.disabled = true;
+
+  } catch (e) {
+    statusEl.innerHTML = `<span style="color:var(--red);">❌ Erreur réseau : ${e.message}</span>`;
+    btn.disabled = false;
+  }
 }
 </script>
 </body>

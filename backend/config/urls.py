@@ -30,5 +30,7 @@ urlpatterns = [
     path("api/users/", include("core.user_urls", namespace="users")),
     # Export Excel / PDF
     path("api/export/", include("core.export_urls", namespace="export")),
+    # Backup / Restore (ZIP multi-CSV)
+    path("api/backup/", include("core.backup_urls", namespace="backup")),
 ]
 
