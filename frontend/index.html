@@ -1700,7 +1700,7 @@ async function deleteUser(userId, username) {
 async function exportFile(resource, format) {
   const url = `${API}/export/${resource}/${format}/`;
   const res = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('access')}` }
   });
   if (!res.ok) { alert('Erreur export'); return; }
   const blob = await res.blob();
