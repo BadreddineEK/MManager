@@ -1,8 +1,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Mosquée Manager — Docker Compose
 # Usage :
-#   Dev local  : docker-compose up -d db backend
-#   Prod       : docker-compose --profile prod up -d
+#   Dev local  : docker compose up -d
+#   Prod       : docker compose --profile prod up -d
 #
 # Variables requises : voir .env.example → copier en .env et adapter
 # ─────────────────────────────────────────────────────────────────────────────
@@ -27,11 +27,10 @@ services:
     ports:
       - "5432:5432"  # Exposé uniquement en dev (à retirer en prod)
 
-  # ── Backend Django ────────────────────────────────────────────────────────────
+  # ── Backend Django — DEV (runserver + hot-reload) ─────────────────────────────
   backend:
     build: ./backend
     restart: unless-stopped
-    # En prod, remplacer par : gunicorn config.wsgi:application --bind 0.0.0.0:8000
     command: python manage.py runserver 0.0.0.0:8000
     env_file:
       - .env
@@ -43,6 +42,32 @@ services:
     volumes:
       - ./backend:/app          # Hot-reload en dev
       - static_files:/app/staticfiles
+
+  # ── Backend Django — PROD (gunicorn, workers multiples) ──────────────────────
+  backend-prod:
+    build: ./backend
+    restart: unless-stopped
+    command: >
+      gunicorn config.wsgi:application
+        --bind 0.0.0.0:8000
+        --workers 3
+        --threads 2
+        --worker-class gthread
+        --timeout 60
+        --access-logfile -
+        --error-logfile -
+        --log-level info
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - static_files:/app/staticfiles
+    profiles:
+      - prod
 
   # ── Cloudflare Tunnel (prod uniquement) ──────────────────────────────────────
   cloudflared:

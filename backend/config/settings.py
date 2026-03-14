@@ -157,6 +157,16 @@ SIMPLE_JWT = {
 # En dev : toutes origines autorisées. En prod : lister explicitement.
 CORS_ALLOW_ALL_ORIGINS: bool = DEBUG
 CORS_ALLOW_CREDENTIALS = True
+# En prod (DEBUG=False), définir CORS_ALLOWED_ORIGINS dans .env :
+# CORS_ALLOWED_ORIGINS=https://mosque.votredomaine.com
+CORS_ALLOWED_ORIGINS: list[str] = env.list("CORS_ALLOWED_ORIGINS", default=[])
+
+# ── Sécurité HTTPS (prod derrière Cloudflare Tunnel) ─────────────────────────
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = False          # Cloudflare gère le redirect HTTP→HTTPS
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 # Pas de print() en prod — tout passe par le logger standard Django
