@@ -26,5 +26,9 @@ urlpatterns = [
     path("api/kpi/", include("kpi.urls", namespace="kpi")),
     # Settings + Onboarding (ADMIN)
     path("api/settings/", include("core.settings_urls", namespace="settings")),
+    # Gestion des utilisateurs (ADMIN)
+    path("api/users/", include("core.user_urls", namespace="users")),
+    # Export Excel / PDF
+    path("api/export/", include("core.export_urls", namespace="export")),
 ]
 

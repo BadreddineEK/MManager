@@ -141,6 +141,7 @@
     <hr style="border-color:#2d2d5e; margin:8px 0;" />
     <button onclick="showSection('treasury')" id="nav-treasury">🏦 Trésorerie</button>
     <hr style="border-color:#2d2d5e; margin:8px 0;" />
+    <button onclick="showSection('users')" id="nav-users">👥 Utilisateurs</button>
     <button onclick="showSection('settings')" id="nav-settings">⚙️ Paramètres</button>
     <div class="user-info" id="user-info"></div>
     <button class="logout" onclick="logout()">🚪 Déconnexion</button>
@@ -168,6 +169,8 @@
       <div class="search-bar">
         <input type="text" id="family-search" placeholder="Rechercher par nom, email, téléphone..." oninput="searchFamilies()" />
         <button class="btn btn-primary" onclick="openFamilyModal()">+ Ajouter</button>
+        <button class="btn" style="background:#166534;" onclick="exportFile('families','excel')">⬇️ Excel</button>
+        <button class="btn" style="background:#7c3aed;" onclick="exportFile('families','pdf')">⬇️ PDF</button>
       </div>
       <div id="families-alert"></div>
       <div class="card" style="padding:0; overflow:hidden;">
@@ -207,6 +210,8 @@
           <option value="">Toutes les années</option>
         </select>
         <button class="btn btn-primary" onclick="openPaymentModal()">+ Enregistrer paiement</button>
+        <button class="btn" style="background:#166534;" onclick="exportFile('school-payments','excel')">⬇️ Excel</button>
+        <button class="btn" style="background:#7c3aed;" onclick="exportFile('school-payments','pdf')">⬇️ PDF</button>
       </div>
       <div id="payments-alert"></div>
       <div class="card" style="padding:0; overflow:hidden;">
@@ -241,6 +246,8 @@
           <option value="unpaid">❌ Non cotisants</option>
         </select>
         <button class="btn btn-primary" onclick="openMemberModal()">+ Ajouter</button>
+        <button class="btn" style="background:#166534;" onclick="exportFile('members','excel')">⬇️ Excel</button>
+        <button class="btn" style="background:#7c3aed;" onclick="exportFile('members','pdf')">⬇️ PDF</button>
       </div>
       <div id="members-alert"></div>
       <div class="card" style="padding:0; overflow:hidden;">
@@ -324,6 +331,8 @@
         <input type="month" id="trs-month-filter" onchange="loadTreasury()" style="width:auto; margin-bottom:0; padding:9px 12px; border:1px solid #ddd; border-radius:6px;" />
         <input type="text" id="trs-search" placeholder="Rechercher..." oninput="loadTreasury()" style="flex:1; margin-bottom:0;" />
         <button class="btn btn-primary" onclick="openTreasuryModal()">+ Ajouter</button>
+        <button class="btn" style="background:#166534;" onclick="exportFile('treasury','excel')">⬇️ Excel</button>
+        <button class="btn" style="background:#7c3aed;" onclick="exportFile('treasury','pdf')">⬇️ PDF</button>
       </div>
       <div id="treasury-alert"></div>
       <div class="card" style="padding:0; overflow:hidden;">
@@ -341,6 +350,26 @@
             </tr>
           </thead>
           <tbody id="treasury-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Section : Utilisateurs ── -->
+    <div id="section-users" class="hidden">
+      <h2>👥 Gestion des utilisateurs</h2>
+      <div id="users-alert"></div>
+      <div class="search-bar">
+        <button class="btn btn-primary" onclick="openUserModal()">+ Créer un utilisateur</button>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead>
+            <tr>
+              <th>Utilisateur</th><th>Email</th><th>Nom complet</th>
+              <th>Rôle</th><th>Mosquée</th><th>Actif</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-table"></tbody>
         </table>
       </div>
     </div>
@@ -572,6 +601,40 @@
   </div>
 </div>
 
+<!-- Modal Utilisateur -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <h3 id="user-modal-title">Créer un utilisateur</h3>
+    <input type="hidden" id="user-modal-id" />
+    <div id="user-modal-username-row">
+      <label>Nom d'utilisateur *</label>
+      <input type="text" id="user-modal-username" placeholder="Ex: tresorier1" autocomplete="off" />
+    </div>
+    <label>Email *</label>
+    <input type="email" id="user-modal-email" placeholder="utilisateur@mosquee.fr" />
+    <label>Prénom</label>
+    <input type="text" id="user-modal-firstname" placeholder="(optionnel)" />
+    <label>Nom</label>
+    <input type="text" id="user-modal-lastname" placeholder="(optionnel)" />
+    <label>Mot de passe <span id="user-modal-pw-hint" style="color:#888;font-size:0.8em;"></span></label>
+    <input type="password" id="user-modal-password" placeholder="••••••••" autocomplete="new-password" />
+    <label>Rôle *</label>
+    <select id="user-modal-role">
+      <option value="ADMIN">🔑 Admin</option>
+      <option value="TRESORIER">💼 Trésorier</option>
+      <option value="ECOLE_MANAGER">🎓 École Manager</option>
+    </select>
+    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+      <input type="checkbox" id="user-modal-active" checked style="width:auto; margin:0;" />
+      Compte actif
+    </label>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-user')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveUser()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════════════ -->
 <script>
 const API = 'http://localhost:8000/api';
@@ -639,7 +702,7 @@ async function apiFetch(path, method = 'GET', body = null) {
 
 function showSection(name) {
   const allSections = ['school', 'families', 'children', 'payments', 'arrears',
-                       'members', 'memberships', 'unpaid-members', 'treasury', 'settings'];
+                       'members', 'memberships', 'unpaid-members', 'treasury', 'users', 'settings'];
   allSections.forEach(s => {
     document.getElementById(`section-${s}`).classList.add('hidden');
     const nav = document.getElementById(`nav-${s}`);
@@ -657,6 +720,7 @@ function showSection(name) {
   if (name === 'memberships') loadMembershipPayments();
   if (name === 'unpaid-members') loadUnpaidMembers();
   if (name === 'treasury') loadTreasury();
+  if (name === 'users') loadUsers();
   if (name === 'settings') loadSettings();
 }
 
@@ -1537,6 +1601,114 @@ if (accessToken) {
   } catch (e) {
     localStorage.clear();
   }
+}
+
+// ── Utilisateurs ─────────────────────────────────────────────────────────────
+
+const ROLE_LABELS = { ADMIN: '🔑 Admin', TRESORIER: '💼 Trésorier', ECOLE_MANAGER: '🎓 École Manager', '': '—' };
+
+async function loadUsers() {
+  const alert = document.getElementById('users-alert');
+  alert.textContent = '';
+  const res = await apiFetch('/users/');
+  if (!res || !res.ok) { alert.innerHTML = '<div class="alert alert-error">Erreur chargement utilisateurs</div>'; return; }
+  const users = await res.json();
+  const tbody = document.getElementById('users-table');
+  tbody.innerHTML = '';
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;">Aucun utilisateur</td></tr>'; return; }
+  users.forEach(u => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>${u.username}</b></td>
+      <td>${u.email}</td>
+      <td>${u.first_name || ''} ${u.last_name || ''}</td>
+      <td>${ROLE_LABELS[u.role] || u.role}</td>
+      <td>${u.mosque_name || '<em style="color:#888">global</em>'}</td>
+      <td>${u.is_active ? '✅' : '❌'}</td>
+      <td>
+        <button class="btn btn-sm" onclick="openUserModal(${u.id})">✏️</button>
+        <button class="btn btn-sm" style="background:#7f1d1d;" onclick="deleteUser(${u.id}, '${u.username}')">🗑️</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function openUserModal(userId = null) {
+  document.getElementById('user-modal-id').value = userId || '';
+  document.getElementById('user-modal-title').textContent = userId ? 'Modifier l\'utilisateur' : 'Créer un utilisateur';
+  document.getElementById('user-modal-username').value = '';
+  document.getElementById('user-modal-email').value = '';
+  document.getElementById('user-modal-firstname').value = '';
+  document.getElementById('user-modal-lastname').value = '';
+  document.getElementById('user-modal-password').value = '';
+  document.getElementById('user-modal-role').value = 'ECOLE_MANAGER';
+  document.getElementById('user-modal-active').checked = true;
+  document.getElementById('user-modal-username-row').style.display = userId ? 'none' : '';
+  document.getElementById('user-modal-pw-hint').textContent = userId ? '(laisser vide pour ne pas changer)' : '';
+
+  if (userId) {
+    apiFetch(`/users/${userId}/`).then(r => r && r.json()).then(u => {
+      if (!u) return;
+      document.getElementById('user-modal-email').value = u.email;
+      document.getElementById('user-modal-firstname').value = u.first_name || '';
+      document.getElementById('user-modal-lastname').value = u.last_name || '';
+      document.getElementById('user-modal-role').value = u.role || '';
+      document.getElementById('user-modal-active').checked = u.is_active;
+    });
+  }
+  openModal('modal-user');
+}
+
+async function saveUser() {
+  const userId = document.getElementById('user-modal-id').value;
+  const payload = {
+    email:      document.getElementById('user-modal-email').value.trim(),
+    first_name: document.getElementById('user-modal-firstname').value.trim(),
+    last_name:  document.getElementById('user-modal-lastname').value.trim(),
+    role:       document.getElementById('user-modal-role').value,
+    is_active:  document.getElementById('user-modal-active').checked,
+  };
+  const pw = document.getElementById('user-modal-password').value;
+  if (pw) payload.password = pw;
+
+  let res;
+  if (userId) {
+    res = await apiFetch(`/users/${userId}/`, 'PUT', payload);
+  } else {
+    payload.username = document.getElementById('user-modal-username').value.trim();
+    res = await apiFetch('/users/', 'POST', payload);
+  }
+  if (!res) return;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    document.getElementById('users-alert').innerHTML = `<div class="alert alert-error">${JSON.stringify(err)}</div>`;
+    closeModal('modal-user');
+    return;
+  }
+  closeModal('modal-user');
+  loadUsers();
+}
+
+async function deleteUser(userId, username) {
+  if (!confirm(`Supprimer l'utilisateur "${username}" ?`)) return;
+  const res = await apiFetch(`/users/${userId}/`, 'DELETE');
+  if (res && res.status === 204) loadUsers();
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+
+async function exportFile(resource, format) {
+  const url = `${API}/export/${resource}/${format}/`;
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+  });
+  if (!res.ok) { alert('Erreur export'); return; }
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const ext = format === 'excel' ? 'xlsx' : 'pdf';
+  a.download = `${resource}_${new Date().toISOString().slice(0,10)}.${ext}`;
+  a.click();
 }
 </script>
 </body>
