@@ -16,6 +16,8 @@ urlpatterns = [
     path("health/", health_check, name="health_check"),
     # Auth JWT
     path("api/auth/", include("core.urls", namespace="core")),
+    # School
+    path("api/school/", include("school.urls", namespace="school")),
     # Les namespaces API seront ajoutés au fil des étapes :
     # path("api/school/", include("school.urls")),
     # path("api/membership/", include("membership.urls")),

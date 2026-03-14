@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mosquée Manager — École</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+
+    /* ── Layout ── */
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 220px; background: #1a1a2e; color: #eee;
+      padding: 24px 16px; display: flex; flex-direction: column; gap: 8px;
+      position: fixed; height: 100vh;
+    }
+    .sidebar h1 { font-size: 1rem; color: #a78bfa; margin-bottom: 16px; line-height: 1.4; }
+    .sidebar button {
+      background: none; border: none; color: #ccc; text-align: left;
+      padding: 10px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+      width: 100%;
+    }
+    .sidebar button:hover, .sidebar button.active { background: #2d2d5e; color: #fff; }
+    .sidebar .logout { margin-top: auto; color: #f87171; }
+    .sidebar .user-info { font-size: 0.75rem; color: #888; padding: 8px 12px; }
+
+    .main { margin-left: 220px; padding: 32px; flex: 1; }
+    .main h2 { font-size: 1.4rem; margin-bottom: 20px; color: #1a1a2e; }
+
+    /* ── Login ── */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; background: #f5f5f5;
+    }
+    .login-card {
+      background: white; padding: 40px; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 360px;
+    }
+    .login-card h1 { font-size: 1.4rem; margin-bottom: 8px; color: #1a1a2e; }
+    .login-card p { color: #666; font-size: 0.9rem; margin-bottom: 24px; }
+
+    /* ── Formulaires ── */
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: #444; }
+    input, select, textarea {
+      width: 100%; padding: 9px 12px; border: 1px solid #ddd;
+      border-radius: 6px; font-size: 0.9rem; margin-bottom: 14px;
+    }
+    input:focus, select:focus { outline: 2px solid #a78bfa; border-color: transparent; }
+    textarea { resize: vertical; min-height: 60px; }
+
+    /* ── Boutons ── */
+    .btn {
+      padding: 9px 18px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 0.9rem; font-weight: 600;
+    }
+    .btn-primary { background: #7c3aed; color: white; }
+    .btn-primary:hover { background: #6d28d9; }
+    .btn-danger { background: #ef4444; color: white; font-size: 0.8rem; padding: 5px 10px; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-sm { background: #e5e7eb; color: #333; font-size: 0.8rem; padding: 5px 10px; }
+    .btn-sm:hover { background: #d1d5db; }
+    .btn-full { width: 100%; margin-top: 4px; }
+
+    /* ── Cards / Tables ── */
+    .card { background: white; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); text-align: center; }
+    .stat-card .num { font-size: 2rem; font-weight: 700; color: #7c3aed; }
+    .stat-card .lbl { font-size: 0.8rem; color: #888; margin-top: 4px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f9fafb; text-align: left; padding: 10px 12px; font-size: 0.82rem; color: #666; border-bottom: 1px solid #e5e7eb; }
+    td { padding: 10px 12px; font-size: 0.88rem; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    tr:hover td { background: #fafafa; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab { padding: 8px 16px; border-radius: 6px; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 0.88rem; }
+    .tab.active { background: #7c3aed; color: white; border-color: #7c3aed; }
+
+    /* ── Alertes ── */
+    .alert { padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 0.88rem; }
+    .alert-error { background: #fee2e2; color: #991b1b; }
+    .alert-success { background: #dcfce7; color: #166534; }
+    .alert-info { background: #dbeafe; color: #1e40af; }
+
+    /* ── Badge ── */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-gray { background: #f3f4f6; color: #4b5563; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal { background: white; border-radius: 12px; padding: 28px; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { margin-bottom: 20px; font-size: 1.1rem; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+    .hidden { display: none !important; }
+    .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+    .search-bar input { margin-bottom: 0; flex: 1; }
+  </style>
+</head>
+<body>
+
+<!-- ══ ECRAN LOGIN ══════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>🕌 Mosquée Manager</h1>
+    <p>Connectez-vous pour accéder à l'administration</p>
+    <div id="login-error" class="alert alert-error hidden"></div>
+    <label>Nom d'utilisateur</label>
+    <input type="text" id="username" placeholder="admin" />
+    <label>Mot de passe</label>
+    <input type="password" id="password" placeholder="••••••••" />
+    <button class="btn btn-primary btn-full" onclick="login()">Se connecter</button>
+  </div>
+</div>
+
+<!-- ══ APP PRINCIPALE ══════════════════════════════════════════════════════ -->
+<div id="app-screen" class="app hidden">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h1>🕌 Mosquée<br>Manager</h1>
+    <button class="active" onclick="showSection('school')" id="nav-school">🎓 École</button>
+    <button onclick="showSection('families')" id="nav-families">👨‍👩‍👧 Familles</button>
+    <button onclick="showSection('children')" id="nav-children">🧒 Enfants</button>
+    <button onclick="showSection('payments')" id="nav-payments">💰 Paiements</button>
+    <button onclick="showSection('arrears')" id="nav-arrears">⚠️ Impayés</button>
+    <div class="user-info" id="user-info"></div>
+    <button class="logout" onclick="logout()">🚪 Déconnexion</button>
+  </div>
+
+  <div class="main">
+
+    <!-- ── Section : Tableau de bord école ── -->
+    <div id="section-school">
+      <h2>🎓 Tableau de bord — École</h2>
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card"><div class="num" id="stat-families">—</div><div class="lbl">Familles</div></div>
+        <div class="stat-card"><div class="num" id="stat-children">—</div><div class="lbl">Enfants</div></div>
+        <div class="stat-card"><div class="num" id="stat-payments">—</div><div class="lbl">Paiements</div></div>
+        <div class="stat-card"><div class="num" id="stat-arrears">—</div><div class="lbl">Impayés</div></div>
+      </div>
+      <div class="card">
+        <p style="color:#666; font-size:0.9rem;">Bienvenue sur le tableau de bord de l'école coranique.<br>Utilisez le menu de gauche pour gérer les familles, enfants et paiements.</p>
+      </div>
+    </div>
+
+    <!-- ── Section : Familles ── -->
+    <div id="section-families" class="hidden">
+      <h2>👨‍👩‍👧 Familles</h2>
+      <div class="search-bar">
+        <input type="text" id="family-search" placeholder="Rechercher par nom, email, téléphone..." oninput="searchFamilies()" />
+        <button class="btn btn-primary" onclick="openFamilyModal()">+ Ajouter</button>
+      </div>
+      <div id="families-alert"></div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Enfants</th><th>Total payé</th><th>Actions</th></tr></thead>
+          <tbody id="families-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Section : Enfants ── -->
+    <div id="section-children" class="hidden">
+      <h2>🧒 Enfants</h2>
+      <div class="search-bar">
+        <input type="text" id="child-search" placeholder="Rechercher par prénom ou famille..." oninput="searchChildren()" />
+        <select id="child-level-filter" onchange="loadChildren()" style="width:auto; margin-bottom:0;">
+          <option value="">Tous les niveaux</option>
+          <option>NP</option><option>N1</option><option>N2</option>
+          <option>N3</option><option>N4</option><option>N5</option><option>N6</option>
+        </select>
+        <button class="btn btn-primary" onclick="openChildModal()">+ Ajouter</button>
+      </div>
+      <div id="children-alert"></div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Prénom</th><th>Niveau</th><th>Famille</th><th>Date naissance</th><th>Actions</th></tr></thead>
+          <tbody id="children-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Section : Paiements ── -->
+    <div id="section-payments" class="hidden">
+      <h2>💰 Paiements École</h2>
+      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
+        <select id="payment-year-filter" onchange="loadPayments()" style="width:auto; margin-bottom:0;">
+          <option value="">Toutes les années</option>
+        </select>
+        <button class="btn btn-primary" onclick="openPaymentModal()">+ Enregistrer paiement</button>
+      </div>
+      <div id="payments-alert"></div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Date</th><th>Famille</th><th>Enfant</th><th>Année</th><th>Montant</th><th>Mode</th><th>Note</th><th>Actions</th></tr></thead>
+          <tbody id="payments-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Section : Impayés ── -->
+    <div id="section-arrears" class="hidden">
+      <h2>⚠️ Familles avec impayés</h2>
+      <div id="arrears-info" class="alert alert-info hidden"></div>
+      <div id="arrears-alert"></div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Famille</th><th>Téléphone</th><th>Email</th><th>Enfants</th></tr></thead>
+          <tbody id="arrears-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODALS ══════════════════════════════════════════════════════════════ -->
+
+<!-- Modal Famille -->
+<div class="modal-overlay" id="modal-family">
+  <div class="modal">
+    <h3 id="modal-family-title">Ajouter une famille</h3>
+    <input type="hidden" id="family-id" />
+    <label>Nom du contact principal *</label>
+    <input type="text" id="family-name" placeholder="Ex: Ahmed Benali" />
+    <label>Téléphone principal *</label>
+    <input type="text" id="family-phone1" placeholder="06 12 34 56 78" />
+    <label>Téléphone secondaire</label>
+    <input type="text" id="family-phone2" placeholder="(optionnel)" />
+    <label>Email</label>
+    <input type="email" id="family-email" placeholder="famille@email.com" />
+    <label>Adresse</label>
+    <textarea id="family-address" placeholder="(optionnel)"></textarea>
+    <div id="modal-family-error" class="alert alert-error hidden"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-family')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveFamily()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Enfant -->
+<div class="modal-overlay" id="modal-child">
+  <div class="modal">
+    <h3 id="modal-child-title">Ajouter un enfant</h3>
+    <input type="hidden" id="child-id" />
+    <label>Prénom *</label>
+    <input type="text" id="child-firstname" placeholder="Ex: Youssef" />
+    <label>Famille *</label>
+    <select id="child-family"></select>
+    <label>Niveau *</label>
+    <select id="child-level">
+      <option value="">-- Choisir --</option>
+      <option>NP</option><option>N1</option><option>N2</option>
+      <option>N3</option><option>N4</option><option>N5</option><option>N6</option>
+    </select>
+    <label>Date de naissance</label>
+    <input type="date" id="child-birthdate" />
+    <div id="modal-child-error" class="alert alert-error hidden"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-child')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveChild()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Paiement -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal">
+    <h3 id="modal-payment-title">Enregistrer un paiement</h3>
+    <input type="hidden" id="payment-id" />
+    <label>Famille *</label>
+    <select id="payment-family" onchange="loadChildrenForFamily()"></select>
+    <label>Enfant (optionnel)</label>
+    <select id="payment-child"><option value="">-- Aucun --</option></select>
+    <label>Année scolaire *</label>
+    <select id="payment-year"></select>
+    <label>Date *</label>
+    <input type="date" id="payment-date" />
+    <label>Montant (€) *</label>
+    <input type="number" id="payment-amount" placeholder="300" min="0" step="0.01" />
+    <label>Mode de paiement</label>
+    <select id="payment-method">
+      <option value="cash">Espèces</option>
+      <option value="cheque">Chèque</option>
+      <option value="virement">Virement</option>
+      <option value="autre">Autre</option>
+    </select>
+    <label>Note</label>
+    <textarea id="payment-note" placeholder="(optionnel)"></textarea>
+    <div id="modal-payment-error" class="alert alert-error hidden"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-payment')">Annuler</button>
+      <button class="btn btn-primary" onclick="savePayment()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ JAVASCRIPT ══════════════════════════════════════════════════════════ -->
+<script>
+const API = 'http://localhost:8000/api';
+let accessToken = localStorage.getItem('access') || '';
+let refreshToken = localStorage.getItem('refresh') || '';
+let allFamilies = [];
+let allChildren = [];
+let schoolYears = [];
+
+// ── Auth ────────────────────────────────────────────────────────────────────
+
+async function login() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+
+  try {
+    const res = await fetch(`${API}/auth/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) throw new Error('Identifiants incorrects');
+    const data = await res.json();
+    accessToken = data.access;
+    refreshToken = data.refresh;
+    localStorage.setItem('access', accessToken);
+    localStorage.setItem('refresh', refreshToken);
+
+    // Afficher l'info user depuis le payload JWT
+    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+    document.getElementById('user-info').textContent = `${payload.email}\n${payload.role}`;
+
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+    loadDashboard();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  }
+}
+
+async function logout() {
+  await apiFetch('/auth/logout/', 'POST', { refresh: refreshToken }).catch(() => {});
+  localStorage.clear();
+  location.reload();
+}
+
+async function apiFetch(path, method = 'GET', body = null) {
+  const opts = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(`${API}${path}`, opts);
+  if (res.status === 401) { logout(); return null; }
+  return res;
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+
+function showSection(name) {
+  ['school', 'families', 'children', 'payments', 'arrears'].forEach(s => {
+    document.getElementById(`section-${s}`).classList.add('hidden');
+    document.getElementById(`nav-${s}`).classList.remove('active');
+  });
+  document.getElementById(`section-${name}`).classList.remove('hidden');
+  document.getElementById(`nav-${name}`).classList.add('active');
+
+  if (name === 'families') loadFamilies();
+  if (name === 'children') loadChildren();
+  if (name === 'payments') loadPayments();
+  if (name === 'arrears') loadArrears();
+}
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
+
+async function loadDashboard() {
+  const [fRes, cRes, pRes, aRes] = await Promise.all([
+    apiFetch('/school/families/'),
+    apiFetch('/school/children/'),
+    apiFetch('/school/payments/'),
+    apiFetch('/school/families/arrears/'),
+  ]);
+
+  if (fRes && fRes.ok) {
+    const d = await fRes.json();
+    document.getElementById('stat-families').textContent = d.count ?? d.results?.length ?? '—';
+  }
+  if (cRes && cRes.ok) {
+    const d = await cRes.json();
+    document.getElementById('stat-children').textContent = d.count ?? d.results?.length ?? '—';
+  }
+  if (pRes && pRes.ok) {
+    const d = await pRes.json();
+    document.getElementById('stat-payments').textContent = d.count ?? d.results?.length ?? '—';
+  }
+  if (aRes && aRes.ok) {
+    const d = await aRes.json();
+    document.getElementById('stat-arrears').textContent = d.count ?? '—';
+  } else {
+    document.getElementById('stat-arrears').textContent = '0';
+  }
+
+  await loadSchoolYears();
+}
+
+async function loadSchoolYears() {
+  const res = await apiFetch('/school/years/');
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  schoolYears = data.results || data;
+
+  // Remplir le select dans le filtre paiements
+  const sel = document.getElementById('payment-year-filter');
+  sel.innerHTML = '<option value="">Toutes les années</option>';
+  schoolYears.forEach(y => {
+    sel.innerHTML += `<option value="${y.id}">${y.label}${y.is_active ? ' ✓' : ''}</option>`;
+  });
+}
+
+// ── Familles ─────────────────────────────────────────────────────────────────
+
+async function loadFamilies(search = '') {
+  const url = search ? `/school/families/?search=${encodeURIComponent(search)}` : '/school/families/';
+  const res = await apiFetch(url);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  allFamilies = data.results || data;
+  renderFamilies(allFamilies);
+}
+
+function renderFamilies(families) {
+  const tbody = document.getElementById('families-table');
+  if (!families.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">Aucune famille enregistrée</td></tr>';
+    return;
+  }
+  tbody.innerHTML = families.map(f => `
+    <tr>
+      <td><strong>${esc(f.primary_contact_name)}</strong></td>
+      <td>${esc(f.phone1)}</td>
+      <td>${esc(f.email) || '<span style="color:#bbb">—</span>'}</td>
+      <td><span class="badge badge-gray">${f.children_count} enfant(s)</span></td>
+      <td><span class="badge badge-green">${f.total_paid.toFixed(2)} €</span></td>
+      <td style="display:flex;gap:4px;">
+        <button class="btn btn-sm" onclick="editFamily(${f.id})">✏️</button>
+        <button class="btn btn-danger" onclick="deleteFamily(${f.id})">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function searchFamilies() {
+  const q = document.getElementById('family-search').value;
+  loadFamilies(q);
+}
+
+function openFamilyModal(id = null) {
+  document.getElementById('family-id').value = '';
+  document.getElementById('family-name').value = '';
+  document.getElementById('family-phone1').value = '';
+  document.getElementById('family-phone2').value = '';
+  document.getElementById('family-email').value = '';
+  document.getElementById('family-address').value = '';
+  document.getElementById('modal-family-title').textContent = id ? 'Modifier la famille' : 'Ajouter une famille';
+  document.getElementById('modal-family-error').classList.add('hidden');
+  openModal('modal-family');
+}
+
+async function editFamily(id) {
+  const res = await apiFetch(`/school/families/${id}/`);
+  if (!res || !res.ok) return;
+  const f = await res.json();
+  document.getElementById('family-id').value = f.id;
+  document.getElementById('family-name').value = f.primary_contact_name;
+  document.getElementById('family-phone1').value = f.phone1;
+  document.getElementById('family-phone2').value = f.phone2 || '';
+  document.getElementById('family-email').value = f.email || '';
+  document.getElementById('family-address').value = f.address || '';
+  document.getElementById('modal-family-title').textContent = 'Modifier la famille';
+  document.getElementById('modal-family-error').classList.add('hidden');
+  openModal('modal-family');
+}
+
+async function saveFamily() {
+  const id = document.getElementById('family-id').value;
+  const body = {
+    primary_contact_name: document.getElementById('family-name').value.trim(),
+    phone1: document.getElementById('family-phone1').value.trim(),
+    phone2: document.getElementById('family-phone2').value.trim(),
+    email: document.getElementById('family-email').value.trim(),
+    address: document.getElementById('family-address').value.trim(),
+  };
+  const errEl = document.getElementById('modal-family-error');
+  if (!body.primary_contact_name || !body.phone1) {
+    errEl.textContent = 'Le nom et le téléphone sont obligatoires.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  const res = await apiFetch(
+    id ? `/school/families/${id}/` : '/school/families/',
+    id ? 'PUT' : 'POST',
+    body
+  );
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    errEl.classList.remove('hidden');
+    return;
+  }
+  closeModal('modal-family');
+  loadFamilies();
+}
+
+async function deleteFamily(id) {
+  if (!confirm('Supprimer cette famille et tous ses enfants / paiements ?')) return;
+  await apiFetch(`/school/families/${id}/`, 'DELETE');
+  loadFamilies();
+}
+
+// ── Enfants ──────────────────────────────────────────────────────────────────
+
+async function loadChildren(search = '') {
+  const level = document.getElementById('child-level-filter').value;
+  let url = '/school/children/?';
+  if (search) url += `search=${encodeURIComponent(search)}&`;
+  if (level) url += `level=${level}`;
+  const res = await apiFetch(url);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  allChildren = data.results || data;
+  renderChildren(allChildren);
+}
+
+function renderChildren(children) {
+  const tbody = document.getElementById('children-table');
+  if (!children.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">Aucun enfant enregistré</td></tr>';
+    return;
+  }
+  tbody.innerHTML = children.map(c => `
+    <tr>
+      <td><strong>${esc(c.first_name)}</strong></td>
+      <td><span class="badge badge-gray">${esc(c.level)}</span></td>
+      <td>${esc(getFamilyName(c.family))}</td>
+      <td>${c.birth_date || '<span style="color:#bbb">—</span>'}</td>
+      <td style="display:flex;gap:4px;">
+        <button class="btn btn-sm" onclick="editChild(${c.id})">✏️</button>
+        <button class="btn btn-danger" onclick="deleteChild(${c.id})">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function searchChildren() {
+  const q = document.getElementById('child-search').value;
+  loadChildren(q);
+}
+
+function getFamilyName(id) {
+  const f = allFamilies.find(f => f.id === id);
+  return f ? f.primary_contact_name : `Famille #${id}`;
+}
+
+async function openChildModal() {
+  await loadFamiliesForSelect('child-family');
+  document.getElementById('child-id').value = '';
+  document.getElementById('child-firstname').value = '';
+  document.getElementById('child-level').value = '';
+  document.getElementById('child-birthdate').value = '';
+  document.getElementById('modal-child-title').textContent = 'Ajouter un enfant';
+  document.getElementById('modal-child-error').classList.add('hidden');
+  openModal('modal-child');
+}
+
+async function editChild(id) {
+  await loadFamiliesForSelect('child-family');
+  const res = await apiFetch(`/school/children/${id}/`);
+  if (!res || !res.ok) return;
+  const c = await res.json();
+  document.getElementById('child-id').value = c.id;
+  document.getElementById('child-firstname').value = c.first_name;
+  document.getElementById('child-family').value = c.family;
+  document.getElementById('child-level').value = c.level;
+  document.getElementById('child-birthdate').value = c.birth_date || '';
+  document.getElementById('modal-child-title').textContent = 'Modifier l\'enfant';
+  document.getElementById('modal-child-error').classList.add('hidden');
+  openModal('modal-child');
+}
+
+async function saveChild() {
+  const id = document.getElementById('child-id').value;
+  const body = {
+    first_name: document.getElementById('child-firstname').value.trim(),
+    family: parseInt(document.getElementById('child-family').value),
+    level: document.getElementById('child-level').value,
+    birth_date: document.getElementById('child-birthdate').value || null,
+  };
+  const errEl = document.getElementById('modal-child-error');
+  if (!body.first_name || !body.family || !body.level) {
+    errEl.textContent = 'Prénom, famille et niveau sont obligatoires.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  const res = await apiFetch(
+    id ? `/school/children/${id}/` : '/school/children/',
+    id ? 'PUT' : 'POST',
+    body
+  );
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    errEl.classList.remove('hidden');
+    return;
+  }
+  closeModal('modal-child');
+  loadChildren();
+}
+
+async function deleteChild(id) {
+  if (!confirm('Supprimer cet enfant ?')) return;
+  await apiFetch(`/school/children/${id}/`, 'DELETE');
+  loadChildren();
+}
+
+// ── Paiements ────────────────────────────────────────────────────────────────
+
+async function loadPayments() {
+  const yearId = document.getElementById('payment-year-filter').value;
+  let url = '/school/payments/?';
+  if (yearId) url += `year_id=${yearId}`;
+  const res = await apiFetch(url);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  const payments = data.results || data;
+  const tbody = document.getElementById('payments-table');
+  if (!payments.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;">Aucun paiement enregistré</td></tr>';
+    return;
+  }
+  tbody.innerHTML = payments.map(p => `
+    <tr>
+      <td>${p.date}</td>
+      <td><strong>${esc(p.family_name)}</strong></td>
+      <td>${p.child_name ? esc(p.child_name) : '<span style="color:#bbb">—</span>'}</td>
+      <td>${esc(p.school_year_label)}</td>
+      <td><strong>${parseFloat(p.amount).toFixed(2)} €</strong></td>
+      <td><span class="badge badge-gray">${esc(p.method)}</span></td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;">${esc(p.note) || ''}</td>
+      <td><button class="btn btn-danger" onclick="deletePayment(${p.id})">🗑️</button></td>
+    </tr>
+  `).join('');
+}
+
+async function openPaymentModal() {
+  await loadFamiliesForSelect('payment-family');
+  await loadYearsForSelect('payment-year');
+  document.getElementById('payment-id').value = '';
+  document.getElementById('payment-child').innerHTML = '<option value="">-- Aucun --</option>';
+  document.getElementById('payment-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('payment-amount').value = '';
+  document.getElementById('payment-method').value = 'cash';
+  document.getElementById('payment-note').value = '';
+  document.getElementById('modal-payment-error').classList.add('hidden');
+  openModal('modal-payment');
+}
+
+async function loadChildrenForFamily() {
+  const familyId = document.getElementById('payment-family').value;
+  const sel = document.getElementById('payment-child');
+  sel.innerHTML = '<option value="">-- Aucun --</option>';
+  if (!familyId) return;
+  const res = await apiFetch(`/school/children/?search=`);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  const children = (data.results || data).filter(c => c.family === parseInt(familyId));
+  children.forEach(c => {
+    sel.innerHTML += `<option value="${c.id}">${esc(c.first_name)} (${esc(c.level)})</option>`;
+  });
+}
+
+async function savePayment() {
+  const body = {
+    family: parseInt(document.getElementById('payment-family').value),
+    school_year: parseInt(document.getElementById('payment-year').value),
+    child: document.getElementById('payment-child').value ? parseInt(document.getElementById('payment-child').value) : null,
+    date: document.getElementById('payment-date').value,
+    amount: parseFloat(document.getElementById('payment-amount').value),
+    method: document.getElementById('payment-method').value,
+    note: document.getElementById('payment-note').value.trim(),
+  };
+  const errEl = document.getElementById('modal-payment-error');
+  if (!body.family || !body.school_year || !body.date || !body.amount) {
+    errEl.textContent = 'Famille, année, date et montant sont obligatoires.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  const res = await apiFetch('/school/payments/', 'POST', body);
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    errEl.classList.remove('hidden');
+    return;
+  }
+  closeModal('modal-payment');
+  loadPayments();
+}
+
+async function deletePayment(id) {
+  if (!confirm('Supprimer ce paiement ?')) return;
+  await apiFetch(`/school/payments/${id}/`, 'DELETE');
+  loadPayments();
+}
+
+// ── Impayés ──────────────────────────────────────────────────────────────────
+
+async function loadArrears() {
+  const infoEl = document.getElementById('arrears-info');
+  const alertEl = document.getElementById('arrears-alert');
+  infoEl.classList.add('hidden');
+  alertEl.innerHTML = '';
+
+  const res = await apiFetch('/school/families/arrears/');
+  if (!res) return;
+
+  if (res.status === 404) {
+    alertEl.innerHTML = '<div class="alert alert-error">Aucune année scolaire active. Créez-en une depuis l\'Admin Django.</div>';
+    return;
+  }
+
+  if (!res.ok) return;
+  const data = await res.json();
+
+  infoEl.textContent = `Année active : ${data.school_year} — ${data.count} famille(s) sans paiement`;
+  infoEl.classList.remove('hidden');
+
+  const tbody = document.getElementById('arrears-table');
+  if (!data.families.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#166534;padding:20px;">✅ Toutes les familles ont payé !</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.families.map(f => `
+    <tr>
+      <td><strong>${esc(f.primary_contact_name)}</strong></td>
+      <td>${esc(f.phone1)}</td>
+      <td>${esc(f.email) || '—'}</td>
+      <td>${f.children_count} enfant(s)</td>
+    </tr>
+  `).join('');
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+async function loadFamiliesForSelect(selectId) {
+  if (!allFamilies.length) {
+    const res = await apiFetch('/school/families/');
+    if (res && res.ok) {
+      const data = await res.json();
+      allFamilies = data.results || data;
+    }
+  }
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = '<option value="">-- Choisir une famille --</option>';
+  allFamilies.forEach(f => {
+    sel.innerHTML += `<option value="${f.id}">${esc(f.primary_contact_name)}</option>`;
+  });
+}
+
+async function loadYearsForSelect(selectId) {
+  if (!schoolYears.length) await loadSchoolYears();
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = '<option value="">-- Choisir une année --</option>';
+  schoolYears.forEach(y => {
+    sel.innerHTML += `<option value="${y.id}">${y.label}${y.is_active ? ' ✓ active' : ''}</option>`;
+  });
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Fermer les modals en cliquant en dehors
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ── Auto-login si token présent ───────────────────────────────────────────────
+if (accessToken) {
+  try {
+    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+    const isExpired = payload.exp * 1000 < Date.now();
+    if (!isExpired) {
+      document.getElementById('user-info').textContent = `${payload.email}\n${payload.role}`;
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app-screen').classList.remove('hidden');
+      loadDashboard();
+    } else {
+      localStorage.clear();
+    }
+  } catch (e) {
+    localStorage.clear();
+  }
+}
+</script>
+</body>
+</html>

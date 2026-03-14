@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Applications locales (autres apps ajoutées au fil des étapes)
     "core.apps.CoreConfig",
+    "school.apps.SchoolConfig",
 ]
 
 # ── Middleware ─────────────────────────────────────────────────────────────────
@@ -152,6 +153,7 @@ SIMPLE_JWT = {
 # ── CORS ───────────────────────────────────────────────────────────────────────
 # En dev : toutes origines autorisées. En prod : lister explicitement.
 CORS_ALLOW_ALL_ORIGINS: bool = DEBUG
+CORS_ALLOW_CREDENTIALS = True
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 # Pas de print() en prod — tout passe par le logger standard Django
