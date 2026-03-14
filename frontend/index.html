@@ -1292,7 +1292,11 @@
 
 <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════════════ -->
 <script>
-const API = 'http://localhost:8000/api';
+// En dev (fichier ouvert directement) → localhost:8000
+// En prod (servi par Nginx) → URL relative /api (même origine)
+const API = (location.protocol === 'file:' || location.hostname === 'localhost')
+  ? 'http://localhost:8000/api'
+  : '/api';
 let accessToken = localStorage.getItem('access') || '';
 let refreshToken = localStorage.getItem('refresh') || '';
 let allFamilies = [];
