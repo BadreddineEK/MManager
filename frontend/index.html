@@ -6,106 +6,500 @@
   <title>Mosquée Manager</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
-
-    /* ── Layout ── */
-    .app { display: flex; min-height: 100vh; }
-    .sidebar {
-      width: 220px; background: #1a1a2e; color: #eee;
-      padding: 24px 16px; display: flex; flex-direction: column; gap: 8px;
-      position: fixed; height: 100vh;
+    /* ═══════════════════════════════════════════════════════════
+       DESIGN SYSTEM — Mosquée Manager
+       Palette : violet #6d28d9 | fond #f8f7ff | dark #16123a
+    ═══════════════════════════════════════════════════════════ */
+    :root {
+      --accent:      #6d28d9;
+      --accent-soft: #ede9fe;
+      --accent-dark: #4c1d95;
+      --sidebar-bg:  #16123a;
+      --sidebar-w:   240px;
+      --radius:      10px;
+      --shadow:      0 1px 6px rgba(0,0,0,0.08);
+      --shadow-md:   0 4px 20px rgba(0,0,0,0.12);
+      --text:        #1e1b3a;
+      --muted:       #6b7280;
+      --border:      #e8e5f0;
+      --bg:          #f5f4fb;
+      --surface:     #ffffff;
+      --green:       #16a34a;
+      --red:         #dc2626;
+      --green-soft:  #dcfce7;
+      --red-soft:    #fee2e2;
+      --blue-soft:   #dbeafe;
     }
-    .sidebar h1 { font-size: 1rem; color: #a78bfa; margin-bottom: 16px; line-height: 1.4; }
-    .sidebar button {
-      background: none; border: none; color: #ccc; text-align: left;
-      padding: 10px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
-      width: 100%;
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
     }
-    .sidebar button:hover, .sidebar button.active { background: #2d2d5e; color: #fff; }
-    .sidebar .logout { margin-top: auto; color: #f87171; }
-    .sidebar .user-info { font-size: 0.75rem; color: #888; padding: 8px 12px; }
 
-    .main { margin-left: 220px; padding: 32px; flex: 1; }
-    .main h2 { font-size: 1.4rem; margin-bottom: 20px; color: #1a1a2e; }
-
-    /* ── Login ── */
+    /* ══ LOGIN ══════════════════════════════════════════════════ */
     #login-screen {
-      display: flex; align-items: center; justify-content: center;
-      min-height: 100vh; background: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #16123a 0%, #2d1b69 50%, #1e1b3a 100%);
     }
     .login-card {
-      background: white; padding: 40px; border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 360px;
+      background: var(--surface);
+      padding: 48px 40px;
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+      width: 380px;
+      max-width: 94vw;
     }
-    .login-card h1 { font-size: 1.4rem; margin-bottom: 8px; color: #1a1a2e; }
-    .login-card p { color: #666; font-size: 0.9rem; margin-bottom: 24px; }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .login-logo .icon {
+      font-size: 2.8rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .login-logo h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+    .login-logo p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
 
-    /* ── Formulaires ── */
-    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: #444; }
+    /* ══ LAYOUT APP ═════════════════════════════════════════════ */
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 50;
+      border-right: 1px solid rgba(255,255,255,0.04);
+    }
+    .sidebar-brand {
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .sidebar-brand .brand-icon { font-size: 1.5rem; }
+    .sidebar-brand .brand-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+      margin-top: 2px;
+    }
+    .sidebar-brand .brand-sub {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.35);
+      margin-top: 1px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    /* Groupes de navigation */
+    .nav-group { padding: 12px 12px 4px; }
+    .nav-group-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.25);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0 8px;
+      margin-bottom: 4px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.85rem;
+      font-weight: 500;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      transition: background 0.15s, color 0.15s;
+      margin-bottom: 1px;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9); }
+    .nav-item.active { background: rgba(109,40,217,0.4); color: #fff; }
+    .nav-item.active .nav-icon { color: #a78bfa; }
+    .nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto;
+      background: rgba(220,38,38,0.7);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 99px;
+    }
+    /* Bas de sidebar */
+    .sidebar-footer {
+      margin-top: auto;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 12px;
+    }
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+    }
+    .user-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6d28d9, #a78bfa);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+    .user-details .u-name { font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.85); }
+    .user-details .u-role { font-size: 0.68rem; color: rgba(255,255,255,0.35); }
+    .btn-logout {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; padding: 8px 10px; border-radius: 8px;
+      background: none; border: none; cursor: pointer;
+      color: rgba(248,113,113,0.75); font-size: 0.82rem; font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-logout:hover { background: rgba(220,38,38,0.12); color: #f87171; }
+
+    /* ── Main content ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    /* Header contextuel */
+    .page-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    .page-header-left h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .page-header-left .breadcrumb {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+    .page-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .page-body { padding: 28px 32px; flex: 1; }
+
+    /* ══ FORMULAIRES ════════════════════════════════════════════ */
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
     input, select, textarea {
-      width: 100%; padding: 9px 12px; border: 1px solid #ddd;
-      border-radius: 6px; font-size: 0.9rem; margin-bottom: 14px;
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.88rem;
+      margin-bottom: 14px;
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color 0.15s;
+      font-family: inherit;
     }
-    input:focus, select:focus { outline: 2px solid #a78bfa; border-color: transparent; }
-    textarea { resize: vertical; min-height: 60px; }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(109,40,217,0.1);
+    }
+    textarea { resize: vertical; min-height: 64px; }
 
-    /* ── Boutons ── */
+    /* ══ BOUTONS ════════════════════════════════════════════════ */
     .btn {
-      padding: 9px 18px; border: none; border-radius: 6px;
-      cursor: pointer; font-size: 0.9rem; font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.84rem;
+      font-weight: 600;
+      font-family: inherit;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+      color: var(--text);
+      background: var(--surface);
+      border: 1.5px solid var(--border);
     }
-    .btn-primary { background: #7c3aed; color: white; }
-    .btn-primary:hover { background: #6d28d9; }
-    .btn-danger { background: #ef4444; color: white; font-size: 0.8rem; padding: 5px 10px; }
-    .btn-danger:hover { background: #dc2626; }
-    .btn-sm { background: #e5e7eb; color: #333; font-size: 0.8rem; padding: 5px 10px; }
-    .btn-sm:hover { background: #d1d5db; }
-    .btn-full { width: 100%; margin-top: 4px; }
+    .btn:hover { opacity: 0.85; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: var(--accent-dark); opacity: 1; }
+    .btn-success { background: var(--green); color: #fff; border-color: var(--green); }
+    .btn-success:hover { background: #15803d; opacity: 1; }
+    .btn-purple-soft { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+    .btn-danger { background: var(--red); color: #fff; border-color: var(--red); font-size: 0.78rem; padding: 5px 10px; }
+    .btn-danger:hover { background: #b91c1c; opacity: 1; }
+    .btn-sm { font-size: 0.78rem; padding: 5px 10px; }
+    .btn-icon { padding: 7px; border-radius: 7px; }
+    .btn-full { width: 100%; justify-content: center; }
 
-    /* ── Cards / Tables ── */
-    .card { background: white; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
-    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); text-align: center; }
-    .stat-card .num { font-size: 2rem; font-weight: 700; color: #7c3aed; }
-    .stat-card .lbl { font-size: 0.8rem; color: #888; margin-top: 4px; }
+    /* ══ CARDS ══════════════════════════════════════════════════ */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .card-p { padding: 24px; }
 
+    /* KPI Stats */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px 20px 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .stat-card .stat-icon {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+    .stat-card .num {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .stat-card .lbl {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* ══ TABLES ═════════════════════════════════════════════════ */
+    .table-wrapper { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
-    th { background: #f9fafb; text-align: left; padding: 10px 12px; font-size: 0.82rem; color: #666; border-bottom: 1px solid #e5e7eb; }
-    td { padding: 10px 12px; font-size: 0.88rem; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
-    tr:hover td { background: #fafafa; }
+    thead tr { border-bottom: 2px solid var(--border); }
+    th {
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      background: #faf9fe;
+    }
+    td {
+      padding: 11px 14px;
+      font-size: 0.85rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      color: var(--text);
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #faf8ff; }
+    .td-actions { display: flex; gap: 6px; }
 
-    /* ── Tabs ── */
-    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-    .tab { padding: 8px 16px; border-radius: 6px; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 0.88rem; }
-    .tab.active { background: #7c3aed; color: white; border-color: #7c3aed; }
+    /* ══ FILTRES / TOOLBAR ══════════════════════════════════════ */
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .toolbar input, .toolbar select {
+      margin-bottom: 0;
+      width: auto;
+    }
+    .toolbar .search-input { flex: 1; min-width: 180px; }
 
-    /* ── Alertes ── */
-    .alert { padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 0.88rem; }
-    .alert-error { background: #fee2e2; color: #991b1b; }
-    .alert-success { background: #dcfce7; color: #166534; }
-    .alert-info { background: #dbeafe; color: #1e40af; }
+    /* ══ ALERTES ════════════════════════════════════════════════ */
+    .alert {
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      font-size: 0.84rem;
+      font-weight: 500;
+    }
+    .alert-error   { background: var(--red-soft);  color: #991b1b; border: 1px solid #fca5a5; }
+    .alert-success { background: var(--green-soft); color: #14532d; border: 1px solid #86efac; }
+    .alert-info    { background: var(--blue-soft);  color: #1e40af; border: 1px solid #93c5fd; }
 
-    /* ── Badge ── */
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
-    .badge-green { background: #dcfce7; color: #166534; }
-    .badge-red { background: #fee2e2; color: #991b1b; }
-    .badge-gray { background: #f3f4f6; color: #4b5563; }
+    /* ══ BADGES ═════════════════════════════════════════════════ */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 9px; border-radius: 99px;
+      font-size: 0.72rem; font-weight: 700; gap: 4px;
+    }
+    .badge-green  { background: var(--green-soft);  color: #166534; }
+    .badge-red    { background: var(--red-soft);    color: #991b1b; }
+    .badge-gray   { background: #f3f4f6; color: #4b5563; }
+    .badge-purple { background: var(--accent-soft); color: var(--accent); }
+    .badge-blue   { background: var(--blue-soft);   color: #1e40af; }
 
-    /* ── Modal ── */
+    /* ══ MODAL ══════════════════════════════════════════════════ */
     .modal-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.4); z-index: 100;
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(15,10,40,0.55);
+      backdrop-filter: blur(3px);
+      z-index: 200;
       align-items: center; justify-content: center;
     }
     .modal-overlay.open { display: flex; }
-    .modal { background: white; border-radius: 12px; padding: 28px; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
-    .modal h3 { margin-bottom: 20px; font-size: 1.1rem; }
-    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+    .modal {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 0;
+      width: 500px; max-width: 96vw; max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 28px 60px rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+    }
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .modal-close {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 1.2rem; line-height: 1;
+      padding: 2px 6px; border-radius: 6px;
+    }
+    .modal-close:hover { background: var(--border); }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer {
+      display: flex; gap: 8px; justify-content: flex-end;
+      padding: 14px 24px;
+      border-top: 1px solid var(--border);
+      background: #faf9fe;
+      border-radius: 0 0 16px 16px;
+    }
 
+    /* ══ CHARTS GRID ════════════════════════════════════════════ */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .chart-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .chart-card .chart-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .chart-card .chart-title .ct-icon { color: var(--accent); }
+
+    /* ══ SECTION SETTINGS ═══════════════════════════════════════ */
+    .settings-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+      max-width: 700px;
+    }
+    .settings-section h3 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ══ UTILITAIRES ════════════════════════════════════════════ */
     .hidden { display: none !important; }
-    .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
-    .search-bar input { margin-bottom: 0; flex: 1; }
+    .text-muted { color: var(--muted); }
+    .text-green { color: var(--green); }
+    .text-red   { color: var(--red); }
+    .mt-0 { margin-top: 0; }
+    .gap-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+    /* ══ SCROLLBAR SIDEBAR ══════════════════════════════════════ */
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    /* ══ RESPONSIVE ═════════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      :root { --sidebar-w: 56px; }
+      .sidebar-brand .brand-name,
+      .sidebar-brand .brand-sub,
+      .nav-item span,
+      .nav-group-label,
+      .user-details,
+      .btn-logout span { display: none; }
+      .nav-item { justify-content: center; padding: 10px; }
+      .nav-icon { width: auto; }
+      .user-chip { justify-content: center; padding: 6px; }
+    }
+    @media (max-width: 640px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .page-body { padding: 20px 16px; }
+      .page-header { padding: 14px 16px; }
+    }
   </style>
 </head>
 <body>
@@ -113,366 +507,523 @@
 <!-- ══ ECRAN LOGIN ══════════════════════════════════════════════════════════ -->
 <div id="login-screen">
   <div class="login-card">
-    <h1>🕌 Mosquée Manager</h1>
-    <p>Connectez-vous pour accéder à l'administration</p>
+    <div class="login-logo">
+      <span class="icon">🕌</span>
+      <h1>Mosquée Manager</h1>
+      <p>Administration &amp; gestion de votre mosquée</p>
+    </div>
     <div id="login-error" class="alert alert-error hidden"></div>
-    <label>Nom d'utilisateur</label>
-    <input type="text" id="username" placeholder="admin" />
+    <label>Identifiant</label>
+    <input type="text" id="username" placeholder="admin" autocomplete="username" />
     <label>Mot de passe</label>
-    <input type="password" id="password" placeholder="••••••••" />
-    <button class="btn btn-primary btn-full" onclick="login()">Se connecter</button>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
+           onkeydown="if(event.key==='Enter') login()" />
+    <button class="btn btn-primary btn-full" onclick="login()" style="margin-top:4px; padding:11px 16px; font-size:0.92rem;">
+      Se connecter
+    </button>
   </div>
 </div>
 
 <!-- ══ APP PRINCIPALE ══════════════════════════════════════════════════════ -->
 <div id="app-screen" class="app hidden">
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h1>🕌 Mosquée<br>Manager</h1>
-    <button class="active" onclick="showSection('school')" id="nav-school">🎓 École</button>
-    <button onclick="showSection('families')" id="nav-families">👨‍👩‍👧 Familles</button>
-    <button onclick="showSection('children')" id="nav-children">🧒 Enfants</button>
-    <button onclick="showSection('payments')" id="nav-payments">💰 Paiements</button>
-    <button onclick="showSection('arrears')" id="nav-arrears">⚠️ Impayés</button>
-    <hr style="border-color:#2d2d5e; margin:8px 0;" />
-    <button onclick="showSection('members')" id="nav-members">🤝 Adhérents</button>
-    <button onclick="showSection('memberships')" id="nav-memberships">💳 Cotisations</button>
-    <button onclick="showSection('unpaid-members')" id="nav-unpaid-members">🔴 Non cotisants</button>
-    <hr style="border-color:#2d2d5e; margin:8px 0;" />
-    <button onclick="showSection('treasury')" id="nav-treasury">🏦 Trésorerie</button>
-    <hr style="border-color:#2d2d5e; margin:8px 0;" />
-    <button onclick="showSection('users')" id="nav-users">👥 Utilisateurs</button>
-    <button onclick="showSection('settings')" id="nav-settings">⚙️ Paramètres</button>
-    <div class="user-info" id="user-info"></div>
-    <button class="logout" onclick="logout()">🚪 Déconnexion</button>
-  </div>
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🕌</div>
+      <div class="brand-name">Mosquée Manager</div>
+      <div class="brand-sub">Administration</div>
+    </div>
 
-  <div class="main">
+    <!-- Dashboard -->
+    <div class="nav-group">
+      <div class="nav-group-label">Vue d'ensemble</div>
+      <button class="nav-item active" id="nav-school" onclick="showSection('school')">
+        <span class="nav-icon">📊</span><span>Tableau de bord</span>
+      </button>
+    </div>
 
-    <!-- ── Section : Tableau de bord école ── -->
+    <!-- École -->
+    <div class="nav-group">
+      <div class="nav-group-label">École coranique</div>
+      <button class="nav-item" id="nav-families" onclick="showSection('families')">
+        <span class="nav-icon">👨‍👩‍👧</span><span>Familles</span>
+      </button>
+      <button class="nav-item" id="nav-children" onclick="showSection('children')">
+        <span class="nav-icon">🧒</span><span>Enfants</span>
+      </button>
+      <button class="nav-item" id="nav-payments" onclick="showSection('payments')">
+        <span class="nav-icon">💰</span><span>Paiements</span>
+      </button>
+      <button class="nav-item" id="nav-arrears" onclick="showSection('arrears')">
+        <span class="nav-icon">⚠️</span><span>Impayés</span>
+      </button>
+    </div>
+
+    <!-- Adhésion -->
+    <div class="nav-group">
+      <div class="nav-group-label">Adhésion</div>
+      <button class="nav-item" id="nav-members" onclick="showSection('members')">
+        <span class="nav-icon">🤝</span><span>Adhérents</span>
+      </button>
+      <button class="nav-item" id="nav-memberships" onclick="showSection('memberships')">
+        <span class="nav-icon">💳</span><span>Cotisations</span>
+      </button>
+      <button class="nav-item" id="nav-unpaid-members" onclick="showSection('unpaid-members')">
+        <span class="nav-icon">🔴</span><span>Non cotisants</span>
+      </button>
+    </div>
+
+    <!-- Finance -->
+    <div class="nav-group">
+      <div class="nav-group-label">Finance</div>
+      <button class="nav-item" id="nav-treasury" onclick="showSection('treasury')">
+        <span class="nav-icon">🏦</span><span>Trésorerie</span>
+      </button>
+    </div>
+
+    <!-- Admin -->
+    <div class="nav-group">
+      <div class="nav-group-label">Administration</div>
+      <button class="nav-item" id="nav-users" onclick="showSection('users')">
+        <span class="nav-icon">👥</span><span>Utilisateurs</span>
+      </button>
+      <button class="nav-item" id="nav-settings" onclick="showSection('settings')">
+        <span class="nav-icon">⚙️</span><span>Paramètres</span>
+      </button>
+    </div>
+
+    <!-- Footer utilisateur -->
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-details">
+          <div class="u-name" id="user-name-display">—</div>
+          <div class="u-role" id="user-role-display">—</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">
+        <span>🚪</span><span>Déconnexion</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Contenu principal ── -->
+    <!-- ══ SECTIONS ════════════════════════════════════════════════════════ -->
+
+    <!-- ── Tableau de bord ── -->
     <div id="section-school">
-      <h2>🎓 Tableau de bord — École &amp; Vue générale</h2>
-
-      <!-- ── Ligne KPI chiffres ── -->
-      <div class="stats-row" id="stats-row">
-        <div class="stat-card"><div class="num" id="stat-families">—</div><div class="lbl">Familles</div></div>
-        <div class="stat-card"><div class="num" id="stat-children">—</div><div class="lbl">Enfants</div></div>
-        <div class="stat-card"><div class="num" id="stat-payments">—</div><div class="lbl">Paiements école</div></div>
-        <div class="stat-card"><div class="num" style="color:#dc2626;" id="stat-arrears">—</div><div class="lbl">Familles impayées</div></div>
-        <div class="stat-card"><div class="num" id="stat-members">—</div><div class="lbl">Adhérents</div></div>
-        <div class="stat-card"><div class="num" style="color:#16a34a;" id="stat-balance">—</div><div class="lbl">Solde trésorerie</div></div>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Tableau de bord</h2>
+          <div class="breadcrumb">Vue d'ensemble — <span id="dashboard-mosque-name">—</span></div>
+        </div>
+        <div class="page-header-actions">
+          <select id="school-year-select" onchange="loadDashboard()" style="width:auto;margin:0;font-size:0.82rem;"></select>
+        </div>
       </div>
-
-      <!-- ── Ligne graphiques ── -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
-
-        <!-- Graphique 1 : Paiements école par mois (6 derniers mois) -->
-        <div class="card" style="padding:20px;">
-          <h3 style="margin:0 0 12px;font-size:0.95rem;color:#7c3aed;">📈 Paiements école — 6 derniers mois</h3>
-          <canvas id="chart-school-payments" height="200"></canvas>
+      <div class="page-body">
+        <!-- KPI -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon">👨‍👩‍👧</div>
+            <div class="num" id="stat-families">—</div>
+            <div class="lbl">Familles inscrites</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🧒</div>
+            <div class="num" id="stat-children">—</div>
+            <div class="lbl">Enfants</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="num" id="stat-payments">—</div>
+            <div class="lbl">Paiements école</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div class="num text-red" id="stat-arrears">—</div>
+            <div class="lbl">Familles impayées</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🤝</div>
+            <div class="num" id="stat-members">—</div>
+            <div class="lbl">Adhérents</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏦</div>
+            <div class="num text-green" id="stat-balance">—</div>
+            <div class="lbl">Solde trésorerie</div>
+          </div>
         </div>
-
-        <!-- Graphique 2 : Répartition enfants par niveau -->
-        <div class="card" style="padding:20px;">
-          <h3 style="margin:0 0 12px;font-size:0.95rem;color:#7c3aed;">🎓 Enfants par niveau</h3>
-          <canvas id="chart-levels" height="200"></canvas>
+        <!-- Graphiques -->
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-title"><span class="ct-icon">📈</span> Paiements école — 6 mois</div>
+            <canvas id="chart-school-payments" height="200"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title"><span class="ct-icon">🎓</span> Répartition par niveau</div>
+            <canvas id="chart-levels" height="200"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title"><span class="ct-icon">🏦</span> Trésorerie — Entrées vs Sorties</div>
+            <canvas id="chart-treasury" height="200"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title"><span class="ct-icon">🤝</span> Adhérents — État cotisations</div>
+            <canvas id="chart-membership" height="200"></canvas>
+          </div>
         </div>
-
-        <!-- Graphique 3 : Trésorerie — entrées vs sorties (6 derniers mois) -->
-        <div class="card" style="padding:20px;">
-          <h3 style="margin:0 0 12px;font-size:0.95rem;color:#7c3aed;">🏦 Trésorerie — Entrées vs Sorties</h3>
-          <canvas id="chart-treasury" height="200"></canvas>
-        </div>
-
-        <!-- Graphique 4 : Adhérents cotisants vs non cotisants -->
-        <div class="card" style="padding:20px;">
-          <h3 style="margin:0 0 12px;font-size:0.95rem;color:#7c3aed;">🤝 Adhérents — État des cotisations</h3>
-          <canvas id="chart-membership" height="200"></canvas>
-        </div>
-
       </div>
     </div>
 
-    <!-- ── Section : Familles ── -->
+    <!-- ── Familles ── -->
     <div id="section-families" class="hidden">
-      <h2>👨‍👩‍👧 Familles</h2>
-      <div class="search-bar">
-        <input type="text" id="family-search" placeholder="Rechercher par nom, email, téléphone..." oninput="searchFamilies()" />
-        <button class="btn btn-primary" onclick="openFamilyModal()">+ Ajouter</button>
-        <button class="btn" style="background:#166534;" onclick="exportFile('families','excel')">⬇️ Excel</button>
-        <button class="btn" style="background:#7c3aed;" onclick="exportFile('families','pdf')">⬇️ PDF</button>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Familles</h2>
+          <div class="breadcrumb">École coranique · Gestion des familles</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-success btn-sm" onclick="exportFile('families','excel')">⬇ Excel</button>
+          <button class="btn btn-purple-soft btn-sm" onclick="exportFile('families','pdf')">⬇ PDF</button>
+          <button class="btn btn-primary" onclick="openFamilyModal()">+ Famille</button>
+        </div>
       </div>
-      <div id="families-alert"></div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Enfants</th><th>Total payé</th><th>Actions</th></tr></thead>
-          <tbody id="families-table"></tbody>
-        </table>
+      <div class="page-body">
+        <div class="toolbar">
+          <input type="text" class="search-input" id="family-search" placeholder="🔍  Rechercher par nom, email, téléphone..." oninput="searchFamilies()" />
+        </div>
+        <div id="families-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Nom contact</th><th>Téléphone</th><th>Email</th><th>Enfants</th><th>Total payé</th><th>Actions</th></tr></thead>
+            <tbody id="families-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- ── Section : Enfants ── -->
+    <!-- ── Enfants ── -->
     <div id="section-children" class="hidden">
-      <h2>🧒 Enfants</h2>
-      <div class="search-bar">
-        <input type="text" id="child-search" placeholder="Rechercher par prénom ou famille..." oninput="searchChildren()" />
-        <select id="child-level-filter" onchange="loadChildren()" style="width:auto; margin-bottom:0;">
-          <option value="">Tous les niveaux</option>
-          <option>NP</option><option>N1</option><option>N2</option>
-          <option>N3</option><option>N4</option><option>N5</option><option>N6</option>
-        </select>
-        <button class="btn btn-primary" onclick="openChildModal()">+ Ajouter</button>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Enfants</h2>
+          <div class="breadcrumb">École coranique · Liste des élèves</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-primary" onclick="openChildModal()">+ Enfant</button>
+        </div>
       </div>
-      <div id="children-alert"></div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead><tr><th>Prénom</th><th>Niveau</th><th>Famille</th><th>Date naissance</th><th>Actions</th></tr></thead>
-          <tbody id="children-table"></tbody>
-        </table>
+      <div class="page-body">
+        <div class="toolbar">
+          <input type="text" class="search-input" id="child-search" placeholder="🔍  Rechercher par prénom ou famille..." oninput="searchChildren()" />
+          <select id="child-level-filter" onchange="loadChildren()" style="width:auto;margin:0;">
+            <option value="">Tous les niveaux</option>
+            <option>NP</option><option>N1</option><option>N2</option>
+            <option>N3</option><option>N4</option><option>N5</option><option>N6</option>
+          </select>
+        </div>
+        <div id="children-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Prénom</th><th>Niveau</th><th>Famille</th><th>Date naissance</th><th>Actions</th></tr></thead>
+            <tbody id="children-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- ── Section : Paiements ── -->
+    <!-- ── Paiements école ── -->
     <div id="section-payments" class="hidden">
-      <h2>💰 Paiements École</h2>
-      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
-        <select id="payment-year-filter" onchange="loadPayments()" style="width:auto; margin-bottom:0;">
-          <option value="">Toutes les années</option>
-        </select>
-        <button class="btn btn-primary" onclick="openPaymentModal()">+ Enregistrer paiement</button>
-        <button class="btn" style="background:#166534;" onclick="exportFile('school-payments','excel')">⬇️ Excel</button>
-        <button class="btn" style="background:#7c3aed;" onclick="exportFile('school-payments','pdf')">⬇️ PDF</button>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Paiements École</h2>
+          <div class="breadcrumb">École coranique · Suivi des paiements</div>
+        </div>
+        <div class="page-header-actions">
+          <select id="payment-year-filter" onchange="loadPayments()" style="width:auto;margin:0;font-size:0.82rem;">
+            <option value="">Toutes les années</option>
+          </select>
+          <button class="btn btn-success btn-sm" onclick="exportFile('school-payments','excel')">⬇ Excel</button>
+          <button class="btn btn-purple-soft btn-sm" onclick="exportFile('school-payments','pdf')">⬇ PDF</button>
+          <button class="btn btn-primary" onclick="openPaymentModal()">+ Paiement</button>
+        </div>
       </div>
-      <div id="payments-alert"></div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead><tr><th>Date</th><th>Famille</th><th>Enfant</th><th>Année</th><th>Montant</th><th>Mode</th><th>Note</th><th>Actions</th></tr></thead>
-          <tbody id="payments-table"></tbody>
-        </table>
+      <div class="page-body">
+        <div id="payments-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Famille</th><th>Enfant</th><th>Année</th><th>Montant</th><th>Mode</th><th>Note</th><th>Actions</th></tr></thead>
+            <tbody id="payments-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- ── Section : Impayés école ── -->
+    <!-- ── Impayés ── -->
     <div id="section-arrears" class="hidden">
-      <h2>⚠️ Familles avec impayés</h2>
-      <div id="arrears-info" class="alert alert-info hidden"></div>
-      <div id="arrears-alert"></div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead><tr><th>Famille</th><th>Téléphone</th><th>Email</th><th>Enfants</th></tr></thead>
-          <tbody id="arrears-table"></tbody>
-        </table>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Familles avec impayés</h2>
+          <div class="breadcrumb">École coranique · Suivi des impayés</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div id="arrears-info" class="alert alert-info hidden"></div>
+        <div id="arrears-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Famille</th><th>Téléphone</th><th>Email</th><th>Enfants</th></tr></thead>
+            <tbody id="arrears-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- ── Section : Adhérents ── -->
+    <!-- ── Adhérents ── -->
     <div id="section-members" class="hidden">
-      <h2>🤝 Adhérents</h2>
-      <div class="search-bar">
-        <input type="text" id="member-search" placeholder="Rechercher par nom, email, téléphone..." oninput="searchMembers()" />
-        <select id="member-status-filter" onchange="loadMembers()" style="width:auto; margin-bottom:0;">
-          <option value="">Tous les adhérents</option>
-          <option value="paid">✅ À jour</option>
-          <option value="unpaid">❌ Non cotisants</option>
-        </select>
-        <button class="btn btn-primary" onclick="openMemberModal()">+ Ajouter</button>
-        <button class="btn" style="background:#166534;" onclick="exportFile('members','excel')">⬇️ Excel</button>
-        <button class="btn" style="background:#7c3aed;" onclick="exportFile('members','pdf')">⬇️ PDF</button>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Adhérents</h2>
+          <div class="breadcrumb">Adhésion · Registre des membres</div>
+        </div>
+        <div class="page-header-actions">
+          <select id="member-status-filter" onchange="loadMembers()" style="width:auto;margin:0;font-size:0.82rem;">
+            <option value="">Tous</option>
+            <option value="paid">✅ À jour</option>
+            <option value="unpaid">❌ Non cotisants</option>
+          </select>
+          <button class="btn btn-success btn-sm" onclick="exportFile('members','excel')">⬇ Excel</button>
+          <button class="btn btn-purple-soft btn-sm" onclick="exportFile('members','pdf')">⬇ PDF</button>
+          <button class="btn btn-primary" onclick="openMemberModal()">+ Adhérent</button>
+        </div>
       </div>
-      <div id="members-alert"></div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Cotisation annuelle</th><th>Total payé</th><th>Actions</th></tr></thead>
-          <tbody id="members-table"></tbody>
-        </table>
+      <div class="page-body">
+        <div class="toolbar">
+          <input type="text" class="search-input" id="member-search" placeholder="🔍  Rechercher par nom, email, téléphone..." oninput="searchMembers()" />
+        </div>
+        <div id="members-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Cotisation annuelle</th><th>Total payé</th><th>Actions</th></tr></thead>
+            <tbody id="members-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- ── Section : Cotisations ── -->
+    <!-- ── Cotisations ── -->
     <div id="section-memberships" class="hidden">
-      <h2>💳 Paiements Cotisations</h2>
-      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
-        <select id="membership-year-filter" onchange="loadMembershipPayments()" style="width:auto; margin-bottom:0;">
-          <option value="">Toutes les années</option>
-        </select>
-        <button class="btn btn-primary" onclick="openMembershipPaymentModal()">+ Enregistrer cotisation</button>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Cotisations</h2>
+          <div class="breadcrumb">Adhésion · Paiements de cotisations</div>
+        </div>
+        <div class="page-header-actions">
+          <select id="membership-year-filter" onchange="loadMembershipPayments()" style="width:auto;margin:0;font-size:0.82rem;">
+            <option value="">Toutes les années</option>
+          </select>
+          <button class="btn btn-primary" onclick="openMembershipPaymentModal()">+ Cotisation</button>
+        </div>
       </div>
-      <div id="memberships-alert"></div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead><tr><th>Date</th><th>Adhérent</th><th>Année</th><th>Montant</th><th>Mode</th><th>Note</th><th>Actions</th></tr></thead>
-          <tbody id="memberships-table"></tbody>
-        </table>
+      <div class="page-body">
+        <div id="memberships-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Adhérent</th><th>Année</th><th>Montant</th><th>Mode</th><th>Note</th><th>Actions</th></tr></thead>
+            <tbody id="memberships-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- ── Section : Non cotisants ── -->
+    <!-- ── Non cotisants ── -->
     <div id="section-unpaid-members" class="hidden">
-      <h2>🔴 Adhérents non cotisants</h2>
-      <div id="unpaid-members-info" class="alert alert-info hidden"></div>
-      <div id="unpaid-members-alert"></div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Total payé (historique)</th></tr></thead>
-          <tbody id="unpaid-members-table"></tbody>
-        </table>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Non cotisants</h2>
+          <div class="breadcrumb">Adhésion · Adhérents sans cotisation active</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div id="unpaid-members-info" class="alert alert-info hidden"></div>
+        <div id="unpaid-members-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Total payé (historique)</th></tr></thead>
+            <tbody id="unpaid-members-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- ── Section : Trésorerie ── -->
+    <!-- ── Trésorerie ── -->
     <div id="section-treasury" class="hidden">
-      <h2>🏦 Trésorerie</h2>
-
-      <!-- Résumé financier -->
-      <div class="stats-row" id="treasury-stats-row">
-        <div class="stat-card">
-          <div class="num" id="trs-in" style="color:#16a34a">—</div>
-          <div class="lbl">Entrées (période)</div>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Trésorerie</h2>
+          <div class="breadcrumb">Finance · Suivi des entrées &amp; sorties</div>
         </div>
-        <div class="stat-card">
-          <div class="num" id="trs-out" style="color:#dc2626">—</div>
-          <div class="lbl">Sorties (période)</div>
-        </div>
-        <div class="stat-card">
-          <div class="num" id="trs-balance">—</div>
-          <div class="lbl">Solde</div>
+        <div class="page-header-actions">
+          <button class="btn btn-success btn-sm" onclick="exportFile('treasury','excel')">⬇ Excel</button>
+          <button class="btn btn-purple-soft btn-sm" onclick="exportFile('treasury','pdf')">⬇ PDF</button>
+          <button class="btn btn-primary" onclick="openTreasuryModal()">+ Transaction</button>
         </div>
       </div>
-
-      <!-- Filtres -->
-      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
-        <select id="trs-direction-filter" onchange="loadTreasury()" style="width:auto; margin-bottom:0;">
-          <option value="">Entrées + Sorties</option>
-          <option value="IN">✅ Entrées seulement</option>
-          <option value="OUT">❌ Sorties seulement</option>
-        </select>
-        <select id="trs-category-filter" onchange="loadTreasury()" style="width:auto; margin-bottom:0;">
-          <option value="">Toutes catégories</option>
-          <option value="don">Don / Sadaqa</option>
-          <option value="loyer">Loyer</option>
-          <option value="salaire">Salaire / Honoraires</option>
-          <option value="facture">Facture / Charges</option>
-          <option value="ecole">École coranique</option>
-          <option value="cotisation">Cotisation adhérent</option>
-          <option value="projet">Projet / Travaux</option>
-          <option value="subvention">Subvention</option>
-          <option value="autre">Autre</option>
-        </select>
-        <input type="month" id="trs-month-filter" onchange="loadTreasury()" style="width:auto; margin-bottom:0; padding:9px 12px; border:1px solid #ddd; border-radius:6px;" />
-        <input type="text" id="trs-search" placeholder="Rechercher..." oninput="loadTreasury()" style="flex:1; margin-bottom:0;" />
-        <button class="btn btn-primary" onclick="openTreasuryModal()">+ Ajouter</button>
-        <button class="btn" style="background:#166534;" onclick="exportFile('treasury','excel')">⬇️ Excel</button>
-        <button class="btn" style="background:#7c3aed;" onclick="exportFile('treasury','pdf')">⬇️ PDF</button>
-      </div>
-      <div id="treasury-alert"></div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Libellé</th>
-              <th>Catégorie</th>
-              <th>Direction</th>
-              <th>Montant</th>
-              <th>Mode</th>
-              <th>Note</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="treasury-table"></tbody>
-        </table>
+      <div class="page-body">
+        <!-- KPI trésorerie -->
+        <div class="stats-row" style="grid-template-columns:repeat(3,1fr);max-width:600px;margin-bottom:20px;">
+          <div class="stat-card">
+            <div class="stat-icon">📥</div>
+            <div class="num text-green" id="trs-in">—</div>
+            <div class="lbl">Entrées (période)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📤</div>
+            <div class="num text-red" id="trs-out">—</div>
+            <div class="lbl">Sorties (période)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⚖️</div>
+            <div class="num" id="trs-balance">—</div>
+            <div class="lbl">Solde</div>
+          </div>
+        </div>
+        <!-- Filtres -->
+        <div class="toolbar">
+          <select id="trs-direction-filter" onchange="loadTreasury()" style="width:auto;margin:0;">
+            <option value="">Entrées + Sorties</option>
+            <option value="IN">📥 Entrées</option>
+            <option value="OUT">📤 Sorties</option>
+          </select>
+          <select id="trs-category-filter" onchange="loadTreasury()" style="width:auto;margin:0;">
+            <option value="">Toutes catégories</option>
+            <option value="don">Don / Sadaqa</option>
+            <option value="loyer">Loyer</option>
+            <option value="salaire">Salaire / Honoraires</option>
+            <option value="facture">Facture / Charges</option>
+            <option value="ecole">École coranique</option>
+            <option value="cotisation">Cotisation adhérent</option>
+            <option value="projet">Projet / Travaux</option>
+            <option value="subvention">Subvention</option>
+            <option value="autre">Autre</option>
+          </select>
+          <input type="month" id="trs-month-filter" onchange="loadTreasury()" style="width:auto;margin:0;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;" />
+          <input type="text" class="search-input" id="trs-search" placeholder="🔍  Rechercher..." oninput="loadTreasury()" />
+        </div>
+        <div id="treasury-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Direction</th><th>Montant</th><th>Mode</th><th>Note</th><th>Actions</th></tr></thead>
+            <tbody id="treasury-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- ── Section : Utilisateurs ── -->
+    <!-- ── Utilisateurs ── -->
     <div id="section-users" class="hidden">
-      <h2>👥 Gestion des utilisateurs</h2>
-      <div id="users-alert"></div>
-      <div class="search-bar">
-        <button class="btn btn-primary" onclick="openUserModal()">+ Créer un utilisateur</button>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Utilisateurs</h2>
+          <div class="breadcrumb">Administration · Gestion des accès</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-primary" onclick="openUserModal()">+ Utilisateur</button>
+        </div>
       </div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead>
-            <tr>
-              <th>Utilisateur</th><th>Email</th><th>Nom complet</th>
-              <th>Rôle</th><th>Mosquée</th><th>Actif</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="users-table"></tbody>
-        </table>
+      <div class="page-body">
+        <div id="users-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Utilisateur</th><th>Email</th><th>Nom complet</th><th>Rôle</th><th>Mosquée</th><th>Actif</th><th>Actions</th></tr></thead>
+            <tbody id="users-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- ── Section : Paramètres ── -->
+    <!-- ── Paramètres ── -->
     <div id="section-settings" class="hidden">
-      <h2>⚙️ Paramètres de la mosquée</h2>
-      <div id="settings-alert"></div>
-
-      <div class="card" style="max-width:680px;">
-        <h3 style="margin-top:0;color:#a78bfa;">🕌 Identité de la mosquée</h3>
-        <label>Nom de la mosquée *</label>
-        <input type="text" id="s-mosque-name" placeholder="Ex: Grande Mosquée de Meximieux" />
-        <label>Fuseau horaire</label>
-        <input type="text" id="s-mosque-timezone" placeholder="Europe/Paris" />
-        <label>Slug (lecture seule)</label>
-        <input type="text" id="s-mosque-slug" disabled style="color:#888;" />
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Paramètres</h2>
+          <div class="breadcrumb">Administration · Configuration de la mosquée</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-sm" onclick="loadSettings()">↺ Recharger</button>
+          <button class="btn btn-primary" onclick="saveSettings()">💾 Enregistrer</button>
+        </div>
       </div>
+      <div class="page-body">
+        <div id="settings-alert"></div>
 
-      <div class="card" style="max-width:680px; margin-top:16px;">
-        <h3 style="margin-top:0;color:#a78bfa;">🎓 École coranique</h3>
-        <label>Année scolaire active (ex: 2025-2026)</label>
-        <input type="text" id="s-school-year" placeholder="2025-2026" />
-        <label>Frais de scolarité par défaut (€)</label>
-        <input type="number" id="s-school-fee" placeholder="0" min="0" step="0.01" />
-        <label>Mode de paiement école</label>
-        <select id="s-school-fee-mode">
-          <option value="annual">Annuel</option>
-          <option value="monthly">Mensuel</option>
-        </select>
-        <label>Niveaux scolaires (séparés par des virgules)</label>
-        <input type="text" id="s-school-levels" placeholder="NP,N1,N2,N3,N4,N5,N6" />
-      </div>
+        <div class="settings-section">
+          <h3>🕌 Identité de la mosquée</h3>
+          <label>Nom de la mosquée *</label>
+          <input type="text" id="s-mosque-name" placeholder="Ex: Grande Mosquée de Meximieux" />
+          <label>Fuseau horaire</label>
+          <input type="text" id="s-mosque-timezone" placeholder="Europe/Paris" />
+          <label>Slug (lecture seule)</label>
+          <input type="text" id="s-mosque-slug" disabled style="color:var(--muted);" />
+        </div>
 
-      <div class="card" style="max-width:680px; margin-top:16px;">
-        <h3 style="margin-top:0;color:#a78bfa;">🤝 Adhésion</h3>
-        <label>Montant de la cotisation (€)</label>
-        <input type="number" id="s-membership-fee" placeholder="0" min="0" step="0.01" />
-        <label>Mode de cotisation</label>
-        <select id="s-membership-mode">
-          <option value="per_person">Par personne</option>
-          <option value="per_family">Par famille</option>
-        </select>
-      </div>
+        <div class="settings-section">
+          <h3>🎓 École coranique</h3>
+          <label>Année scolaire active</label>
+          <input type="text" id="s-school-year" placeholder="2025-2026" />
+          <label>Frais de scolarité par défaut (€)</label>
+          <input type="number" id="s-school-fee" placeholder="0" min="0" step="0.01" />
+          <label>Mode de paiement</label>
+          <select id="s-school-fee-mode">
+            <option value="annual">Annuel</option>
+            <option value="monthly">Mensuel</option>
+          </select>
+          <label>Niveaux scolaires (séparés par des virgules)</label>
+          <input type="text" id="s-school-levels" placeholder="NP,N1,N2,N3,N4,N5,N6" />
+        </div>
 
-      <div style="max-width:680px; margin-top:20px; display:flex; gap:12px;">
-        <button class="btn" onclick="saveSettings()">💾 Enregistrer</button>
-        <button class="btn" style="background:#2d2d5e;" onclick="loadSettings()">↺ Recharger</button>
+        <div class="settings-section">
+          <h3>🤝 Adhésion</h3>
+          <label>Montant de la cotisation (€)</label>
+          <input type="number" id="s-membership-fee" placeholder="0" min="0" step="0.01" />
+          <label>Mode de cotisation</label>
+          <select id="s-membership-mode">
+            <option value="per_person">Par personne</option>
+            <option value="per_family">Par famille</option>
+          </select>
+        </div>
       </div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /.main -->
+</div><!-- /#app-screen -->
 
 <!-- ══ MODALS ══════════════════════════════════════════════════════════════ -->
 
 <!-- Modal Famille -->
 <div class="modal-overlay" id="modal-family">
   <div class="modal">
-    <h3 id="modal-family-title">Ajouter une famille</h3>
-    <input type="hidden" id="family-id" />
-    <label>Nom du contact principal *</label>
-    <input type="text" id="family-name" placeholder="Ex: Ahmed Benali" />
-    <label>Téléphone principal *</label>
-    <input type="text" id="family-phone1" placeholder="06 12 34 56 78" />
-    <label>Téléphone secondaire</label>
-    <input type="text" id="family-phone2" placeholder="(optionnel)" />
-    <label>Email</label>
-    <input type="email" id="family-email" placeholder="famille@email.com" />
-    <label>Adresse</label>
-    <textarea id="family-address" placeholder="(optionnel)"></textarea>
-    <div id="modal-family-error" class="alert alert-error hidden"></div>
+    <div class="modal-header">
+      <h3 id="modal-family-title">Ajouter une famille</h3>
+      <button class="modal-close" onclick="closeModal('modal-family')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="family-id" />
+      <label>Nom du contact principal *</label>
+      <input type="text" id="family-name" placeholder="Ex: Ahmed Benali" />
+      <label>Téléphone principal *</label>
+      <input type="text" id="family-phone1" placeholder="06 12 34 56 78" />
+      <label>Téléphone secondaire</label>
+      <input type="text" id="family-phone2" placeholder="(optionnel)" />
+      <label>Email</label>
+      <input type="email" id="family-email" placeholder="famille@email.com" />
+      <label>Adresse</label>
+      <textarea id="family-address" placeholder="(optionnel)"></textarea>
+      <div id="modal-family-error" class="alert alert-error hidden"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-family')">Annuler</button>
       <button class="btn btn-primary" onclick="saveFamily()">Enregistrer</button>
@@ -483,21 +1034,26 @@
 <!-- Modal Enfant -->
 <div class="modal-overlay" id="modal-child">
   <div class="modal">
-    <h3 id="modal-child-title">Ajouter un enfant</h3>
-    <input type="hidden" id="child-id" />
-    <label>Prénom *</label>
-    <input type="text" id="child-firstname" placeholder="Ex: Youssef" />
-    <label>Famille *</label>
-    <select id="child-family"></select>
-    <label>Niveau *</label>
-    <select id="child-level">
-      <option value="">-- Choisir --</option>
-      <option>NP</option><option>N1</option><option>N2</option>
-      <option>N3</option><option>N4</option><option>N5</option><option>N6</option>
-    </select>
-    <label>Date de naissance</label>
-    <input type="date" id="child-birthdate" />
-    <div id="modal-child-error" class="alert alert-error hidden"></div>
+    <div class="modal-header">
+      <h3 id="modal-child-title">Ajouter un enfant</h3>
+      <button class="modal-close" onclick="closeModal('modal-child')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="child-id" />
+      <label>Prénom *</label>
+      <input type="text" id="child-firstname" placeholder="Ex: Youssef" />
+      <label>Famille *</label>
+      <select id="child-family"></select>
+      <label>Niveau *</label>
+      <select id="child-level">
+        <option value="">-- Choisir --</option>
+        <option>NP</option><option>N1</option><option>N2</option>
+        <option>N3</option><option>N4</option><option>N5</option><option>N6</option>
+      </select>
+      <label>Date de naissance</label>
+      <input type="date" id="child-birthdate" />
+      <div id="modal-child-error" class="alert alert-error hidden"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-child')">Annuler</button>
       <button class="btn btn-primary" onclick="saveChild()">Enregistrer</button>
@@ -508,28 +1064,33 @@
 <!-- Modal Paiement École -->
 <div class="modal-overlay" id="modal-payment">
   <div class="modal">
-    <h3 id="modal-payment-title">Enregistrer un paiement</h3>
-    <input type="hidden" id="payment-id" />
-    <label>Famille *</label>
-    <select id="payment-family" onchange="loadChildrenForFamily()"></select>
-    <label>Enfant (optionnel)</label>
-    <select id="payment-child"><option value="">-- Aucun --</option></select>
-    <label>Année scolaire *</label>
-    <select id="payment-year"></select>
-    <label>Date *</label>
-    <input type="date" id="payment-date" />
-    <label>Montant (€) *</label>
-    <input type="number" id="payment-amount" placeholder="300" min="0" step="0.01" />
-    <label>Mode de paiement</label>
-    <select id="payment-method">
-      <option value="cash">Espèces</option>
-      <option value="cheque">Chèque</option>
-      <option value="virement">Virement</option>
-      <option value="autre">Autre</option>
-    </select>
-    <label>Note</label>
-    <textarea id="payment-note" placeholder="(optionnel)"></textarea>
-    <div id="modal-payment-error" class="alert alert-error hidden"></div>
+    <div class="modal-header">
+      <h3 id="modal-payment-title">Enregistrer un paiement</h3>
+      <button class="modal-close" onclick="closeModal('modal-payment')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="payment-id" />
+      <label>Famille *</label>
+      <select id="payment-family" onchange="loadChildrenForFamily()"></select>
+      <label>Enfant (optionnel)</label>
+      <select id="payment-child"><option value="">-- Aucun --</option></select>
+      <label>Année scolaire *</label>
+      <select id="payment-year"></select>
+      <label>Date *</label>
+      <input type="date" id="payment-date" />
+      <label>Montant (€) *</label>
+      <input type="number" id="payment-amount" placeholder="300" min="0" step="0.01" />
+      <label>Mode de paiement</label>
+      <select id="payment-method">
+        <option value="cash">Espèces</option>
+        <option value="cheque">Chèque</option>
+        <option value="virement">Virement</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label>Note</label>
+      <textarea id="payment-note" placeholder="(optionnel)"></textarea>
+      <div id="modal-payment-error" class="alert alert-error hidden"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-payment')">Annuler</button>
       <button class="btn btn-primary" onclick="savePayment()">Enregistrer</button>
@@ -540,17 +1101,22 @@
 <!-- Modal Adhérent -->
 <div class="modal-overlay" id="modal-member">
   <div class="modal">
-    <h3 id="modal-member-title">Ajouter un adhérent</h3>
-    <input type="hidden" id="member-id" />
-    <label>Nom complet *</label>
-    <input type="text" id="member-fullname" placeholder="Ex: Mohamed Dupont" />
-    <label>Téléphone</label>
-    <input type="text" id="member-phone" placeholder="06 12 34 56 78" />
-    <label>Email</label>
-    <input type="email" id="member-email" placeholder="(optionnel)" />
-    <label>Adresse</label>
-    <textarea id="member-address" placeholder="(optionnel)"></textarea>
-    <div id="modal-member-error" class="alert alert-error hidden"></div>
+    <div class="modal-header">
+      <h3 id="modal-member-title">Ajouter un adhérent</h3>
+      <button class="modal-close" onclick="closeModal('modal-member')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="member-id" />
+      <label>Nom complet *</label>
+      <input type="text" id="member-fullname" placeholder="Ex: Mohamed Dupont" />
+      <label>Téléphone</label>
+      <input type="text" id="member-phone" placeholder="06 12 34 56 78" />
+      <label>Email</label>
+      <input type="email" id="member-email" placeholder="(optionnel)" />
+      <label>Adresse</label>
+      <textarea id="member-address" placeholder="(optionnel)"></textarea>
+      <div id="modal-member-error" class="alert alert-error hidden"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-member')">Annuler</button>
       <button class="btn btn-primary" onclick="saveMember()">Enregistrer</button>
@@ -559,27 +1125,33 @@
 </div>
 
 <!-- Modal Cotisation -->
-<div class="modal-overlay" id="modal-membership-payment">  <div class="modal">
-    <h3>Enregistrer une cotisation</h3>
-    <input type="hidden" id="mp-id" />
-    <label>Adhérent *</label>
-    <select id="mp-member"></select>
-    <label>Année de cotisation *</label>
-    <select id="mp-year"></select>
-    <label>Date *</label>
-    <input type="date" id="mp-date" />
-    <label>Montant (€) *</label>
-    <input type="number" id="mp-amount" placeholder="150" min="0" step="0.01" />
-    <label>Mode de paiement</label>
-    <select id="mp-method">
-      <option value="cash">Espèces</option>
-      <option value="cheque">Chèque</option>
-      <option value="virement">Virement</option>
-      <option value="autre">Autre</option>
-    </select>
-    <label>Note</label>
-    <textarea id="mp-note" placeholder="(optionnel)"></textarea>
-    <div id="modal-mp-error" class="alert alert-error hidden"></div>
+<div class="modal-overlay" id="modal-membership-payment">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Enregistrer une cotisation</h3>
+      <button class="modal-close" onclick="closeModal('modal-membership-payment')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mp-id" />
+      <label>Adhérent *</label>
+      <select id="mp-member"></select>
+      <label>Année de cotisation *</label>
+      <select id="mp-year"></select>
+      <label>Date *</label>
+      <input type="date" id="mp-date" />
+      <label>Montant (€) *</label>
+      <input type="number" id="mp-amount" placeholder="150" min="0" step="0.01" />
+      <label>Mode de paiement</label>
+      <select id="mp-method">
+        <option value="cash">Espèces</option>
+        <option value="cheque">Chèque</option>
+        <option value="virement">Virement</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label>Note</label>
+      <textarea id="mp-note" placeholder="(optionnel)"></textarea>
+      <div id="modal-mp-error" class="alert alert-error hidden"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-membership-payment')">Annuler</button>
       <button class="btn btn-primary" onclick="saveMembershipPayment()">Enregistrer</button>
@@ -590,41 +1162,46 @@
 <!-- Modal Transaction Trésorerie -->
 <div class="modal-overlay" id="modal-treasury">
   <div class="modal">
-    <h3 id="modal-treasury-title">Ajouter une transaction</h3>
-    <input type="hidden" id="trs-id" />
-    <label>Direction *</label>
-    <select id="trs-direction">
-      <option value="IN">✅ Entrée (recette)</option>
-      <option value="OUT">❌ Sortie (dépense)</option>
-    </select>
-    <label>Catégorie *</label>
-    <select id="trs-category">
-      <option value="don">Don / Sadaqa</option>
-      <option value="loyer">Loyer</option>
-      <option value="salaire">Salaire / Honoraires</option>
-      <option value="facture">Facture / Charges</option>
-      <option value="ecole">École coranique</option>
-      <option value="cotisation">Cotisation adhérent</option>
-      <option value="projet">Projet / Travaux</option>
-      <option value="subvention">Subvention</option>
-      <option value="autre">Autre</option>
-    </select>
-    <label>Libellé *</label>
-    <input type="text" id="trs-label" placeholder="Ex: Don vendredi 14 mars" />
-    <label>Date *</label>
-    <input type="date" id="trs-date" />
-    <label>Montant (€) *</label>
-    <input type="number" id="trs-amount" placeholder="500" min="0" step="0.01" />
-    <label>Mode de paiement</label>
-    <select id="trs-method">
-      <option value="cash">Espèces</option>
-      <option value="cheque">Chèque</option>
-      <option value="virement">Virement</option>
-      <option value="autre">Autre</option>
-    </select>
-    <label>Note</label>
-    <textarea id="trs-note" placeholder="(optionnel)"></textarea>
-    <div id="modal-trs-error" class="alert alert-error hidden"></div>
+    <div class="modal-header">
+      <h3 id="modal-treasury-title">Ajouter une transaction</h3>
+      <button class="modal-close" onclick="closeModal('modal-treasury')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="trs-id" />
+      <label>Direction *</label>
+      <select id="trs-direction">
+        <option value="IN">📥 Entrée (recette)</option>
+        <option value="OUT">📤 Sortie (dépense)</option>
+      </select>
+      <label>Catégorie *</label>
+      <select id="trs-category">
+        <option value="don">Don / Sadaqa</option>
+        <option value="loyer">Loyer</option>
+        <option value="salaire">Salaire / Honoraires</option>
+        <option value="facture">Facture / Charges</option>
+        <option value="ecole">École coranique</option>
+        <option value="cotisation">Cotisation adhérent</option>
+        <option value="projet">Projet / Travaux</option>
+        <option value="subvention">Subvention</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label>Libellé *</label>
+      <input type="text" id="trs-label" placeholder="Ex: Don vendredi 14 mars" />
+      <label>Date *</label>
+      <input type="date" id="trs-date" />
+      <label>Montant (€) *</label>
+      <input type="number" id="trs-amount" placeholder="500" min="0" step="0.01" />
+      <label>Mode de paiement</label>
+      <select id="trs-method">
+        <option value="cash">Espèces</option>
+        <option value="cheque">Chèque</option>
+        <option value="virement">Virement</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label>Note</label>
+      <textarea id="trs-note" placeholder="(optionnel)"></textarea>
+      <div id="modal-trs-error" class="alert alert-error hidden"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-treasury')">Annuler</button>
       <button class="btn btn-primary" onclick="saveTreasuryTransaction()">Enregistrer</button>
@@ -635,30 +1212,35 @@
 <!-- Modal Utilisateur -->
 <div class="modal-overlay" id="modal-user">
   <div class="modal">
-    <h3 id="user-modal-title">Créer un utilisateur</h3>
-    <input type="hidden" id="user-modal-id" />
-    <div id="user-modal-username-row">
-      <label>Nom d'utilisateur *</label>
-      <input type="text" id="user-modal-username" placeholder="Ex: tresorier1" autocomplete="off" />
+    <div class="modal-header">
+      <h3 id="user-modal-title">Créer un utilisateur</h3>
+      <button class="modal-close" onclick="closeModal('modal-user')">✕</button>
     </div>
-    <label>Email *</label>
-    <input type="email" id="user-modal-email" placeholder="utilisateur@mosquee.fr" />
-    <label>Prénom</label>
-    <input type="text" id="user-modal-firstname" placeholder="(optionnel)" />
-    <label>Nom</label>
-    <input type="text" id="user-modal-lastname" placeholder="(optionnel)" />
-    <label>Mot de passe <span id="user-modal-pw-hint" style="color:#888;font-size:0.8em;"></span></label>
-    <input type="password" id="user-modal-password" placeholder="••••••••" autocomplete="new-password" />
-    <label>Rôle *</label>
-    <select id="user-modal-role">
-      <option value="ADMIN">🔑 Admin</option>
-      <option value="TRESORIER">💼 Trésorier</option>
-      <option value="ECOLE_MANAGER">🎓 École Manager</option>
-    </select>
-    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-      <input type="checkbox" id="user-modal-active" checked style="width:auto; margin:0;" />
-      Compte actif
-    </label>
+    <div class="modal-body">
+      <input type="hidden" id="user-modal-id" />
+      <div id="user-modal-username-row">
+        <label>Nom d'utilisateur *</label>
+        <input type="text" id="user-modal-username" placeholder="Ex: tresorier1" autocomplete="off" />
+      </div>
+      <label>Email *</label>
+      <input type="email" id="user-modal-email" placeholder="utilisateur@mosquee.fr" />
+      <label>Prénom</label>
+      <input type="text" id="user-modal-firstname" placeholder="(optionnel)" />
+      <label>Nom</label>
+      <input type="text" id="user-modal-lastname" placeholder="(optionnel)" />
+      <label>Mot de passe <span id="user-modal-pw-hint" style="color:var(--muted);font-size:0.78em;font-weight:400;"></span></label>
+      <input type="password" id="user-modal-password" placeholder="••••••••" autocomplete="new-password" />
+      <label>Rôle *</label>
+      <select id="user-modal-role">
+        <option value="ADMIN">🔑 Admin</option>
+        <option value="TRESORIER">💼 Trésorier</option>
+        <option value="ECOLE_MANAGER">🎓 École Manager</option>
+      </select>
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500;">
+        <input type="checkbox" id="user-modal-active" checked style="width:auto; margin:0;" />
+        Compte actif
+      </label>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-user')">Annuler</button>
       <button class="btn btn-primary" onclick="saveUser()">Enregistrer</button>
@@ -698,7 +1280,14 @@ async function login() {
 
     // Afficher l'info user depuis le payload JWT
     const payload = JSON.parse(atob(accessToken.split('.')[1]));
-    document.getElementById('user-info').textContent = `${payload.email}\n${payload.role}`;
+    const initials = (payload.email || 'U')[0].toUpperCase();
+    document.getElementById('user-avatar').textContent = initials;
+    document.getElementById('user-name-display').textContent = payload.email || '—';
+    const roleLabels = { ADMIN: 'Admin', TRESORIER: 'Trésorier', ECOLE_MANAGER: 'École Manager' };
+    document.getElementById('user-role-display').textContent = roleLabels[payload.role] || payload.role || '—';
+    if (payload.mosque_slug) {
+      document.getElementById('dashboard-mosque-name').textContent = payload.mosque_slug;
+    }
 
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-screen').classList.remove('hidden');
@@ -928,12 +1517,21 @@ async function loadSchoolYears() {
   const data = await res.json();
   schoolYears = data.results || data;
 
-  // Remplir le select dans le filtre paiements
+  // Remplir le select filtre paiements
   const sel = document.getElementById('payment-year-filter');
   sel.innerHTML = '<option value="">Toutes les années</option>';
   schoolYears.forEach(y => {
     sel.innerHTML += `<option value="${y.id}">${y.label}${y.is_active ? ' ✓' : ''}</option>`;
   });
+
+  // Remplir le select dashboard
+  const dash = document.getElementById('school-year-select');
+  if (dash) {
+    dash.innerHTML = '<option value="">Toutes les années</option>';
+    schoolYears.forEach(y => {
+      dash.innerHTML += `<option value="${y.id}"${y.is_active ? ' selected' : ''}>${y.label}${y.is_active ? ' (active)' : ''}</option>`;
+    });
+  }
 }
 
 // ── Familles ─────────────────────────────────────────────────────────────────
@@ -950,20 +1548,20 @@ async function loadFamilies(search = '') {
 function renderFamilies(families) {
   const tbody = document.getElementById('families-table');
   if (!families.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">Aucune famille enregistrée</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">Aucune famille enregistrée</td></tr>';
     return;
   }
   tbody.innerHTML = families.map(f => `
     <tr>
       <td><strong>${esc(f.primary_contact_name)}</strong></td>
       <td>${esc(f.phone1)}</td>
-      <td>${esc(f.email) || '<span style="color:#bbb">—</span>'}</td>
+      <td>${esc(f.email) || '<span class="text-muted">—</span>'}</td>
       <td><span class="badge badge-gray">${f.children_count} enfant(s)</span></td>
       <td><span class="badge badge-green">${f.total_paid.toFixed(2)} €</span></td>
-      <td style="display:flex;gap:4px;">
-        <button class="btn btn-sm" onclick="editFamily(${f.id})">✏️</button>
-        <button class="btn btn-danger" onclick="deleteFamily(${f.id})">🗑️</button>
-      </td>
+      <td><div class="td-actions">
+        <button class="btn btn-sm btn-icon" onclick="editFamily(${f.id})" title="Modifier">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteFamily(${f.id})" title="Supprimer">🗑</button>
+      </div></td>
     </tr>
   `).join('');
 }
@@ -1053,19 +1651,19 @@ async function loadChildren(search = '') {
 function renderChildren(children) {
   const tbody = document.getElementById('children-table');
   if (!children.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">Aucun enfant enregistré</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Aucun enfant enregistré</td></tr>';
     return;
   }
   tbody.innerHTML = children.map(c => `
     <tr>
       <td><strong>${esc(c.first_name)}</strong></td>
-      <td><span class="badge badge-gray">${esc(c.level)}</span></td>
+      <td><span class="badge badge-purple">${esc(c.level)}</span></td>
       <td>${esc(getFamilyName(c.family))}</td>
-      <td>${c.birth_date || '<span style="color:#bbb">—</span>'}</td>
-      <td style="display:flex;gap:4px;">
-        <button class="btn btn-sm" onclick="editChild(${c.id})">✏️</button>
-        <button class="btn btn-danger" onclick="deleteChild(${c.id})">🗑️</button>
-      </td>
+      <td>${c.birth_date || '<span class="text-muted">—</span>'}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-sm btn-icon" onclick="editChild(${c.id})" title="Modifier">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteChild(${c.id})" title="Supprimer">🗑</button>
+      </div></td>
     </tr>
   `).join('');
 }
@@ -1153,19 +1751,21 @@ async function loadPayments() {
   const payments = data.results || data;
   const tbody = document.getElementById('payments-table');
   if (!payments.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;">Aucun paiement enregistré</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">Aucun paiement enregistré</td></tr>';
     return;
   }
   tbody.innerHTML = payments.map(p => `
     <tr>
       <td>${p.date}</td>
       <td><strong>${esc(p.family_name)}</strong></td>
-      <td>${p.child_name ? esc(p.child_name) : '<span style="color:#bbb">—</span>'}</td>
+      <td>${p.child_name ? esc(p.child_name) : '<span class="text-muted">—</span>'}</td>
       <td>${esc(p.school_year_label)}</td>
       <td><strong>${parseFloat(p.amount).toFixed(2)} €</strong></td>
-      <td><span class="badge badge-gray">${esc(p.method)}</span></td>
-      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;">${esc(p.note) || ''}</td>
-      <td><button class="btn btn-danger" onclick="deletePayment(${p.id})">🗑️</button></td>
+      <td><span class="badge badge-blue">${esc(p.method)}</span></td>
+      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.note)||''}">${esc(p.note) || '<span class="text-muted">—</span>'}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deletePayment(${p.id})" title="Supprimer">🗑</button>
+      </div></td>
     </tr>
   `).join('');
 }
@@ -1254,15 +1854,15 @@ async function loadArrears() {
 
   const tbody = document.getElementById('arrears-table');
   if (!data.families.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#166534;padding:20px;">✅ Toutes les familles ont payé !</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--green);padding:24px;">✅ Toutes les familles ont payé !</td></tr>';
     return;
   }
   tbody.innerHTML = data.families.map(f => `
     <tr>
       <td><strong>${esc(f.primary_contact_name)}</strong></td>
       <td>${esc(f.phone1)}</td>
-      <td>${esc(f.email) || '—'}</td>
-      <td>${f.children_count} enfant(s)</td>
+      <td>${esc(f.email) || '<span class="text-muted">—</span>'}</td>
+      <td><span class="badge badge-gray">${f.children_count} enfant(s)</span></td>
     </tr>
   `).join('');
 }
@@ -1329,7 +1929,7 @@ async function loadMembers() {
 function renderMembers(members) {
   const tbody = document.getElementById('members-table');
   if (!members.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">Aucun adhérent enregistré</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">Aucun adhérent enregistré</td></tr>';
     return;
   }
   tbody.innerHTML = members.map(m => {
@@ -1339,14 +1939,14 @@ function renderMembers(members) {
     return `
     <tr>
       <td><strong>${esc(m.full_name)}</strong></td>
-      <td>${esc(m.phone) || '—'}</td>
-      <td>${esc(m.email) || '—'}</td>
+      <td>${esc(m.phone) || '<span class="text-muted">—</span>'}</td>
+      <td>${esc(m.email) || '<span class="text-muted">—</span>'}</td>
       <td>${badge}</td>
       <td><span class="badge badge-gray">${parseFloat(m.total_paid || 0).toFixed(2)} €</span></td>
-      <td style="display:flex;gap:4px;">
-        <button class="btn btn-sm" onclick="editMember(${m.id})">✏️</button>
-        <button class="btn btn-danger" onclick="deleteMember(${m.id})">🗑️</button>
-      </td>
+      <td><div class="td-actions">
+        <button class="btn btn-sm btn-icon" onclick="editMember(${m.id})" title="Modifier">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMember(${m.id})" title="Supprimer">🗑</button>
+      </div></td>
     </tr>`;
   }).join('');
 }
@@ -1439,7 +2039,7 @@ async function loadMembershipPayments() {
   const payments = data.results || data;
   const tbody = document.getElementById('memberships-table');
   if (!payments.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">Aucune cotisation enregistrée</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Aucune cotisation enregistrée</td></tr>';
     return;
   }
   tbody.innerHTML = payments.map(p => `
@@ -1448,9 +2048,11 @@ async function loadMembershipPayments() {
       <td><strong>${esc(p.member_name)}</strong></td>
       <td>${esc(p.year_label)}</td>
       <td><strong>${parseFloat(p.amount).toFixed(2)} €</strong></td>
-      <td><span class="badge badge-gray">${esc(p.method)}</span></td>
-      <td style="max-width:150px;">${esc(p.note) || ''}</td>
-      <td><button class="btn btn-danger" onclick="deleteMembershipPayment(${p.id})">🗑️</button></td>
+      <td><span class="badge badge-blue">${esc(p.method)}</span></td>
+      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.note) || '<span class="text-muted">—</span>'}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMembershipPayment(${p.id})" title="Supprimer">🗑</button>
+      </div></td>
     </tr>
   `).join('');
 }
@@ -1522,14 +2124,14 @@ async function loadUnpaidMembers() {
 
   const tbody = document.getElementById('unpaid-members-table');
   if (!data.members.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#166534;padding:20px;">✅ Tous les adhérents ont cotisé !</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--green);padding:24px;">✅ Tous les adhérents ont cotisé !</td></tr>';
     return;
   }
   tbody.innerHTML = data.members.map(m => `
     <tr>
       <td><strong>${esc(m.full_name)}</strong></td>
-      <td>${esc(m.phone) || '—'}</td>
-      <td>${esc(m.email) || '—'}</td>
+      <td>${esc(m.phone) || '<span class="text-muted">—</span>'}</td>
+      <td>${esc(m.email) || '<span class="text-muted">—</span>'}</td>
       <td>${parseFloat(m.total_paid || 0).toFixed(2)} €</td>
     </tr>
   `).join('');
@@ -1604,7 +2206,7 @@ async function loadTreasury() {
 function renderTreasury(txs) {
   const tbody = document.getElementById('treasury-table');
   if (!txs.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;">Aucune transaction enregistrée</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">Aucune transaction enregistrée</td></tr>';
     return;
   }
   tbody.innerHTML = txs.map(tx => {
@@ -1612,20 +2214,19 @@ function renderTreasury(txs) {
     const dirBadge = isIn
       ? '<span class="badge badge-green">▲ Entrée</span>'
       : '<span class="badge badge-red">▼ Sortie</span>';
-    const amtColor = isIn ? '#16a34a' : '#dc2626';
     return `
     <tr>
       <td>${tx.date}</td>
       <td><strong>${esc(tx.label)}</strong></td>
       <td><span class="badge badge-gray">${esc(tx.category_display)}</span></td>
       <td>${dirBadge}</td>
-      <td style="color:${amtColor}; font-weight:700;">${parseFloat(tx.amount).toFixed(2)} €</td>
-      <td><span class="badge badge-gray">${esc(tx.method_display)}</span></td>
-      <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis;">${esc(tx.note) || ''}</td>
-      <td style="display:flex; gap:4px;">
-        <button class="btn btn-sm" onclick="editTreasuryTransaction(${tx.id})">✏️</button>
-        <button class="btn btn-danger" onclick="deleteTreasuryTransaction(${tx.id})">🗑️</button>
-      </td>
+      <td style="font-weight:700;" class="${isIn ? 'text-green' : 'text-red'}">${parseFloat(tx.amount).toFixed(2)} €</td>
+      <td><span class="badge badge-blue">${esc(tx.method_display)}</span></td>
+      <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(tx.note)||''}">${esc(tx.note) || '<span class="text-muted">—</span>'}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-sm btn-icon" onclick="editTreasuryTransaction(${tx.id})" title="Modifier">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteTreasuryTransaction(${tx.id})" title="Supprimer">🗑</button>
+      </div></td>
     </tr>`;
   }).join('');
 }
@@ -1781,20 +2382,20 @@ async function loadUsers() {
   const users = await res.json();
   const tbody = document.getElementById('users-table');
   tbody.innerHTML = '';
-  if (!users.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;">Aucun utilisateur</td></tr>'; return; }
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Aucun utilisateur</td></tr>'; return; }
   users.forEach(u => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><b>${u.username}</b></td>
+      <td><strong>${u.username}</strong></td>
       <td>${u.email}</td>
       <td>${u.first_name || ''} ${u.last_name || ''}</td>
-      <td>${ROLE_LABELS[u.role] || u.role}</td>
-      <td>${u.mosque_name || '<em style="color:#888">global</em>'}</td>
-      <td>${u.is_active ? '✅' : '❌'}</td>
-      <td>
-        <button class="btn btn-sm" onclick="openUserModal(${u.id})">✏️</button>
-        <button class="btn btn-sm" style="background:#7f1d1d;" onclick="deleteUser(${u.id}, '${u.username}')">🗑️</button>
-      </td>`;
+      <td><span class="badge badge-purple">${ROLE_LABELS[u.role] || u.role}</span></td>
+      <td>${u.mosque_name || '<span class="text-muted">global</span>'}</td>
+      <td>${u.is_active ? '<span class="badge badge-green">✅ Actif</span>' : '<span class="badge badge-red">❌ Inactif</span>'}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-sm btn-icon" onclick="openUserModal(${u.id})" title="Modifier">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteUser(${u.id}, '${u.username}')" title="Supprimer">🗑</button>
+      </div></td>`;
     tbody.appendChild(tr);
   });
 }
