@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "core.apps.CoreConfig",
     "school.apps.SchoolConfig",
     "membership.apps.MembershipConfig",
+    "treasury.apps.TreasuryConfig",
 ]
 
 # ── Middleware ─────────────────────────────────────────────────────────────────

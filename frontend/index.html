@@ -138,6 +138,8 @@
     <button onclick="showSection('members')" id="nav-members">🤝 Adhérents</button>
     <button onclick="showSection('memberships')" id="nav-memberships">💳 Cotisations</button>
     <button onclick="showSection('unpaid-members')" id="nav-unpaid-members">🔴 Non cotisants</button>
+    <hr style="border-color:#2d2d5e; margin:8px 0;" />
+    <button onclick="showSection('treasury')" id="nav-treasury">🏦 Trésorerie</button>
     <div class="user-info" id="user-info"></div>
     <button class="logout" onclick="logout()">🚪 Déconnexion</button>
   </div>
@@ -278,6 +280,69 @@
       </div>
     </div>
 
+    <!-- ── Section : Trésorerie ── -->
+    <div id="section-treasury" class="hidden">
+      <h2>🏦 Trésorerie</h2>
+
+      <!-- Résumé financier -->
+      <div class="stats-row" id="treasury-stats-row">
+        <div class="stat-card">
+          <div class="num" id="trs-in" style="color:#16a34a">—</div>
+          <div class="lbl">Entrées (période)</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" id="trs-out" style="color:#dc2626">—</div>
+          <div class="lbl">Sorties (période)</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" id="trs-balance">—</div>
+          <div class="lbl">Solde</div>
+        </div>
+      </div>
+
+      <!-- Filtres -->
+      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
+        <select id="trs-direction-filter" onchange="loadTreasury()" style="width:auto; margin-bottom:0;">
+          <option value="">Entrées + Sorties</option>
+          <option value="IN">✅ Entrées seulement</option>
+          <option value="OUT">❌ Sorties seulement</option>
+        </select>
+        <select id="trs-category-filter" onchange="loadTreasury()" style="width:auto; margin-bottom:0;">
+          <option value="">Toutes catégories</option>
+          <option value="don">Don / Sadaqa</option>
+          <option value="loyer">Loyer</option>
+          <option value="salaire">Salaire / Honoraires</option>
+          <option value="facture">Facture / Charges</option>
+          <option value="ecole">École coranique</option>
+          <option value="cotisation">Cotisation adhérent</option>
+          <option value="projet">Projet / Travaux</option>
+          <option value="subvention">Subvention</option>
+          <option value="autre">Autre</option>
+        </select>
+        <input type="month" id="trs-month-filter" onchange="loadTreasury()" style="width:auto; margin-bottom:0; padding:9px 12px; border:1px solid #ddd; border-radius:6px;" />
+        <input type="text" id="trs-search" placeholder="Rechercher..." oninput="loadTreasury()" style="flex:1; margin-bottom:0;" />
+        <button class="btn btn-primary" onclick="openTreasuryModal()">+ Ajouter</button>
+      </div>
+      <div id="treasury-alert"></div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Libellé</th>
+              <th>Catégorie</th>
+              <th>Direction</th>
+              <th>Montant</th>
+              <th>Mode</th>
+              <th>Note</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="treasury-table"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -385,8 +450,7 @@
 </div>
 
 <!-- Modal Cotisation -->
-<div class="modal-overlay" id="modal-membership-payment">
-  <div class="modal">
+<div class="modal-overlay" id="modal-membership-payment">  <div class="modal">
     <h3>Enregistrer une cotisation</h3>
     <input type="hidden" id="mp-id" />
     <label>Adhérent *</label>
@@ -410,6 +474,51 @@
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-membership-payment')">Annuler</button>
       <button class="btn btn-primary" onclick="saveMembershipPayment()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Transaction Trésorerie -->
+<div class="modal-overlay" id="modal-treasury">
+  <div class="modal">
+    <h3 id="modal-treasury-title">Ajouter une transaction</h3>
+    <input type="hidden" id="trs-id" />
+    <label>Direction *</label>
+    <select id="trs-direction">
+      <option value="IN">✅ Entrée (recette)</option>
+      <option value="OUT">❌ Sortie (dépense)</option>
+    </select>
+    <label>Catégorie *</label>
+    <select id="trs-category">
+      <option value="don">Don / Sadaqa</option>
+      <option value="loyer">Loyer</option>
+      <option value="salaire">Salaire / Honoraires</option>
+      <option value="facture">Facture / Charges</option>
+      <option value="ecole">École coranique</option>
+      <option value="cotisation">Cotisation adhérent</option>
+      <option value="projet">Projet / Travaux</option>
+      <option value="subvention">Subvention</option>
+      <option value="autre">Autre</option>
+    </select>
+    <label>Libellé *</label>
+    <input type="text" id="trs-label" placeholder="Ex: Don vendredi 14 mars" />
+    <label>Date *</label>
+    <input type="date" id="trs-date" />
+    <label>Montant (€) *</label>
+    <input type="number" id="trs-amount" placeholder="500" min="0" step="0.01" />
+    <label>Mode de paiement</label>
+    <select id="trs-method">
+      <option value="cash">Espèces</option>
+      <option value="cheque">Chèque</option>
+      <option value="virement">Virement</option>
+      <option value="autre">Autre</option>
+    </select>
+    <label>Note</label>
+    <textarea id="trs-note" placeholder="(optionnel)"></textarea>
+    <div id="modal-trs-error" class="alert alert-error hidden"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-treasury')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveTreasuryTransaction()">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -477,11 +586,11 @@ async function apiFetch(path, method = 'GET', body = null) {
   return res;
 }
 
-// ── Navigation (mise à jour avec sections membership) ────────────────────────
+// ── Navigation (mise à jour avec sections membership + treasury) ─────────────
 
 function showSection(name) {
   const allSections = ['school', 'families', 'children', 'payments', 'arrears',
-                       'members', 'memberships', 'unpaid-members'];
+                       'members', 'memberships', 'unpaid-members', 'treasury'];
   allSections.forEach(s => {
     document.getElementById(`section-${s}`).classList.add('hidden');
     const nav = document.getElementById(`nav-${s}`);
@@ -498,6 +607,7 @@ function showSection(name) {
   if (name === 'members') loadMembers();
   if (name === 'memberships') loadMembershipPayments();
   if (name === 'unpaid-members') loadUnpaidMembers();
+  if (name === 'treasury') loadTreasury();
 }
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
@@ -1169,6 +1279,144 @@ async function loadMembershipYearsForSelect(selectId) {
   membershipYears.forEach(y => {
     sel.innerHTML += `<option value="${y.id}">${y.year}${y.is_active ? ' ✓ active' : ''}</option>`;
   });
+}
+
+// ── Trésorerie ────────────────────────────────────────────────────────────────
+
+async function loadTreasury() {
+  // Construire l'URL avec tous les filtres
+  const direction = document.getElementById('trs-direction-filter').value;
+  const category  = document.getElementById('trs-category-filter').value;
+  const month     = document.getElementById('trs-month-filter').value;   // "2026-03"
+  const search    = document.getElementById('trs-search').value.trim();
+
+  let url = '/treasury/transactions/?ordering=-date';
+  if (direction) url += `&direction=${direction}`;
+  if (category)  url += `&category=${category}`;
+  if (month)     url += `&month=${month}`;
+  if (search)    url += `&search=${encodeURIComponent(search)}`;
+
+  const res = await apiFetch(url);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  const txs = data.results || data;
+  renderTreasury(txs);
+
+  // Résumé financier selon les mêmes filtres
+  let sumUrl = '/treasury/transactions/summary/?';
+  if (month) sumUrl += `month=${month}`;
+  else {
+    // par défaut : mois courant
+    const today = new Date().toISOString().slice(0, 7);
+    sumUrl += `month=${today}`;
+  }
+  const sumRes = await apiFetch(sumUrl);
+  if (sumRes && sumRes.ok) {
+    const s = await sumRes.json();
+    document.getElementById('trs-in').textContent      = `${s.total_in.toFixed(2)} €`;
+    document.getElementById('trs-out').textContent     = `${s.total_out.toFixed(2)} €`;
+    const balEl = document.getElementById('trs-balance');
+    balEl.textContent  = `${s.balance.toFixed(2)} €`;
+    balEl.style.color  = s.balance >= 0 ? '#16a34a' : '#dc2626';
+  }
+}
+
+function renderTreasury(txs) {
+  const tbody = document.getElementById('treasury-table');
+  if (!txs.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;">Aucune transaction enregistrée</td></tr>';
+    return;
+  }
+  tbody.innerHTML = txs.map(tx => {
+    const isIn  = tx.direction === 'IN';
+    const dirBadge = isIn
+      ? '<span class="badge badge-green">▲ Entrée</span>'
+      : '<span class="badge badge-red">▼ Sortie</span>';
+    const amtColor = isIn ? '#16a34a' : '#dc2626';
+    return `
+    <tr>
+      <td>${tx.date}</td>
+      <td><strong>${esc(tx.label)}</strong></td>
+      <td><span class="badge badge-gray">${esc(tx.category_display)}</span></td>
+      <td>${dirBadge}</td>
+      <td style="color:${amtColor}; font-weight:700;">${parseFloat(tx.amount).toFixed(2)} €</td>
+      <td><span class="badge badge-gray">${esc(tx.method_display)}</span></td>
+      <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis;">${esc(tx.note) || ''}</td>
+      <td style="display:flex; gap:4px;">
+        <button class="btn btn-sm" onclick="editTreasuryTransaction(${tx.id})">✏️</button>
+        <button class="btn btn-danger" onclick="deleteTreasuryTransaction(${tx.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openTreasuryModal() {
+  document.getElementById('trs-id').value = '';
+  document.getElementById('trs-direction').value = 'IN';
+  document.getElementById('trs-category').value = 'don';
+  document.getElementById('trs-label').value = '';
+  document.getElementById('trs-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('trs-amount').value = '';
+  document.getElementById('trs-method').value = 'cash';
+  document.getElementById('trs-note').value = '';
+  document.getElementById('modal-treasury-title').textContent = 'Ajouter une transaction';
+  document.getElementById('modal-trs-error').classList.add('hidden');
+  openModal('modal-treasury');
+}
+
+async function editTreasuryTransaction(id) {
+  const res = await apiFetch(`/treasury/transactions/${id}/`);
+  if (!res || !res.ok) return;
+  const tx = await res.json();
+  document.getElementById('trs-id').value = tx.id;
+  document.getElementById('trs-direction').value = tx.direction;
+  document.getElementById('trs-category').value = tx.category;
+  document.getElementById('trs-label').value = tx.label;
+  document.getElementById('trs-date').value = tx.date;
+  document.getElementById('trs-amount').value = tx.amount;
+  document.getElementById('trs-method').value = tx.method;
+  document.getElementById('trs-note').value = tx.note || '';
+  document.getElementById('modal-treasury-title').textContent = 'Modifier la transaction';
+  document.getElementById('modal-trs-error').classList.add('hidden');
+  openModal('modal-treasury');
+}
+
+async function saveTreasuryTransaction() {
+  const id = document.getElementById('trs-id').value;
+  const body = {
+    direction: document.getElementById('trs-direction').value,
+    category:  document.getElementById('trs-category').value,
+    label:     document.getElementById('trs-label').value.trim(),
+    date:      document.getElementById('trs-date').value,
+    amount:    parseFloat(document.getElementById('trs-amount').value),
+    method:    document.getElementById('trs-method').value,
+    note:      document.getElementById('trs-note').value.trim(),
+  };
+  const errEl = document.getElementById('modal-trs-error');
+  if (!body.label || !body.date || !body.amount) {
+    errEl.textContent = 'Libellé, date et montant sont obligatoires.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  const res = await apiFetch(
+    id ? `/treasury/transactions/${id}/` : '/treasury/transactions/',
+    id ? 'PUT' : 'POST',
+    body
+  );
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    errEl.classList.remove('hidden');
+    return;
+  }
+  closeModal('modal-treasury');
+  loadTreasury();
+}
+
+async function deleteTreasuryTransaction(id) {
+  if (!confirm('Supprimer cette transaction ?')) return;
+  await apiFetch(`/treasury/transactions/${id}/`, 'DELETE');
+  loadTreasury();
 }
 
 // ── Auto-login si token présent ───────────────────────────────────────────────
