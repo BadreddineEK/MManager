@@ -24,5 +24,7 @@ urlpatterns = [
     path("api/treasury/", include("treasury.urls", namespace="treasury")),
     # KPI (public, sans auth)
     path("api/kpi/", include("kpi.urls", namespace="kpi")),
+    # Settings + Onboarding (ADMIN)
+    path("api/settings/", include("core.settings_urls", namespace="settings")),
 ]
 

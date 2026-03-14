@@ -140,6 +140,8 @@
     <button onclick="showSection('unpaid-members')" id="nav-unpaid-members">🔴 Non cotisants</button>
     <hr style="border-color:#2d2d5e; margin:8px 0;" />
     <button onclick="showSection('treasury')" id="nav-treasury">🏦 Trésorerie</button>
+    <hr style="border-color:#2d2d5e; margin:8px 0;" />
+    <button onclick="showSection('settings')" id="nav-settings">⚙️ Paramètres</button>
     <div class="user-info" id="user-info"></div>
     <button class="logout" onclick="logout()">🚪 Déconnexion</button>
   </div>
@@ -340,6 +342,53 @@
           </thead>
           <tbody id="treasury-table"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- ── Section : Paramètres ── -->
+    <div id="section-settings" class="hidden">
+      <h2>⚙️ Paramètres de la mosquée</h2>
+      <div id="settings-alert"></div>
+
+      <div class="card" style="max-width:680px;">
+        <h3 style="margin-top:0;color:#a78bfa;">🕌 Identité de la mosquée</h3>
+        <label>Nom de la mosquée *</label>
+        <input type="text" id="s-mosque-name" placeholder="Ex: Grande Mosquée de Meximieux" />
+        <label>Fuseau horaire</label>
+        <input type="text" id="s-mosque-timezone" placeholder="Europe/Paris" />
+        <label>Slug (lecture seule)</label>
+        <input type="text" id="s-mosque-slug" disabled style="color:#888;" />
+      </div>
+
+      <div class="card" style="max-width:680px; margin-top:16px;">
+        <h3 style="margin-top:0;color:#a78bfa;">🎓 École coranique</h3>
+        <label>Année scolaire active (ex: 2025-2026)</label>
+        <input type="text" id="s-school-year" placeholder="2025-2026" />
+        <label>Frais de scolarité par défaut (€)</label>
+        <input type="number" id="s-school-fee" placeholder="0" min="0" step="0.01" />
+        <label>Mode de paiement école</label>
+        <select id="s-school-fee-mode">
+          <option value="annual">Annuel</option>
+          <option value="monthly">Mensuel</option>
+        </select>
+        <label>Niveaux scolaires (séparés par des virgules)</label>
+        <input type="text" id="s-school-levels" placeholder="NP,N1,N2,N3,N4,N5,N6" />
+      </div>
+
+      <div class="card" style="max-width:680px; margin-top:16px;">
+        <h3 style="margin-top:0;color:#a78bfa;">🤝 Adhésion</h3>
+        <label>Montant de la cotisation (€)</label>
+        <input type="number" id="s-membership-fee" placeholder="0" min="0" step="0.01" />
+        <label>Mode de cotisation</label>
+        <select id="s-membership-mode">
+          <option value="per_person">Par personne</option>
+          <option value="per_family">Par famille</option>
+        </select>
+      </div>
+
+      <div style="max-width:680px; margin-top:20px; display:flex; gap:12px;">
+        <button class="btn" onclick="saveSettings()">💾 Enregistrer</button>
+        <button class="btn" style="background:#2d2d5e;" onclick="loadSettings()">↺ Recharger</button>
       </div>
     </div>
 
@@ -590,7 +639,7 @@ async function apiFetch(path, method = 'GET', body = null) {
 
 function showSection(name) {
   const allSections = ['school', 'families', 'children', 'payments', 'arrears',
-                       'members', 'memberships', 'unpaid-members', 'treasury'];
+                       'members', 'memberships', 'unpaid-members', 'treasury', 'settings'];
   allSections.forEach(s => {
     document.getElementById(`section-${s}`).classList.add('hidden');
     const nav = document.getElementById(`nav-${s}`);
@@ -608,6 +657,7 @@ function showSection(name) {
   if (name === 'memberships') loadMembershipPayments();
   if (name === 'unpaid-members') loadUnpaidMembers();
   if (name === 'treasury') loadTreasury();
+  if (name === 'settings') loadSettings();
 }
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
@@ -1417,6 +1467,58 @@ async function deleteTreasuryTransaction(id) {
   if (!confirm('Supprimer cette transaction ?')) return;
   await apiFetch(`/treasury/transactions/${id}/`, 'DELETE');
   loadTreasury();
+}
+
+// ── Paramètres ────────────────────────────────────────────────────────────────
+
+async function loadSettings() {
+  const alert = document.getElementById('settings-alert');
+  alert.textContent = '';
+  const res = await apiFetch('/settings/');
+  if (!res) return;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    alert.innerHTML = `<div class="alert alert-error">${err.detail || 'Erreur chargement paramètres'}</div>`;
+    return;
+  }
+  const data = await res.json();
+  document.getElementById('s-mosque-name').value = data.mosque_name || '';
+  document.getElementById('s-mosque-timezone').value = data.mosque_timezone || 'Europe/Paris';
+  document.getElementById('s-mosque-slug').value = data.mosque_slug || '';
+  document.getElementById('s-school-year').value = data.active_school_year_label || '';
+  document.getElementById('s-school-fee').value = data.school_fee_default || 0;
+  document.getElementById('s-school-fee-mode').value = data.school_fee_mode || 'annual';
+  const levels = Array.isArray(data.school_levels) ? data.school_levels.join(',') : (data.school_levels || '');
+  document.getElementById('s-school-levels').value = levels;
+  document.getElementById('s-membership-fee').value = data.membership_fee_amount || 0;
+  document.getElementById('s-membership-mode').value = data.membership_fee_mode || 'per_person';
+}
+
+async function saveSettings() {
+  const alert = document.getElementById('settings-alert');
+  alert.textContent = '';
+  const levelsRaw = document.getElementById('s-school-levels').value;
+  const levels = levelsRaw.split(',').map(l => l.trim()).filter(Boolean);
+  const payload = {
+    mosque_name: document.getElementById('s-mosque-name').value.trim(),
+    mosque_timezone: document.getElementById('s-mosque-timezone').value.trim(),
+    active_school_year_label: document.getElementById('s-school-year').value.trim(),
+    school_fee_default: parseFloat(document.getElementById('s-school-fee').value) || 0,
+    school_fee_mode: document.getElementById('s-school-fee-mode').value,
+    school_levels: levels,
+    membership_fee_amount: parseFloat(document.getElementById('s-membership-fee').value) || 0,
+    membership_fee_mode: document.getElementById('s-membership-mode').value,
+  };
+  const res = await apiFetch('/settings/', 'PUT', payload);
+  if (!res) return;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg = JSON.stringify(err);
+    alert.innerHTML = `<div class="alert alert-error">Erreur : ${msg}</div>`;
+    return;
+  }
+  alert.innerHTML = `<div class="alert alert-success" style="background:#14532d;color:#86efac;padding:10px 14px;border-radius:6px;">✅ Paramètres enregistrés</div>`;
+  setTimeout(() => { alert.textContent = ''; }, 3000);
 }
 
 // ── Auto-login si token présent ───────────────────────────────────────────────
