@@ -18,9 +18,9 @@ urlpatterns = [
     path("api/auth/", include("core.urls", namespace="core")),
     # School
     path("api/school/", include("school.urls", namespace="school")),
+    # Membership
+    path("api/membership/", include("membership.urls", namespace="membership")),
     # Les namespaces API seront ajoutés au fil des étapes :
-    # path("api/school/", include("school.urls")),
-    # path("api/membership/", include("membership.urls")),
     # path("api/treasury/", include("treasury.urls")),
     # path("api/kpi/", include("kpi.urls")),
 ]

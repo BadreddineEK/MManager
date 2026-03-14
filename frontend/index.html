@@ -134,6 +134,10 @@
     <button onclick="showSection('children')" id="nav-children">🧒 Enfants</button>
     <button onclick="showSection('payments')" id="nav-payments">💰 Paiements</button>
     <button onclick="showSection('arrears')" id="nav-arrears">⚠️ Impayés</button>
+    <hr style="border-color:#2d2d5e; margin:8px 0;" />
+    <button onclick="showSection('members')" id="nav-members">🤝 Adhérents</button>
+    <button onclick="showSection('memberships')" id="nav-memberships">💳 Cotisations</button>
+    <button onclick="showSection('unpaid-members')" id="nav-unpaid-members">🔴 Non cotisants</button>
     <div class="user-info" id="user-info"></div>
     <button class="logout" onclick="logout()">🚪 Déconnexion</button>
   </div>
@@ -209,7 +213,7 @@
       </div>
     </div>
 
-    <!-- ── Section : Impayés ── -->
+    <!-- ── Section : Impayés école ── -->
     <div id="section-arrears" class="hidden">
       <h2>⚠️ Familles avec impayés</h2>
       <div id="arrears-info" class="alert alert-info hidden"></div>
@@ -218,6 +222,58 @@
         <table>
           <thead><tr><th>Famille</th><th>Téléphone</th><th>Email</th><th>Enfants</th></tr></thead>
           <tbody id="arrears-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Section : Adhérents ── -->
+    <div id="section-members" class="hidden">
+      <h2>🤝 Adhérents</h2>
+      <div class="search-bar">
+        <input type="text" id="member-search" placeholder="Rechercher par nom, email, téléphone..." oninput="searchMembers()" />
+        <select id="member-status-filter" onchange="loadMembers()" style="width:auto; margin-bottom:0;">
+          <option value="">Tous les adhérents</option>
+          <option value="paid">✅ À jour</option>
+          <option value="unpaid">❌ Non cotisants</option>
+        </select>
+        <button class="btn btn-primary" onclick="openMemberModal()">+ Ajouter</button>
+      </div>
+      <div id="members-alert"></div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Cotisation annuelle</th><th>Total payé</th><th>Actions</th></tr></thead>
+          <tbody id="members-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Section : Cotisations ── -->
+    <div id="section-memberships" class="hidden">
+      <h2>💳 Paiements Cotisations</h2>
+      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
+        <select id="membership-year-filter" onchange="loadMembershipPayments()" style="width:auto; margin-bottom:0;">
+          <option value="">Toutes les années</option>
+        </select>
+        <button class="btn btn-primary" onclick="openMembershipPaymentModal()">+ Enregistrer cotisation</button>
+      </div>
+      <div id="memberships-alert"></div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Date</th><th>Adhérent</th><th>Année</th><th>Montant</th><th>Mode</th><th>Note</th><th>Actions</th></tr></thead>
+          <tbody id="memberships-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Section : Non cotisants ── -->
+    <div id="section-unpaid-members" class="hidden">
+      <h2>🔴 Adhérents non cotisants</h2>
+      <div id="unpaid-members-info" class="alert alert-info hidden"></div>
+      <div id="unpaid-members-alert"></div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Total payé (historique)</th></tr></thead>
+          <tbody id="unpaid-members-table"></tbody>
         </table>
       </div>
     </div>
@@ -275,7 +331,7 @@
   </div>
 </div>
 
-<!-- Modal Paiement -->
+<!-- Modal Paiement École -->
 <div class="modal-overlay" id="modal-payment">
   <div class="modal">
     <h3 id="modal-payment-title">Enregistrer un paiement</h3>
@@ -303,6 +359,57 @@
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-payment')">Annuler</button>
       <button class="btn btn-primary" onclick="savePayment()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Adhérent -->
+<div class="modal-overlay" id="modal-member">
+  <div class="modal">
+    <h3 id="modal-member-title">Ajouter un adhérent</h3>
+    <input type="hidden" id="member-id" />
+    <label>Nom complet *</label>
+    <input type="text" id="member-fullname" placeholder="Ex: Mohamed Dupont" />
+    <label>Téléphone</label>
+    <input type="text" id="member-phone" placeholder="06 12 34 56 78" />
+    <label>Email</label>
+    <input type="email" id="member-email" placeholder="(optionnel)" />
+    <label>Adresse</label>
+    <textarea id="member-address" placeholder="(optionnel)"></textarea>
+    <div id="modal-member-error" class="alert alert-error hidden"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-member')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveMember()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cotisation -->
+<div class="modal-overlay" id="modal-membership-payment">
+  <div class="modal">
+    <h3>Enregistrer une cotisation</h3>
+    <input type="hidden" id="mp-id" />
+    <label>Adhérent *</label>
+    <select id="mp-member"></select>
+    <label>Année de cotisation *</label>
+    <select id="mp-year"></select>
+    <label>Date *</label>
+    <input type="date" id="mp-date" />
+    <label>Montant (€) *</label>
+    <input type="number" id="mp-amount" placeholder="150" min="0" step="0.01" />
+    <label>Mode de paiement</label>
+    <select id="mp-method">
+      <option value="cash">Espèces</option>
+      <option value="cheque">Chèque</option>
+      <option value="virement">Virement</option>
+      <option value="autre">Autre</option>
+    </select>
+    <label>Note</label>
+    <textarea id="mp-note" placeholder="(optionnel)"></textarea>
+    <div id="modal-mp-error" class="alert alert-error hidden"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-membership-payment')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveMembershipPayment()">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -370,20 +477,27 @@ async function apiFetch(path, method = 'GET', body = null) {
   return res;
 }
 
-// ── Navigation ───────────────────────────────────────────────────────────────
+// ── Navigation (mise à jour avec sections membership) ────────────────────────
 
 function showSection(name) {
-  ['school', 'families', 'children', 'payments', 'arrears'].forEach(s => {
+  const allSections = ['school', 'families', 'children', 'payments', 'arrears',
+                       'members', 'memberships', 'unpaid-members'];
+  allSections.forEach(s => {
     document.getElementById(`section-${s}`).classList.add('hidden');
-    document.getElementById(`nav-${s}`).classList.remove('active');
+    const nav = document.getElementById(`nav-${s}`);
+    if (nav) nav.classList.remove('active');
   });
   document.getElementById(`section-${name}`).classList.remove('hidden');
-  document.getElementById(`nav-${name}`).classList.add('active');
+  const activeNav = document.getElementById(`nav-${name}`);
+  if (activeNav) activeNav.classList.add('active');
 
   if (name === 'families') loadFamilies();
   if (name === 'children') loadChildren();
   if (name === 'payments') loadPayments();
   if (name === 'arrears') loadArrears();
+  if (name === 'members') loadMembers();
+  if (name === 'memberships') loadMembershipPayments();
+  if (name === 'unpaid-members') loadUnpaidMembers();
 }
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
@@ -803,6 +917,259 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (e.target === overlay) overlay.classList.remove('open');
   });
 });
+
+// ── Adhérents ────────────────────────────────────────────────────────────────
+
+let allMembers = [];
+let membershipYears = [];
+
+async function loadMembers() {
+  const status = document.getElementById('member-status-filter').value;
+  const search = document.getElementById('member-search').value.trim();
+  let url = '/membership/members/?';
+  if (status) url += `status=${status}&`;
+  if (search) url += `search=${encodeURIComponent(search)}`;
+  const res = await apiFetch(url);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  allMembers = data.results || data;
+  renderMembers(allMembers);
+}
+
+function renderMembers(members) {
+  const tbody = document.getElementById('members-table');
+  if (!members.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">Aucun adhérent enregistré</td></tr>';
+    return;
+  }
+  tbody.innerHTML = members.map(m => {
+    const badge = m.is_current_year_paid
+      ? '<span class="badge badge-green">✅ À jour</span>'
+      : '<span class="badge badge-red">❌ Non cotisant</span>';
+    return `
+    <tr>
+      <td><strong>${esc(m.full_name)}</strong></td>
+      <td>${esc(m.phone) || '—'}</td>
+      <td>${esc(m.email) || '—'}</td>
+      <td>${badge}</td>
+      <td><span class="badge badge-gray">${parseFloat(m.total_paid || 0).toFixed(2)} €</span></td>
+      <td style="display:flex;gap:4px;">
+        <button class="btn btn-sm" onclick="editMember(${m.id})">✏️</button>
+        <button class="btn btn-danger" onclick="deleteMember(${m.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function searchMembers() { loadMembers(); }
+
+function openMemberModal() {
+  document.getElementById('member-id').value = '';
+  document.getElementById('member-fullname').value = '';
+  document.getElementById('member-phone').value = '';
+  document.getElementById('member-email').value = '';
+  document.getElementById('member-address').value = '';
+  document.getElementById('modal-member-title').textContent = 'Ajouter un adhérent';
+  document.getElementById('modal-member-error').classList.add('hidden');
+  openModal('modal-member');
+}
+
+async function editMember(id) {
+  const res = await apiFetch(`/membership/members/${id}/`);
+  if (!res || !res.ok) return;
+  const m = await res.json();
+  document.getElementById('member-id').value = m.id;
+  document.getElementById('member-fullname').value = m.full_name;
+  document.getElementById('member-phone').value = m.phone || '';
+  document.getElementById('member-email').value = m.email || '';
+  document.getElementById('member-address').value = m.address || '';
+  document.getElementById('modal-member-title').textContent = 'Modifier l\'adhérent';
+  document.getElementById('modal-member-error').classList.add('hidden');
+  openModal('modal-member');
+}
+
+async function saveMember() {
+  const id = document.getElementById('member-id').value;
+  const body = {
+    full_name: document.getElementById('member-fullname').value.trim(),
+    phone: document.getElementById('member-phone').value.trim(),
+    email: document.getElementById('member-email').value.trim(),
+    address: document.getElementById('member-address').value.trim(),
+  };
+  const errEl = document.getElementById('modal-member-error');
+  if (!body.full_name) {
+    errEl.textContent = 'Le nom complet est obligatoire.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  const res = await apiFetch(
+    id ? `/membership/members/${id}/` : '/membership/members/',
+    id ? 'PUT' : 'POST',
+    body
+  );
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    errEl.classList.remove('hidden');
+    return;
+  }
+  closeModal('modal-member');
+  loadMembers();
+}
+
+async function deleteMember(id) {
+  if (!confirm('Supprimer cet adhérent et toutes ses cotisations ?')) return;
+  await apiFetch(`/membership/members/${id}/`, 'DELETE');
+  loadMembers();
+}
+
+// ── Cotisations ───────────────────────────────────────────────────────────────
+
+async function loadMembershipYears() {
+  const res = await apiFetch('/membership/years/');
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  membershipYears = data.results || data;
+
+  const sel = document.getElementById('membership-year-filter');
+  sel.innerHTML = '<option value="">Toutes les années</option>';
+  membershipYears.forEach(y => {
+    sel.innerHTML += `<option value="${y.id}">${y.year}${y.is_active ? ' ✓' : ''}</option>`;
+  });
+}
+
+async function loadMembershipPayments() {
+  if (!membershipYears.length) await loadMembershipYears();
+  const yearId = document.getElementById('membership-year-filter').value;
+  let url = '/membership/payments/?';
+  if (yearId) url += `year_id=${yearId}`;
+  const res = await apiFetch(url);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  const payments = data.results || data;
+  const tbody = document.getElementById('memberships-table');
+  if (!payments.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">Aucune cotisation enregistrée</td></tr>';
+    return;
+  }
+  tbody.innerHTML = payments.map(p => `
+    <tr>
+      <td>${p.date}</td>
+      <td><strong>${esc(p.member_name)}</strong></td>
+      <td>${esc(p.year_label)}</td>
+      <td><strong>${parseFloat(p.amount).toFixed(2)} €</strong></td>
+      <td><span class="badge badge-gray">${esc(p.method)}</span></td>
+      <td style="max-width:150px;">${esc(p.note) || ''}</td>
+      <td><button class="btn btn-danger" onclick="deleteMembershipPayment(${p.id})">🗑️</button></td>
+    </tr>
+  `).join('');
+}
+
+async function openMembershipPaymentModal() {
+  await loadMembersForSelect('mp-member');
+  await loadMembershipYearsForSelect('mp-year');
+  document.getElementById('mp-id').value = '';
+  document.getElementById('mp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('mp-amount').value = '';
+  document.getElementById('mp-method').value = 'cash';
+  document.getElementById('mp-note').value = '';
+  document.getElementById('modal-mp-error').classList.add('hidden');
+  openModal('modal-membership-payment');
+}
+
+async function saveMembershipPayment() {
+  const body = {
+    member: parseInt(document.getElementById('mp-member').value),
+    membership_year: parseInt(document.getElementById('mp-year').value),
+    date: document.getElementById('mp-date').value,
+    amount: parseFloat(document.getElementById('mp-amount').value),
+    method: document.getElementById('mp-method').value,
+    note: document.getElementById('mp-note').value.trim(),
+  };
+  const errEl = document.getElementById('modal-mp-error');
+  if (!body.member || !body.membership_year || !body.date || !body.amount) {
+    errEl.textContent = 'Adhérent, année, date et montant sont obligatoires.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  const res = await apiFetch('/membership/payments/', 'POST', body);
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    errEl.classList.remove('hidden');
+    return;
+  }
+  closeModal('modal-membership-payment');
+  loadMembershipPayments();
+}
+
+async function deleteMembershipPayment(id) {
+  if (!confirm('Supprimer cette cotisation ?')) return;
+  await apiFetch(`/membership/payments/${id}/`, 'DELETE');
+  loadMembershipPayments();
+}
+
+// ── Non cotisants ─────────────────────────────────────────────────────────────
+
+async function loadUnpaidMembers() {
+  const infoEl = document.getElementById('unpaid-members-info');
+  const alertEl = document.getElementById('unpaid-members-alert');
+  infoEl.classList.add('hidden');
+  alertEl.innerHTML = '';
+
+  const res = await apiFetch('/membership/members/unpaid/');
+  if (!res) return;
+
+  if (res.status === 404) {
+    alertEl.innerHTML = '<div class="alert alert-error">Aucune année de cotisation active. Créez-en une depuis l\'Admin Django.</div>';
+    return;
+  }
+  if (!res.ok) return;
+
+  const data = await res.json();
+  infoEl.textContent = `Année active : ${data.year} — ${data.count} adhérent(s) non cotisant(s) — Montant attendu : ${data.amount_expected.toFixed(2)} €`;
+  infoEl.classList.remove('hidden');
+
+  const tbody = document.getElementById('unpaid-members-table');
+  if (!data.members.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#166534;padding:20px;">✅ Tous les adhérents ont cotisé !</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.members.map(m => `
+    <tr>
+      <td><strong>${esc(m.full_name)}</strong></td>
+      <td>${esc(m.phone) || '—'}</td>
+      <td>${esc(m.email) || '—'}</td>
+      <td>${parseFloat(m.total_paid || 0).toFixed(2)} €</td>
+    </tr>
+  `).join('');
+}
+
+// ── Helpers membership ────────────────────────────────────────────────────────
+
+async function loadMembersForSelect(selectId) {
+  if (!allMembers.length) {
+    const res = await apiFetch('/membership/members/');
+    if (res && res.ok) {
+      const data = await res.json();
+      allMembers = data.results || data;
+    }
+  }
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = '<option value="">-- Choisir un adhérent --</option>';
+  allMembers.forEach(m => {
+    sel.innerHTML += `<option value="${m.id}">${esc(m.full_name)}</option>`;
+  });
+}
+
+async function loadMembershipYearsForSelect(selectId) {
+  if (!membershipYears.length) await loadMembershipYears();
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = '<option value="">-- Choisir une année --</option>';
+  membershipYears.forEach(y => {
+    sel.innerHTML += `<option value="${y.id}">${y.year}${y.is_active ? ' ✓ active' : ''}</option>`;
+  });
+}
 
 // ── Auto-login si token présent ───────────────────────────────────────────────
 if (accessToken) {

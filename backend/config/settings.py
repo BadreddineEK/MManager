@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     # Applications locales (autres apps ajoutées au fil des étapes)
     "core.apps.CoreConfig",
     "school.apps.SchoolConfig",
+    "membership.apps.MembershipConfig",
 ]
 
 # ── Middleware ─────────────────────────────────────────────────────────────────
