@@ -22,7 +22,7 @@ urlpatterns = [
     path("api/membership/", include("membership.urls", namespace="membership")),
     # Treasury
     path("api/treasury/", include("treasury.urls", namespace="treasury")),
-    # Les namespaces API seront ajoutés au fil des étapes :
-    # path("api/kpi/", include("kpi.urls")),
+    # KPI (public, sans auth)
+    path("api/kpi/", include("kpi.urls", namespace="kpi")),
 ]
 

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🕌 KPI — Mosquée Manager</title>
+  <style>
+    :root {
+      --bg:       #0f0f1a;
+      --card:     #1a1a2e;
+      --border:   #2d2d5e;
+      --purple:   #a78bfa;
+      --green:    #4ade80;
+      --red:      #f87171;
+      --yellow:   #fbbf24;
+      --text:     #e2e8f0;
+      --muted:    #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .header h1 { font-size: 1.4rem; color: var(--purple); }
+    .header .meta { font-size: 0.8rem; color: var(--muted); text-align: right; line-height: 1.6; }
+    .mosque-name { font-size: 1rem; color: var(--text); font-weight: 700; }
+
+    /* ── Grille principale ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .card-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* ── KPI row ── */
+    .kpi-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .kpi-box {
+      flex: 1;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .kpi-num {
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .kpi-lbl {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* ── Progress bar ── */
+    .progress-wrap { margin-top: 8px; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: var(--bg);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+
+    /* ── Niveaux ── */
+    .levels { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .level-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+    }
+    .level-chip span { color: var(--purple); font-weight: 700; margin-left: 4px; }
+
+    /* ── Trésorerie ── */
+    .treasury-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .t-box {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .t-num { font-size: 1.6rem; font-weight: 800; }
+    .t-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+    .cat-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .cat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      padding: 6px 10px;
+      background: var(--bg);
+      border-radius: 6px;
+    }
+    .cat-in  { color: var(--green); font-weight: 700; }
+    .cat-out { color: var(--red);   font-weight: 700; }
+
+    /* ── Footer refresh ── */
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── Setup screen ── */
+    #setup-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .setup-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 40px;
+      width: 400px;
+      text-align: center;
+    }
+    .setup-card h2 { color: var(--purple); margin-bottom: 8px; }
+    .setup-card p  { color: var(--muted); font-size: 0.88rem; margin-bottom: 24px; }
+    .setup-card input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+    .setup-card button {
+      width: 100%;
+      padding: 12px;
+      background: var(--purple);
+      color: var(--bg);
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .setup-error { color: var(--red); font-size: 0.82rem; margin-top: 10px; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ══ SETUP : saisir le slug mosquee ══════════════════════════════════════ -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <h2>🕌 KPI Screen</h2>
+    <p>Entrez le slug de votre mosquée pour afficher les indicateurs</p>
+    <input type="text" id="slug-input" placeholder="ex: meximieuxtest" />
+    <button onclick="startKPI()">Afficher les KPI</button>
+    <div class="setup-error hidden" id="setup-error"></div>
+  </div>
+</div>
+
+<!-- ══ ECRAN KPI ════════════════════════════════════════════════════════════ -->
+<div id="kpi-screen" class="hidden">
+
+  <div class="header">
+    <div>
+      <div class="mosque-name" id="kpi-mosque-name">—</div>
+      <h1>📊 Tableau de bord KPI</h1>
+    </div>
+    <div class="meta">
+      <div id="kpi-period">—</div>
+      <div id="kpi-generated">—</div>
+      <div><span class="dot"></span>Actualisation auto 60s</div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- ── Card École ── -->
+    <div class="card">
+      <div class="card-title">🎓 École coranique</div>
+      <div class="kpi-row">
+        <div class="kpi-box">
+          <div class="kpi-num" id="s-families" style="color:var(--purple)">—</div>
+          <div class="kpi-lbl">Familles</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-num" id="s-children" style="color:var(--yellow)">—</div>
+          <div class="kpi-lbl">Enfants</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-num" id="s-year" style="color:var(--muted); font-size:1rem;">—</div>
+          <div class="kpi-lbl">Année active</div>
+        </div>
+      </div>
+
+      <!-- Barre progression paiements familles -->
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Familles ayant payé</span>
+          <span id="s-paid-label">—</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="s-paid-bar" style="background:var(--green); width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Montant collecté -->
+      <div style="margin-top:14px; text-align:center;">
+        <span style="font-size:1.8rem; font-weight:800; color:var(--green)" id="s-amount">—</span>
+        <span style="color:var(--muted); font-size:0.82rem;"> collectés</span>
+      </div>
+
+      <!-- Répartition par niveau -->
+      <div class="card-title" style="margin-top:16px;">Répartition niveaux</div>
+      <div class="levels" id="s-levels"></div>
+    </div>
+
+    <!-- ── Card Adhérents ── -->
+    <div class="card">
+      <div class="card-title">🤝 Cotisations adhérents</div>
+      <div class="kpi-row">
+        <div class="kpi-box">
+          <div class="kpi-num" id="m-total" style="color:var(--purple)">—</div>
+          <div class="kpi-lbl">Total adhérents</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-num" id="m-year" style="color:var(--muted); font-size:1rem;">—</div>
+          <div class="kpi-lbl">Année active</div>
+        </div>
+      </div>
+
+      <!-- Barre progression cotisants -->
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Adhérents à jour</span>
+          <span id="m-paid-label">—</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="m-paid-bar" style="background:var(--green); width:0%"></div>
+        </div>
+      </div>
+
+      <div class="kpi-row" style="margin-top:14px;">
+        <div class="kpi-box">
+          <div class="kpi-num" id="m-paid" style="color:var(--green)">—</div>
+          <div class="kpi-lbl">✅ À jour</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-num" id="m-unpaid" style="color:var(--red)">—</div>
+          <div class="kpi-lbl">❌ En attente</div>
+        </div>
+      </div>
+
+      <div style="margin-top:8px; text-align:center;">
+        <span style="font-size:1.8rem; font-weight:800; color:var(--green)" id="m-collected">—</span>
+        <span style="color:var(--muted); font-size:0.82rem;"> collectés</span>
+      </div>
+    </div>
+
+    <!-- ── Card Trésorerie ── -->
+    <div class="card">
+      <div class="card-title">🏦 Trésorerie — <span id="t-period" style="color:var(--purple)">—</span></div>
+      <div class="treasury-row">
+        <div class="t-box">
+          <div class="t-num" id="t-in" style="color:var(--green)">—</div>
+          <div class="t-lbl">Entrées</div>
+        </div>
+        <div class="t-box">
+          <div class="t-num" id="t-out" style="color:var(--red)">—</div>
+          <div class="t-lbl">Sorties</div>
+        </div>
+        <div class="t-box">
+          <div class="t-num" id="t-balance">—</div>
+          <div class="t-lbl">Solde</div>
+        </div>
+      </div>
+
+      <div class="card-title">Par catégorie</div>
+      <div class="cat-list" id="t-categories">
+        <div style="color:var(--muted); font-size:0.82rem; text-align:center; padding:10px;">Aucune transaction ce mois</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    Dernière mise à jour : <span id="kpi-time">—</span>
+    &nbsp;·&nbsp;
+    <a href="javascript:void(0)" onclick="resetSlug()" style="color:var(--muted);">Changer de mosquée</a>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000/api';
+let mosqueSlug = '';
+let refreshTimer = null;
+
+// ── Démarrage ────────────────────────────────────────────────────────────────
+
+function startKPI() {
+  const slug = document.getElementById('slug-input').value.trim();
+  if (!slug) return;
+  mosqueSlug = slug;
+  localStorage.setItem('kpi_slug', slug);
+  fetchKPI();
+}
+
+function resetSlug() {
+  clearInterval(refreshTimer);
+  localStorage.removeItem('kpi_slug');
+  document.getElementById('kpi-screen').classList.add('hidden');
+  document.getElementById('setup-screen').classList.remove('hidden');
+}
+
+// ── Fetch KPI ────────────────────────────────────────────────────────────────
+
+async function fetchKPI() {
+  const today = new Date().toISOString().slice(0, 7);
+  const url = `${API}/kpi/summary/?mosque=${encodeURIComponent(mosqueSlug)}&month=${today}`;
+
+  try {
+    const res = await fetch(url);
+    if (res.status === 404) {
+      showError(`Mosquée "${mosqueSlug}" introuvable. Vérifiez le slug.`);
+      return;
+    }
+    if (!res.ok) {
+      showError(`Erreur serveur (${res.status})`);
+      return;
+    }
+    const data = await res.json();
+    renderKPI(data);
+
+    // Basculer vers l'écran KPI si on était sur setup
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('kpi-screen').classList.remove('hidden');
+    document.getElementById('setup-error').classList.add('hidden');
+
+    // Programmer le prochain refresh
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(fetchKPI, 60_000);
+
+  } catch (e) {
+    showError('Impossible de joindre le serveur : ' + e.message);
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('setup-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+// ── Rendu KPI ────────────────────────────────────────────────────────────────
+
+function renderKPI(d) {
+  const now = new Date();
+  document.getElementById('kpi-mosque-name').textContent = d.mosque;
+  document.getElementById('kpi-period').textContent      = `Période : ${d.treasury.period}`;
+  document.getElementById('kpi-generated').textContent   = `Généré : ${new Date(d.generated_at).toLocaleTimeString('fr-FR')}`;
+  document.getElementById('kpi-time').textContent        = now.toLocaleTimeString('fr-FR');
+
+  // ── École ──────────────────────────────────────────────────────────────────
+  const s = d.school;
+  document.getElementById('s-families').textContent = s.total_families;
+  document.getElementById('s-children').textContent = s.total_children;
+  document.getElementById('s-year').textContent     = s.active_year || '—';
+  document.getElementById('s-amount').textContent   = `${s.amount_paid.toFixed(2)} €`;
+
+  const sPct = s.total_families > 0
+    ? Math.round((s.families_paid / s.total_families) * 100)
+    : 0;
+  document.getElementById('s-paid-bar').style.width   = `${sPct}%`;
+  document.getElementById('s-paid-label').textContent =
+    `${s.families_paid} / ${s.total_families} (${sPct}%)`;
+
+  // Niveaux
+  const levelsEl = document.getElementById('s-levels');
+  const levels = s.by_level;
+  if (Object.keys(levels).length === 0) {
+    levelsEl.innerHTML = '<span style="color:var(--muted); font-size:0.82rem;">Aucun enfant</span>';
+  } else {
+    levelsEl.innerHTML = Object.entries(levels)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([lvl, cnt]) => `
+        <div class="level-chip">${lvl} <span>${cnt}</span></div>
+      `).join('');
+  }
+
+  // ── Adhérents ─────────────────────────────────────────────────────────────
+  const m = d.membership;
+  document.getElementById('m-total').textContent     = m.total_members;
+  document.getElementById('m-year').textContent      = m.active_year || '—';
+  document.getElementById('m-paid').textContent      = m.members_paid;
+  document.getElementById('m-unpaid').textContent    = m.members_unpaid;
+  document.getElementById('m-collected').textContent = `${m.total_collected.toFixed(2)} €`;
+
+  const mPct = m.total_members > 0
+    ? Math.round((m.members_paid / m.total_members) * 100)
+    : 0;
+  document.getElementById('m-paid-bar').style.width   = `${mPct}%`;
+  document.getElementById('m-paid-label').textContent =
+    `${m.members_paid} / ${m.total_members} (${mPct}%)`;
+
+  // ── Trésorerie ────────────────────────────────────────────────────────────
+  const t = d.treasury;
+  document.getElementById('t-period').textContent  = t.period;
+  document.getElementById('t-in').textContent      = `${t.total_in.toFixed(2)} €`;
+  document.getElementById('t-out').textContent     = `${t.total_out.toFixed(2)} €`;
+  const balEl = document.getElementById('t-balance');
+  balEl.textContent  = `${t.balance.toFixed(2)} €`;
+  balEl.style.color  = t.balance >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const catEl = document.getElementById('t-categories');
+  const cats  = Object.entries(t.by_category);
+  if (cats.length === 0) {
+    catEl.innerHTML = '<div style="color:var(--muted); font-size:0.82rem; text-align:center; padding:10px;">Aucune transaction ce mois</div>';
+  } else {
+    catEl.innerHTML = cats.map(([cat, vals]) => `
+      <div class="cat-row">
+        <span>${cat}</span>
+        <span>
+          ${vals.in  > 0 ? `<span class="cat-in">+${vals.in.toFixed(2)} €</span>` : ''}
+          ${vals.out > 0 ? `<span class="cat-out" style="margin-left:8px;">-${vals.out.toFixed(2)} €</span>` : ''}
+        </span>
+      </div>
+    `).join('');
+  }
+}
+
+// ── Auto-démarrage si slug en localStorage ────────────────────────────────────
+const saved = localStorage.getItem('kpi_slug');
+if (saved) {
+  document.getElementById('slug-input').value = saved;
+  mosqueSlug = saved;
+  fetchKPI();
+}
+</script>
+</body>
+</html>
