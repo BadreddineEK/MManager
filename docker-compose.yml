@@ -24,9 +24,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    # ⚠️ Port 5432 NON exposé en prod (accès interne uniquement)
-    ports:
-      - "5432:5432"
+    # Port 5432 NON exposé en prod — accès interne Docker uniquement
+    # Décommenter uniquement pour debug local :
+    # ports:
+    #   - "5432:5432"
 
   # ── Backend Django — DEV (runserver + hot-reload) ─────────────────────────────
   backend:
@@ -44,17 +45,17 @@ services:
       - ./backend:/app          # Hot-reload en dev
       - static_files:/app/staticfiles
 
-  # ── Backend Django — PROD (gunicorn, workers multiples) ──────────────────────
+  # ── Backend Django — PROD (gunicorn, adapté Raspberry Pi) ───────────────────
   backend-prod:
     build: ./backend
     restart: unless-stopped
     command: >
       gunicorn config.wsgi:application
         --bind 0.0.0.0:8000
-        --workers 3
-        --threads 2
+        --workers 2
+        --threads 4
         --worker-class gthread
-        --timeout 60
+        --timeout 120
         --access-logfile -
         --error-logfile -
         --log-level info
