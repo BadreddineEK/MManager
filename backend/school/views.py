@@ -1,7 +1,7 @@
 """
 Vues school -- API REST Ecole coranique
 =========================================
-Toutes les vues filtrent automatiquement par request.mosque (multi-tenant).
+Toutes les vues filtrent automatiquement par mosque (multi-tenant).
 """
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -19,24 +19,37 @@ from .serializers import (
 )
 
 
+def get_mosque(request):
+    """
+    Retourne la mosquee de la requete.
+    - User normal : request.mosque (injecte par HasMosquePermission)
+    - Superuser sans mosquee : prend la premiere mosquee disponible
+    """
+    from core.models import Mosque
+    mosque = getattr(request, 'mosque', None)
+    if mosque is not None:
+        return mosque
+    return Mosque.objects.first()
+
+
 class SchoolYearViewSet(viewsets.ModelViewSet):
-    """CRUD annees scolaires -- filtre par mosquee."""
+    """CRUD annees scolaires."""
 
     serializer_class = SchoolYearSerializer
     permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get_queryset(self):
-        mosque = self.request.mosque
+        mosque = get_mosque(self.request)
         if mosque is None:
-            return SchoolYear.objects.all()
+            return SchoolYear.objects.none()
         return SchoolYear.objects.filter(mosque=mosque)
 
     def perform_create(self, serializer):
-        serializer.save(mosque=self.request.mosque)
+        serializer.save(mosque=get_mosque(self.request))
 
 
 class FamilyViewSet(viewsets.ModelViewSet):
-    """CRUD familles -- filtre par mosquee + recherche."""
+    """CRUD familles."""
 
     serializer_class = FamilySerializer
     permission_classes = [IsAuthenticated, HasMosquePermission]
@@ -45,39 +58,36 @@ class FamilyViewSet(viewsets.ModelViewSet):
     ordering_fields = ["primary_contact_name", "created_at"]
 
     def get_queryset(self):
-        mosque = self.request.mosque
+        mosque = get_mosque(self.request)
         qs = Family.objects.prefetch_related("children", "payments")
         if mosque is None:
-            return qs.all()
+            return qs.none()
         return qs.filter(mosque=mosque)
 
     def perform_create(self, serializer):
-        serializer.save(mosque=self.request.mosque)
+        serializer.save(mosque=get_mosque(self.request))
 
     @action(detail=False, methods=["get"], url_path="arrears")
     def arrears(self, request):
         """
         GET /api/school/families/arrears/
-        Retourne les familles qui n'ont aucun paiement pour l'annee active.
+        Retourne les familles sans paiement pour l'annee active.
         """
-        mosque = request.mosque
-        # Trouver l'annee active
-        active_year = SchoolYear.objects.filter(
-            mosque=mosque, is_active=True
-        ).first()
+        mosque = get_mosque(request)
+        if mosque is None:
+            return Response({"detail": "Aucune mosquee trouvee."}, status=status.HTTP_404_NOT_FOUND)
 
+        active_year = SchoolYear.objects.filter(mosque=mosque, is_active=True).first()
         if not active_year:
             return Response(
                 {"detail": "Aucune annee scolaire active trouvee."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # Familles ayant paye pour l'annee active
         paid_family_ids = SchoolPayment.objects.filter(
             mosque=mosque, school_year=active_year
         ).values_list("family_id", flat=True)
 
-        # Familles sans paiement
         families_in_arrears = Family.objects.filter(mosque=mosque).exclude(
             id__in=paid_family_ids
         ).prefetch_related("children")
@@ -91,7 +101,7 @@ class FamilyViewSet(viewsets.ModelViewSet):
 
 
 class ChildViewSet(viewsets.ModelViewSet):
-    """CRUD enfants -- filtre par mosquee + niveau."""
+    """CRUD enfants."""
 
     serializer_class = ChildSerializer
     permission_classes = [IsAuthenticated, HasMosquePermission]
@@ -100,26 +110,22 @@ class ChildViewSet(viewsets.ModelViewSet):
     ordering_fields = ["first_name", "level", "created_at"]
 
     def get_queryset(self):
-        mosque = self.request.mosque
+        mosque = get_mosque(self.request)
         qs = Child.objects.select_related("family")
         if mosque is None:
-            qs = qs.all()
-        else:
-            qs = qs.filter(mosque=mosque)
-
-        # Filtre optionnel par niveau : ?level=N1
+            return qs.none()
+        qs = qs.filter(mosque=mosque)
         level = self.request.query_params.get("level")
         if level:
             qs = qs.filter(level=level)
-
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(mosque=self.request.mosque)
+        serializer.save(mosque=get_mosque(self.request))
 
 
 class SchoolPaymentViewSet(viewsets.ModelViewSet):
-    """CRUD paiements ecole -- filtre par mosquee + annee."""
+    """CRUD paiements ecole."""
 
     serializer_class = SchoolPaymentSerializer
     permission_classes = [IsAuthenticated, HasMosquePermission]
@@ -127,24 +133,18 @@ class SchoolPaymentViewSet(viewsets.ModelViewSet):
     ordering_fields = ["date", "amount", "created_at"]
 
     def get_queryset(self):
-        mosque = self.request.mosque
+        mosque = get_mosque(self.request)
         qs = SchoolPayment.objects.select_related("family", "child", "school_year")
         if mosque is None:
-            qs = qs.all()
-        else:
-            qs = qs.filter(mosque=mosque)
-
-        # Filtre optionnel par annee : ?year_id=1
+            return qs.none()
+        qs = qs.filter(mosque=mosque)
         year_id = self.request.query_params.get("year_id")
         if year_id:
             qs = qs.filter(school_year_id=year_id)
-
-        # Filtre optionnel par famille : ?family_id=2
         family_id = self.request.query_params.get("family_id")
         if family_id:
             qs = qs.filter(family_id=family_id)
-
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(mosque=self.request.mosque)
+        serializer.save(mosque=get_mosque(self.request))
