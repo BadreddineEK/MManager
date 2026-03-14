@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mosquée Manager — École</title>
+  <title>Mosquée Manager</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
@@ -151,15 +152,45 @@
 
     <!-- ── Section : Tableau de bord école ── -->
     <div id="section-school">
-      <h2>🎓 Tableau de bord — École</h2>
+      <h2>🎓 Tableau de bord — École &amp; Vue générale</h2>
+
+      <!-- ── Ligne KPI chiffres ── -->
       <div class="stats-row" id="stats-row">
         <div class="stat-card"><div class="num" id="stat-families">—</div><div class="lbl">Familles</div></div>
         <div class="stat-card"><div class="num" id="stat-children">—</div><div class="lbl">Enfants</div></div>
-        <div class="stat-card"><div class="num" id="stat-payments">—</div><div class="lbl">Paiements</div></div>
-        <div class="stat-card"><div class="num" id="stat-arrears">—</div><div class="lbl">Impayés</div></div>
+        <div class="stat-card"><div class="num" id="stat-payments">—</div><div class="lbl">Paiements école</div></div>
+        <div class="stat-card"><div class="num" style="color:#dc2626;" id="stat-arrears">—</div><div class="lbl">Familles impayées</div></div>
+        <div class="stat-card"><div class="num" id="stat-members">—</div><div class="lbl">Adhérents</div></div>
+        <div class="stat-card"><div class="num" style="color:#16a34a;" id="stat-balance">—</div><div class="lbl">Solde trésorerie</div></div>
       </div>
-      <div class="card">
-        <p style="color:#666; font-size:0.9rem;">Bienvenue sur le tableau de bord de l'école coranique.<br>Utilisez le menu de gauche pour gérer les familles, enfants et paiements.</p>
+
+      <!-- ── Ligne graphiques ── -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+
+        <!-- Graphique 1 : Paiements école par mois (6 derniers mois) -->
+        <div class="card" style="padding:20px;">
+          <h3 style="margin:0 0 12px;font-size:0.95rem;color:#7c3aed;">📈 Paiements école — 6 derniers mois</h3>
+          <canvas id="chart-school-payments" height="200"></canvas>
+        </div>
+
+        <!-- Graphique 2 : Répartition enfants par niveau -->
+        <div class="card" style="padding:20px;">
+          <h3 style="margin:0 0 12px;font-size:0.95rem;color:#7c3aed;">🎓 Enfants par niveau</h3>
+          <canvas id="chart-levels" height="200"></canvas>
+        </div>
+
+        <!-- Graphique 3 : Trésorerie — entrées vs sorties (6 derniers mois) -->
+        <div class="card" style="padding:20px;">
+          <h3 style="margin:0 0 12px;font-size:0.95rem;color:#7c3aed;">🏦 Trésorerie — Entrées vs Sorties</h3>
+          <canvas id="chart-treasury" height="200"></canvas>
+        </div>
+
+        <!-- Graphique 4 : Adhérents cotisants vs non cotisants -->
+        <div class="card" style="padding:20px;">
+          <h3 style="margin:0 0 12px;font-size:0.95rem;color:#7c3aed;">🤝 Adhérents — État des cotisations</h3>
+          <canvas id="chart-membership" height="200"></canvas>
+        </div>
+
       </div>
     </div>
 
@@ -726,34 +757,169 @@ function showSection(name) {
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 
+// ── Instances Chart.js (pour pouvoir les détruire avant recréation) ──────────
+const _charts = {};
+
+function _destroyChart(id) {
+  if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+}
+
+// Palette cohérente avec le thème violet/dark
+const CHART_COLORS = {
+  purple:      'rgba(124, 58, 237, 0.8)',
+  purpleLight: 'rgba(124, 58, 237, 0.15)',
+  green:       'rgba(22, 163, 74, 0.8)',
+  greenLight:  'rgba(22, 163, 74, 0.15)',
+  red:         'rgba(220, 38, 38, 0.8)',
+  redLight:    'rgba(220, 38, 38, 0.15)',
+  blue:        'rgba(59, 130, 246, 0.8)',
+  orange:      'rgba(234, 88, 12, 0.8)',
+  gray:        'rgba(156, 163, 175, 0.8)',
+};
+
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+Chart.defaults.color = '#6b7280';
+
+// Génère les 6 derniers mois sous forme ["2025-10", "2025-11", ...]
+function _last6Months() {
+  const months = [];
+  const d = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const m = new Date(d.getFullYear(), d.getMonth() - i, 1);
+    months.push(`${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return months;
+}
+
+function _monthLabel(ym) {
+  const [y, m] = ym.split('-');
+  return new Date(y, m - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+}
+
 async function loadDashboard() {
-  const [fRes, cRes, pRes, aRes] = await Promise.all([
+  const months = _last6Months();
+
+  // ── Requêtes parallèles (données brutes stockées pour réutilisation) ─────
+  const [fRes, cRes, pRes, aRes, mRes, tSummaryRes, unpaidRes] = await Promise.all([
     apiFetch('/school/families/'),
     apiFetch('/school/children/'),
     apiFetch('/school/payments/'),
     apiFetch('/school/families/arrears/'),
+    apiFetch('/membership/members/'),
+    apiFetch('/treasury/transactions/summary/'),
+    apiFetch('/membership/members/unpaid/'),
   ]);
 
-  if (fRes && fRes.ok) {
-    const d = await fRes.json();
-    document.getElementById('stat-families').textContent = d.count ?? d.results?.length ?? '—';
-  }
-  if (cRes && cRes.ok) {
-    const d = await cRes.json();
-    document.getElementById('stat-children').textContent = d.count ?? d.results?.length ?? '—';
-  }
-  if (pRes && pRes.ok) {
-    const d = await pRes.json();
-    document.getElementById('stat-payments').textContent = d.count ?? d.results?.length ?? '—';
-  }
-  if (aRes && aRes.ok) {
-    const d = await aRes.json();
-    document.getElementById('stat-arrears').textContent = d.count ?? '—';
-  } else {
-    document.getElementById('stat-arrears').textContent = '0';
+  // Lire et conserver les JSON (une seule consommation du body)
+  const fData  = fRes?.ok  ? await fRes.json()        : null;
+  const cData  = cRes?.ok  ? await cRes.json()        : null;
+  const pData  = pRes?.ok  ? await pRes.json()        : null;
+  const aData  = aRes?.ok  ? await aRes.json()        : null;
+  const mData  = mRes?.ok  ? await mRes.json()        : null;
+  const tSum   = tSummaryRes?.ok ? await tSummaryRes.json() : null;
+  const unpaid = unpaidRes?.ok ? await unpaidRes.json() : null;
+
+  const families   = fData ? (fData.results || fData) : [];
+  const children   = cData ? (cData.results || cData) : [];
+  const payments   = pData ? (pData.results || pData) : [];
+  const arrears    = aData ? (aData.results || aData) : [];
+  const members    = mData ? (mData.results || mData) : [];
+  const unpaidList = unpaid ? (unpaid.results || unpaid) : [];
+
+  // ── KPI stat-cards ───────────────────────────────────────────────────────
+  document.getElementById('stat-families').textContent = fData?.count  ?? families.length;
+  document.getElementById('stat-children').textContent = cData?.count  ?? children.length;
+  document.getElementById('stat-payments').textContent = pData?.count  ?? payments.length;
+  document.getElementById('stat-arrears').textContent  = aData?.count  ?? arrears.length;
+  document.getElementById('stat-members').textContent  = mData?.count  ?? members.length;
+
+  if (tSum) {
+    const bal = parseFloat(tSum.balance ?? (tSum.total_in - tSum.total_out) ?? 0);
+    const el = document.getElementById('stat-balance');
+    el.textContent = `${bal >= 0 ? '+' : ''}${bal.toFixed(0)} €`;
+    el.style.color = bal >= 0 ? '#16a34a' : '#dc2626';
   }
 
   await loadSchoolYears();
+
+  // ── Graphique 1 : Paiements école — 6 derniers mois ─────────────────────
+  // Regroupement côté client (évite 6 appels API)
+  const payByMonth = {};
+  months.forEach(m => { payByMonth[m] = 0; });
+  payments.forEach(p => {
+    const key = p.date?.slice(0, 7);
+    if (key in payByMonth) payByMonth[key] += parseFloat(p.amount || 0);
+  });
+  _destroyChart('school-payments');
+  _charts['school-payments'] = new Chart(document.getElementById('chart-school-payments'), {
+    type: 'bar',
+    data: {
+      labels: months.map(_monthLabel),
+      datasets: [{
+        label: 'Paiements (€)',
+        data: months.map(m => payByMonth[m]),
+        backgroundColor: CHART_COLORS.purple,
+        borderColor: CHART_COLORS.purple,
+        borderRadius: 6,
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  // ── Graphique 2 : Enfants par niveau ─────────────────────────────────────
+  const byLevel = {};
+  children.forEach(c => { byLevel[c.level] = (byLevel[c.level] || 0) + 1; });
+  const lvlLabels = Object.keys(byLevel).sort();
+  const palette   = ['#7c3aed','#2563eb','#16a34a','#ea580c','#dc2626','#0891b2','#a855f7'];
+  _destroyChart('levels');
+  _charts['levels'] = new Chart(document.getElementById('chart-levels'), {
+    type: 'doughnut',
+    data: {
+      labels: lvlLabels.length ? lvlLabels : ['Aucun élève'],
+      datasets: [{ data: lvlLabels.length ? lvlLabels.map(l => byLevel[l]) : [1], backgroundColor: palette, borderWidth: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'right' } } }
+  });
+
+  // ── Graphique 3 : Trésorerie entrées vs sorties — 6 derniers mois ────────
+  // Appels séquentiels /summary/?month= (6 requêtes légères)
+  const trsIn = [], trsOut = [];
+  for (const month of months) {
+    const res = await apiFetch(`/treasury/transactions/summary/?month=${month}`);
+    if (res?.ok) {
+      const d = await res.json();
+      trsIn.push(parseFloat(d.total_in  || 0));
+      trsOut.push(parseFloat(d.total_out || 0));
+    } else {
+      trsIn.push(0); trsOut.push(0);
+    }
+  }
+  _destroyChart('treasury');
+  _charts['treasury'] = new Chart(document.getElementById('chart-treasury'), {
+    type: 'bar',
+    data: {
+      labels: months.map(_monthLabel),
+      datasets: [
+        { label: 'Entrées (€)', data: trsIn,  backgroundColor: CHART_COLORS.green, borderRadius: 4 },
+        { label: 'Sorties (€)', data: trsOut, backgroundColor: CHART_COLORS.red,   borderRadius: 4 },
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  // ── Graphique 4 : Adhérents — cotisants vs non cotisants ─────────────────
+  const unpaidCount = unpaid?.count ?? unpaidList.length;
+  const totalMbrs   = mData?.count  ?? members.length;
+  const paidCount   = Math.max(0, totalMbrs - unpaidCount);
+  _destroyChart('membership');
+  _charts['membership'] = new Chart(document.getElementById('chart-membership'), {
+    type: 'pie',
+    data: {
+      labels: [`✅ À jour (${paidCount})`, `❌ Non cotisants (${unpaidCount})`],
+      datasets: [{ data: [paidCount, unpaidCount], backgroundColor: [CHART_COLORS.green, CHART_COLORS.red], borderWidth: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
 }
 
 async function loadSchoolYears() {
