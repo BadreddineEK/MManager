@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.permissions import HasMosquePermission
+from core.utils import get_mosque
 
 from .models import Member, MembershipPayment, MembershipYear
 from .serializers import (
@@ -15,14 +16,6 @@ from .serializers import (
     MembershipPaymentSerializer,
     MembershipYearSerializer,
 )
-
-
-def get_mosque(request):
-    from core.models import Mosque
-    mosque = getattr(request, 'mosque', None)
-    if mosque is not None:
-        return mosque
-    return Mosque.objects.first()
 
 
 class MembershipYearViewSet(viewsets.ModelViewSet):

@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.permissions import HasMosquePermission
+from core.utils import get_mosque
 
 from .models import Child, Family, SchoolPayment, SchoolYear
 from .serializers import (
@@ -17,19 +18,6 @@ from .serializers import (
     SchoolPaymentSerializer,
     SchoolYearSerializer,
 )
-
-
-def get_mosque(request):
-    """
-    Retourne la mosquee de la requete.
-    - User normal : request.mosque (injecte par HasMosquePermission)
-    - Superuser sans mosquee : prend la premiere mosquee disponible
-    """
-    from core.models import Mosque
-    mosque = getattr(request, 'mosque', None)
-    if mosque is not None:
-        return mosque
-    return Mosque.objects.first()
 
 
 class SchoolYearViewSet(viewsets.ModelViewSet):
