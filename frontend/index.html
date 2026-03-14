@@ -2358,7 +2358,14 @@ if (accessToken) {
     const payload = JSON.parse(atob(accessToken.split('.')[1]));
     const isExpired = payload.exp * 1000 < Date.now();
     if (!isExpired) {
-      document.getElementById('user-info').textContent = `${payload.email}\n${payload.role}`;
+      const initials = (payload.email || 'U')[0].toUpperCase();
+      document.getElementById('user-avatar').textContent = initials;
+      document.getElementById('user-name-display').textContent = payload.email || '—';
+      const _rl = { ADMIN: 'Admin', TRESORIER: 'Trésorier', ECOLE_MANAGER: 'École Manager' };
+      document.getElementById('user-role-display').textContent = _rl[payload.role] || payload.role || '—';
+      if (payload.mosque_slug) {
+        document.getElementById('dashboard-mosque-name').textContent = payload.mosque_slug;
+      }
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('app-screen').classList.remove('hidden');
       loadDashboard();
