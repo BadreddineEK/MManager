@@ -56,12 +56,35 @@ services:
     profiles:
       - prod
 
-  # ── Backup quotidien (prod uniquement) ───────────────────────────────────────
+  # ── Backup one-shot (manuel : docker compose run backup) ────────────────────
   backup:
     image: postgres:16-alpine
     restart: "no"
     # Installation openssl (non inclus dans l'image de base alpine) + lancement du script
     entrypoint: ["sh", "-c", "apk add --no-cache openssl && /scripts/backup.sh"]
+    env_file:
+      - .env
+    volumes:
+      - ./backups:/backups
+      - ./scripts:/scripts
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - prod
+
+  # ── Backup cron quotidien (prod uniquement) ───────────────────────────────────
+  # Effectue un dump chiffré chaque nuit à 02h00 (heure du serveur)
+  backup-cron:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    entrypoint:
+      - sh
+      - -c
+      - |
+        apk add --no-cache openssl
+        echo "0 2 * * * /scripts/backup.sh >> /backups/backup.log 2>&1" | crontab -
+        crond -f -l 8
     env_file:
       - .env
     volumes:
