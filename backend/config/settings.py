@@ -168,11 +168,15 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS: list[str] = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 # ── Sécurité HTTPS (prod derrière Cloudflare Tunnel) ─────────────────────────
+# CSRF_COOKIE_SECURE et SESSION_COOKIE_SECURE nécessitent HTTPS.
+# En accès local HTTP (Raspberry Pi LAN), on les désactive.
+# Ils seront réactivés automatiquement quand Cloudflare Tunnel (HTTPS) sera configuré.
+_https = os.environ.get("HTTPS_ENABLED", "false").lower() == "true"
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = False          # Cloudflare gère le redirect HTTP→HTTPS
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = _https
+    CSRF_COOKIE_SECURE = _https
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 # Pas de print() en prod — tout passe par le logger standard Django
