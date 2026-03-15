@@ -39,10 +39,8 @@ ALLOWED_HOSTS: list[str] = env("ALLOWED_HOSTS")
 # Origines de confiance pour CSRF (Django Admin + Cloudflare Tunnel)
 # En dev : vide (DEBUG=True → CSRF moins strict)
 # En prod : liste des URLs depuis lesquelles l'app est accédée
-CSRF_TRUSTED_ORIGINS: list[str] = env.list(
-    "CSRF_TRUSTED_ORIGINS",
-    default=["http://localhost", "http://127.0.0.1"],
-)
+_csrf_raw = os.environ.get("CSRF_TRUSTED_ORIGINS", "http://localhost,http://127.0.0.1")
+CSRF_TRUSTED_ORIGINS: list[str] = [s.strip() for s in _csrf_raw.split(",") if s.strip()]
 
 # ── Applications installées ───────────────────────────────────────────────────
 INSTALLED_APPS = [
