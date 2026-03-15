@@ -36,6 +36,14 @@ SECRET_KEY: str = env("DJANGO_SECRET_KEY")
 DEBUG: bool = env("DJANGO_DEBUG")
 ALLOWED_HOSTS: list[str] = env("ALLOWED_HOSTS")
 
+# Origines de confiance pour CSRF (Django Admin + Cloudflare Tunnel)
+# En dev : vide (DEBUG=True → CSRF moins strict)
+# En prod : liste des URLs depuis lesquelles l'app est accédée
+CSRF_TRUSTED_ORIGINS: list[str] = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=["http://localhost", "http://127.0.0.1"],
+)
+
 # ── Applications installées ───────────────────────────────────────────────────
 INSTALLED_APPS = [
     "django.contrib.admin",
