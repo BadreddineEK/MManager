@@ -21,6 +21,25 @@
       --muted2:    #6b7280;
     }
 
+    /* ── Thème clair ── */
+    [data-theme="light"] {
+      --bg:        #f4f4f8;
+      --surface:   #ffffff;
+      --card:      #ffffff;
+      --border:    #e2e2ef;
+      --purple:    #7c3aed;
+      --purple-d:  #6d28d9;
+      --green:     #059669;
+      --red:       #dc2626;
+      --yellow:    #d97706;
+      --blue:      #2563eb;
+      --text:      #111827;
+      --muted:     #9ca3af;
+      --muted2:    #6b7280;
+    }
+    [data-theme="light"] body { background: var(--bg); }
+    [data-theme="light"] .kpi-header { background: linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%); }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -161,7 +180,6 @@
     .stat-num  { font-size: 2rem; font-weight: 900; line-height: 1; letter-spacing: -.03em; }
     .stat-lbl  { font-size: 0.68rem; color: var(--muted2); margin-top: 5px; text-transform: uppercase; letter-spacing: .05em; }
 
-    .prog-block  {}
     .prog-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
     .prog-label  { font-size: 0.8rem; color: var(--muted2); }
     .prog-value  { font-size: 0.88rem; font-weight: 700; color: var(--text); }
@@ -198,6 +216,24 @@
     .kpi-footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
     .kpi-footer a:hover { color: var(--muted2); }
 
+    /* ── Bouton thème ── */
+    .theme-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      width: 36px; height: 36px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .2s, background .2s;
+      flex-shrink: 0;
+    }
+    .theme-btn:hover { border-color: var(--purple); }
+    .theme-btn-setup {
+      position: fixed; top: 16px; right: 16px;
+      z-index: 100;
+    }
+
     .hidden { display: none !important; }
 
     @media (max-width: 1000px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -216,19 +252,21 @@
 
 <!-- ══ SETUP SCREEN ══════════════════════════════════════════════════════════ -->
 <div id="setup-screen">
+  <button class="theme-btn theme-btn-setup" id="theme-btn-setup" onclick="toggleTheme()" title="Changer le thème">🌙</button>
   <div class="setup-card">
     <span class="setup-icon">🕌</span>
     <div class="setup-title">Tableau de bord KPI</div>
     <div class="setup-sub">Sélectionnez votre mosquée pour afficher<br>les indicateurs en temps réel</div>
 
-    <div class="select-wrap">
-      <select id="mosque-select">
-        <option value="">Chargement des mosquées…</option>
-      </select>
-      <span class="select-arrow">▼</span>
+    <div id="select-block">
+      <div class="select-wrap">
+        <select id="mosque-select">
+          <option value="">Chargement…</option>
+        </select>
+        <span class="select-arrow">▼</span>
+      </div>
+      <div class="or-separator">ou saisir manuellement</div>
     </div>
-
-    <div class="or-separator">ou saisir manuellement</div>
 
     <input type="text" class="slug-input" id="slug-input" placeholder="slug de mosquée  (ex: meximieuxtest)" />
 
@@ -262,6 +300,7 @@
         <span class="live-dot"></span>
         <span>Live · <span id="kpi-countdown">60</span>s</span>
       </div>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Changer le thème">🌙</button>
     </div>
   </header>
 
@@ -272,7 +311,7 @@
       <div class="kcard">
         <div class="kcard-head">
           <div class="kcard-icon icon-school">🎓</div>
-          <div class="kcard-title">École coranique</div>
+          <div class="kcard-title">École</div>
         </div>
         <div class="stat-row">
           <div class="stat-box">
@@ -410,15 +449,18 @@ async function loadMosqueList() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const list = await res.json();
     const sel  = document.getElementById('mosque-select');
+    const wrap = document.getElementById('select-block');
     if (list.length === 0) {
-      sel.innerHTML = '<option value="">Aucune mosquée disponible</option>';
+      // Aucune mosquée → cacher le dropdown, garder juste l'input
+      if (wrap) wrap.style.display = 'none';
     } else {
       sel.innerHTML = '<option value="">— Choisir une mosquée —</option>'
         + list.map(m => `<option value="${esc(m.slug)}">${esc(m.name)}</option>`).join('');
     }
   } catch (e) {
-    document.getElementById('mosque-select').innerHTML =
-      '<option value="">Impossible de charger la liste</option>';
+    // API indisponible (Pi pas encore mis à jour) → on cache le dropdown silencieusement
+    const wrap = document.getElementById('select-block');
+    if (wrap) wrap.style.display = 'none';
   }
 }
 
@@ -569,7 +611,24 @@ function fmt(n) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
 }
 
+// ── Thème ─────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const next   = isDark ? 'light' : 'dark';
+  applyTheme(next);
+  localStorage.setItem('kpi_theme', next);
+}
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : '');
+  const icon = theme === 'light' ? '☀️' : '🌙';
+  document.querySelectorAll('.theme-btn').forEach(b => b.textContent = icon);
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
+// Thème sauvegardé
+const savedTheme = localStorage.getItem('kpi_theme') || 'dark';
+applyTheme(savedTheme);
+
 loadMosqueList();
 
 const saved = localStorage.getItem('kpi_slug');
