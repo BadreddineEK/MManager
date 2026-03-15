@@ -1,8 +1,7 @@
-from django.shortcuts import render
-
 """
 Vue KPI -- agregats mosquee (AUCUNE donnee personnelle)
 =======================================================
+GET /api/kpi/mosques/            → liste des mosquees (slug + nom)
 GET /api/kpi/summary/?mosque=<slug>
 
 Accessible SANS authentification (ecran TV/tablette public).
@@ -20,6 +19,19 @@ from core.models import Mosque
 from membership.models import Member, MembershipPayment, MembershipYear
 from school.models import Child, Family, SchoolPayment, SchoolYear
 from treasury.models import TreasuryTransaction
+
+
+class KPIMosqueListView(APIView):
+    """
+    Liste publique des mosquees disponibles.
+    GET /api/kpi/mosques/
+    Retourne : [{slug, name}, ...]
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        mosques = Mosque.objects.order_by("name").values("slug", "name")
+        return Response(list(mosques))
 
 
 class KPISummaryView(APIView):
