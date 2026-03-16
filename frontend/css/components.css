@@ -92,8 +92,15 @@ tbody tr:hover td { background: #faf8ff; }
 .badge-gray   { background: #f3f4f6;           color: #4b5563; }
 .badge-purple { background: var(--accent-soft); color: var(--accent); }
 .badge-blue   { background: var(--blue-soft);  color: #1e40af; }
+.badge-orange { background: #fff7ed;           color: #c2410c; }
 .badge-1901   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
 .badge-1905   { background: #faf5ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+
+/* ── AUDIT LOG ─────────────────────────────────────────────── */
+.audit-kv { display: inline-block; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; margin: 1px 2px; font-size: 0.73rem; }
+
+/* ── PAGINATION ─────────────────────────────────────────────── */
+.pagination { display: flex; align-items: center; gap: 12px; }
 
 /* ── MODAL ────────────────────────────────────────────────── */
 .modal-overlay {

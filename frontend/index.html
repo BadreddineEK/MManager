@@ -125,6 +125,9 @@
       <button class="nav-item" id="nav-users" onclick="showSection('users')">
         <span class="nav-icon">👥</span><span>Utilisateurs</span>
       </button>
+      <button class="nav-item" id="nav-audit" onclick="showSection('audit')">
+        <span class="nav-icon">📋</span><span>Journal d'audit</span>
+      </button>
       <button class="nav-item" id="nav-settings" onclick="showSection('settings')">
         <span class="nav-icon">⚙️</span><span>Paramètres</span>
       </button>
@@ -325,6 +328,11 @@
           <h2>Familles avec impayés</h2>
           <div class="breadcrumb">École coranique · Suivi des impayés</div>
         </div>
+        <div class="page-header-actions">
+          <button id="btn-send-arrears-notif" class="btn btn-sm" onclick="sendArrearsNotifs()" title="Envoyer un email de rappel à chaque famille avec un email renseigné">
+            📧 Envoyer rappels
+          </button>
+        </div>
       </div>
       <div class="page-body">
         <div id="arrears-info" class="alert alert-info hidden"></div>
@@ -401,6 +409,11 @@
         <div class="page-header-left">
           <h2>Non cotisants</h2>
           <div class="breadcrumb">Adhésion · Adhérents sans cotisation active</div>
+        </div>
+        <div class="page-header-actions">
+          <button id="btn-send-unpaid-notif" class="btn btn-sm" onclick="sendUnpaidMembersNotifs()" title="Envoyer un email de rappel à chaque adhérent non cotisant avec un email renseigné">
+            📧 Envoyer rappels
+          </button>
         </div>
       </div>
       <div class="page-body">
@@ -539,6 +552,79 @@
       </div>
     </div>
 
+    <!-- ── Journal d'audit ── -->
+    <div id="section-audit" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Journal d'audit</h2>
+          <div class="breadcrumb">Administration · Traçabilité des actions</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-sm" onclick="resetAuditFilters()">✕ Réinitialiser filtres</button>
+          <button class="btn btn-sm" onclick="loadAudit(1)">↺ Actualiser</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="toolbar" style="flex-wrap:wrap;gap:10px;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:0.75rem;color:var(--muted);margin:0;">Action</label>
+            <select id="audit-filter-action" onchange="loadAudit(1)" style="width:auto;margin:0;font-size:0.82rem;">
+              <option value="">Toutes</option>
+              <option value="CREATE">Création</option>
+              <option value="UPDATE">Modification</option>
+              <option value="DELETE">Suppression</option>
+              <option value="LOGIN">Connexion</option>
+              <option value="LOGOUT">Déconnexion</option>
+              <option value="EXPORT">Export</option>
+              <option value="IMPORT">Import</option>
+              <option value="SEND_NOTIF">Notification</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:0.75rem;color:var(--muted);margin:0;">Entité</label>
+            <input type="text" id="audit-filter-entity" placeholder="Ex: Family, Member…"
+                   style="width:160px;margin:0;font-size:0.82rem;" onkeydown="if(event.key==='Enter')loadAudit(1)" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:0.75rem;color:var(--muted);margin:0;">Utilisateur (ID)</label>
+            <input type="number" id="audit-filter-user" placeholder="ID"
+                   style="width:90px;margin:0;font-size:0.82rem;" onkeydown="if(event.key==='Enter')loadAudit(1)" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:0.75rem;color:var(--muted);margin:0;">Du</label>
+            <input type="date" id="audit-filter-from" style="width:auto;margin:0;font-size:0.82rem;" onchange="loadAudit(1)" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:0.75rem;color:var(--muted);margin:0;">Au</label>
+            <input type="date" id="audit-filter-to" style="width:auto;margin:0;font-size:0.82rem;" onchange="loadAudit(1)" />
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="loadAudit(1)" style="align-self:flex-end;">🔍 Filtrer</button>
+        </div>
+        <div id="audit-alert" style="margin-top:8px;"></div>
+        <div style="font-size:0.8rem;color:var(--muted);margin:8px 0 4px;" id="audit-info"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:130px;">Date / Heure</th>
+                <th>Utilisateur</th>
+                <th style="width:120px;">Action</th>
+                <th>Entité</th>
+                <th style="width:60px;">ID</th>
+                <th>Détails</th>
+              </tr>
+            </thead>
+            <tbody id="audit-table">
+              <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">
+                Cliquez sur « Actualiser » pour charger le journal.
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="audit-pager" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
     <!-- ── Paramètres ── -->
     <div id="section-settings" class="hidden">
       <div class="page-header">
@@ -646,7 +732,48 @@
         </div>
 
         <div class="settings-section">
-          <h3>💾 Sauvegarde &amp; Restauration</h3>
+          <h3>� Notifications email (SMTP)</h3>
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+            Configurez le serveur SMTP pour l'envoi des rappels aux familles et adhérents.
+            Exemple Gmail : host <code>smtp.gmail.com</code>, port <code>587</code>, TLS activé.
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 100px;gap:12px;">
+            <div>
+              <label>Serveur SMTP (host)</label>
+              <input type="text" id="s-smtp-host" placeholder="smtp.gmail.com" />
+            </div>
+            <div>
+              <label>Port</label>
+              <input type="number" id="s-smtp-port" placeholder="587" min="1" max="65535" />
+            </div>
+          </div>
+          <label>Identifiant SMTP (email)</label>
+          <input type="text" id="s-smtp-user" placeholder="votre.compte@gmail.com" autocomplete="off" />
+          <label>Mot de passe SMTP</label>
+          <input type="password" id="s-smtp-password" placeholder="••••••••" autocomplete="new-password" />
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;margin-top:4px;">
+            <input type="checkbox" id="s-smtp-use-tls" style="width:auto;margin:0;accent-color:var(--accent);" />
+            Utiliser STARTTLS (port 587 recommandé)
+          </label>
+          <label style="margin-top:12px;">Email expéditeur (affiché dans « De : »)</label>
+          <input type="email" id="s-email-from" placeholder="noreply@mosquee.fr" />
+          <label>Préfixe objet des emails</label>
+          <input type="text" id="s-email-subject-prefix" placeholder="[Mosquée Manager]" />
+          <div style="margin-top:18px;padding:16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;">
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">
+              Enregistrez d'abord les paramètres, puis testez la configuration SMTP.
+            </p>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <input type="email" id="s-smtp-test-email" placeholder="destinataire@test.com"
+                     style="width:220px;margin:0;font-size:0.85rem;" />
+              <button id="btn-smtp-test" class="btn btn-sm" onclick="testEmail()">✉️ Tester SMTP</button>
+            </div>
+            <div id="smtp-test-status" style="margin-top:10px;font-size:0.82rem;"></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>�💾 Sauvegarde &amp; Restauration</h3>
           <p style="font-size:0.83rem;color:var(--muted);margin-bottom:18px;line-height:1.6;">
             Exportez l'intégralité des données en un fichier <strong>ZIP</strong> CSV.
             Restaurez pour fusionner sans doublons.
@@ -1034,6 +1161,20 @@
   </div>
 </div>
 
+<!-- Modal Résultat Notifications -->
+<div class="modal-overlay hidden" id="modal-notif-result">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="notif-result-title">Résultat de l'envoi</h3>
+      <button class="modal-close" onclick="closeModal('modal-notif-result')">✕</button>
+    </div>
+    <div class="modal-body" id="notif-result-body" style="max-height:420px;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('modal-notif-result')">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SCRIPTS (ordre de dépendance) ══════════════════════════════════════ -->
 <script src="js/api.js"></script>
 <script src="js/ui.js"></script>
@@ -1046,6 +1187,8 @@
 <script src="js/users.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/export.js"></script>
+<script src="js/audit.js"></script>
+<script src="js/notifications.js"></script>
 <script src="js/auth.js"></script><!-- DOIT être chargé EN DERNIER -->
 
 </body>

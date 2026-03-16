@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.permissions import HasMosquePermission
-from core.utils import get_mosque
+from core.utils import get_mosque, log_action
 
 from .models import Child, Family, SchoolPayment, SchoolYear
 from .serializers import (
@@ -35,6 +35,14 @@ class SchoolYearViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(mosque=get_mosque(self.request))
 
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "SchoolYear", obj.id, {"label": obj.label})
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "SchoolYear", instance.id, {"label": instance.label})
+        instance.delete()
+
 
 class FamilyViewSet(viewsets.ModelViewSet):
     """CRUD familles."""
@@ -53,7 +61,16 @@ class FamilyViewSet(viewsets.ModelViewSet):
         return qs.filter(mosque=mosque)
 
     def perform_create(self, serializer):
-        serializer.save(mosque=get_mosque(self.request))
+        obj = serializer.save(mosque=get_mosque(self.request))
+        log_action(self.request, "CREATE", "Family", obj.id, {"name": obj.primary_contact_name})
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "Family", obj.id, {"name": obj.primary_contact_name})
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "Family", instance.id, {"name": instance.primary_contact_name})
+        instance.delete()
 
     @action(detail=False, methods=["get"], url_path="arrears")
     def arrears(self, request):
@@ -109,7 +126,16 @@ class ChildViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(mosque=get_mosque(self.request))
+        obj = serializer.save(mosque=get_mosque(self.request))
+        log_action(self.request, "CREATE", "Child", obj.id, {"name": obj.first_name, "level": obj.level})
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "Child", obj.id, {"name": obj.first_name, "level": obj.level})
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "Child", instance.id, {"name": instance.first_name})
+        instance.delete()
 
 
 class SchoolPaymentViewSet(viewsets.ModelViewSet):
@@ -129,10 +155,19 @@ class SchoolPaymentViewSet(viewsets.ModelViewSet):
         year_id = self.request.query_params.get("year_id")
         if year_id:
             qs = qs.filter(school_year_id=year_id)
-        family_id = self.request.query_params.get("family_id")
-        if family_id:
-            qs = qs.filter(family_id=family_id)
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(mosque=get_mosque(self.request))
+        obj = serializer.save(mosque=get_mosque(self.request))
+        log_action(self.request, "CREATE", "SchoolPayment", obj.id,
+                   {"family": str(obj.family), "amount": float(obj.amount), "date": str(obj.date)})
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "SchoolPayment", obj.id,
+                   {"family": str(obj.family), "amount": float(obj.amount)})
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "SchoolPayment", instance.id,
+                   {"family": str(instance.family), "amount": float(instance.amount)})
+        instance.delete()

@@ -120,6 +120,39 @@ class MosqueSettings(models.Model):
         help_text="Valeurs conseillées : 30, 60, 120, 300",
     )
 
+    # ── Notifications email ─────────────────────────────────────────────────
+    smtp_host = models.CharField(
+        max_length=200, blank=True, default="",
+        verbose_name="SMTP : hôte",
+        help_text="Ex: smtp.gmail.com, ssl0.ovh.net",
+    )
+    smtp_port = models.PositiveSmallIntegerField(
+        default=587,
+        verbose_name="SMTP : port",
+        help_text="587 (TLS/STARTTLS) ou 465 (SSL)",
+    )
+    smtp_user = models.CharField(
+        max_length=200, blank=True, default="",
+        verbose_name="SMTP : utilisateur",
+    )
+    smtp_password = models.CharField(
+        max_length=200, blank=True, default="",
+        verbose_name="SMTP : mot de passe",
+    )
+    smtp_use_tls = models.BooleanField(
+        default=True,
+        verbose_name="SMTP : utiliser TLS (STARTTLS)",
+    )
+    email_from = models.EmailField(
+        blank=True, default="",
+        verbose_name="Expéditeur des emails",
+        help_text="Ex: noreply@mosquee-meximieux.fr",
+    )
+    email_subject_prefix = models.CharField(
+        max_length=100, blank=True, default="[Mosquée Manager]",
+        verbose_name="Préfixe sujet email",
+    )
+
     class Meta:
         verbose_name = "Paramètres mosquée"
         verbose_name_plural = "Paramètres mosquées"

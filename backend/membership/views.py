@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.permissions import HasMosquePermission
-from core.utils import get_mosque
+from core.utils import get_mosque, log_action
 
 from .models import Member, MembershipPayment, MembershipYear
 from .serializers import (
@@ -32,6 +32,14 @@ class MembershipYearViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(mosque=get_mosque(self.request))
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "MembershipYear", obj.id, {"year": obj.year})
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "MembershipYear", instance.id, {"year": instance.year})
+        instance.delete()
 
 
 class MemberViewSet(viewsets.ModelViewSet):
@@ -66,7 +74,16 @@ class MemberViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(mosque=get_mosque(self.request))
+        obj = serializer.save(mosque=get_mosque(self.request))
+        log_action(self.request, "CREATE", "Member", obj.id, {"name": obj.full_name})
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "Member", obj.id, {"name": obj.full_name})
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "Member", instance.id, {"name": instance.full_name})
+        instance.delete()
 
     @action(detail=False, methods=["get"], url_path="unpaid")
     def unpaid(self, request):
@@ -121,4 +138,16 @@ class MembershipPaymentViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(mosque=get_mosque(self.request))
+        obj = serializer.save(mosque=get_mosque(self.request))
+        log_action(self.request, "CREATE", "MembershipPayment", obj.id,
+                   {"member": str(obj.member), "amount": float(obj.amount), "date": str(obj.date)})
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "MembershipPayment", obj.id,
+                   {"member": str(obj.member), "amount": float(obj.amount)})
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "MembershipPayment", instance.id,
+                   {"member": str(instance.member), "amount": float(instance.amount)})
+        instance.delete()

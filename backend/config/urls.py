@@ -32,5 +32,9 @@ urlpatterns = [
     path("api/export/", include("core.export_urls", namespace="export")),
     # Backup / Restore (ZIP multi-CSV)
     path("api/backup/", include("core.backup_urls", namespace="backup")),
+    # Audit Log (ADMIN)
+    path("api/audit/", include("core.audit_urls", namespace="audit")),
+    # Notifications email (ADMIN)
+    path("api/notifications/", include("core.notification_urls", namespace="notifications")),
 ]
 

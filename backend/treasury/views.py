@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.permissions import HasMosquePermission
-from core.utils import get_mosque
+from core.utils import get_mosque, log_action
 
 from .models import Campaign, TreasuryTransaction
 from .serializers import CampaignSerializer, TreasuryTransactionSerializer
@@ -31,7 +31,16 @@ class CampaignViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(mosque=get_mosque(self.request))
+        obj = serializer.save(mosque=get_mosque(self.request))
+        log_action(self.request, "CREATE", "Campaign", obj.id, {"name": obj.name})
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "Campaign", obj.id, {"name": obj.name})
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "Campaign", instance.id, {"name": instance.name})
+        instance.delete()
 
 
 class TreasuryTransactionViewSet(viewsets.ModelViewSet):
@@ -91,7 +100,19 @@ class TreasuryTransactionViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(mosque=get_mosque(self.request))
+        obj = serializer.save(mosque=get_mosque(self.request))
+        log_action(self.request, "CREATE", "TreasuryTransaction", obj.id,
+                   {"label": obj.label, "amount": float(obj.amount), "direction": obj.direction})
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "TreasuryTransaction", obj.id,
+                   {"label": obj.label, "amount": float(obj.amount), "direction": obj.direction})
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "TreasuryTransaction", instance.id,
+                   {"label": instance.label, "amount": float(instance.amount)})
+        instance.delete()
 
     @action(detail=False, methods=["get"], url_path="summary")
     def summary(self, request):

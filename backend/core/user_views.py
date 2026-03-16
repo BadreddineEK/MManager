@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.permissions import IsAdminRole
-from core.utils import get_mosque
+from core.utils import get_mosque, log_action
 
 from .models import User
 from .user_serializers import UserCreateSerializer, UserListSerializer, UserUpdateSerializer
@@ -64,6 +64,7 @@ class UserListCreateView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         user = serializer.save()
+        log_action(request, "CREATE", "User", user.id, {"username": user.username, "role": user.role})
         logger.info("USER: créé %s (%s) par %s", user.username, user.role, request.user.username)
         return Response(UserListSerializer(user).data, status=status.HTTP_201_CREATED)
 
@@ -105,6 +106,7 @@ class UserDetailView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         updated = serializer.save()
+        log_action(request, "UPDATE", "User", updated.id, {"username": updated.username, "role": updated.role})
         logger.info("USER: modifié %s par %s", updated.username, request.user.username)
         return Response(UserListSerializer(updated).data)
 
@@ -118,6 +120,9 @@ class UserDetailView(APIView):
         if user.is_superuser and not request.user.is_superuser:
             return Response({"detail": "Impossible de supprimer un superutilisateur."}, status=status.HTTP_403_FORBIDDEN)
         username = user.username
+        role = user.role
+        uid = user.id
         user.delete()
+        log_action(request, "DELETE", "User", uid, {"username": username, "role": role})
         logger.info("USER: supprimé %s par %s", username, request.user.username)
         return Response(status=status.HTTP_204_NO_CONTENT)

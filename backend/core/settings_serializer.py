@@ -54,6 +54,14 @@ class MosqueSettingsSerializer(serializers.ModelSerializer):
             "show_kpi_treasury",
             "show_kpi_campaigns",
             "kpi_refresh_secs",
+            # Notifications SMTP
+            "smtp_host",
+            "smtp_port",
+            "smtp_user",
+            "smtp_password",
+            "smtp_use_tls",
+            "email_from",
+            "email_subject_prefix",
         ]
         read_only_fields = ["id", "mosque_name", "mosque_slug", "mosque_timezone"]
 
