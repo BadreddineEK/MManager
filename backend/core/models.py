@@ -129,6 +129,30 @@ class MosqueSettings(models.Model):
         return f"Paramètres — {self.mosque.name}"
 
 
+def _default_permissions():
+    """Permissions par défaut : aucune (doit être explicitement accordé)."""
+    return {
+        "school":      {"read": False, "write": False, "delete": False},
+        "membership":  {"read": False, "write": False, "delete": False},
+        "treasury":    {"read": False, "write": False, "delete": False},
+        "campaigns":   {"read": False, "write": False, "delete": False},
+        "users":       {"read": False, "write": False, "delete": False},
+        "settings":    {"read": False, "write": False},
+    }
+
+
+def _admin_permissions():
+    """Permissions complètes pour un ADMIN."""
+    return {
+        "school":      {"read": True, "write": True, "delete": True},
+        "membership":  {"read": True, "write": True, "delete": True},
+        "treasury":    {"read": True, "write": True, "delete": True},
+        "campaigns":   {"read": True, "write": True, "delete": True},
+        "users":       {"read": True, "write": True, "delete": True},
+        "settings":    {"read": True, "write": True},
+    }
+
+
 class User(AbstractUser):
     """
     Utilisateur Mosquée Manager.
@@ -141,6 +165,7 @@ class User(AbstractUser):
         ("ADMIN", "Admin"),
         ("TRESORIER", "Trésorier"),
         ("ECOLE_MANAGER", "École Manager"),
+        ("VIEWER", "Lecture seule"),
     ]
 
     mosque = models.ForeignKey(
@@ -157,6 +182,11 @@ class User(AbstractUser):
         blank=True,
         default="",
         verbose_name="Rôle",
+    )
+    permissions_data = models.JSONField(
+        default=_default_permissions,
+        verbose_name="Permissions granulaires",
+        help_text="JSON : {school:{read,write,delete}, membership:…, treasury:…, campaigns:…, users:…, settings:…}",
     )
 
     class Meta:
@@ -178,6 +208,30 @@ class User(AbstractUser):
     @property
     def is_ecole_manager(self) -> bool:
         return self.role == "ECOLE_MANAGER"
+
+    @property
+    def is_viewer(self) -> bool:
+        return self.role == "VIEWER"
+
+    def get_effective_permissions(self) -> dict:
+        """
+        Retourne les permissions effectives.
+        - Superuser / ADMIN → permissions complètes
+        - Autres rôles → permissions_data (granulaires)
+        """
+        if self.is_superuser or self.role == "ADMIN":
+            return _admin_permissions()
+        return self.permissions_data or _default_permissions()
+
+    def can(self, module: str, action: str) -> bool:
+        """
+        Vérifie si l'utilisateur a le droit `action` sur `module`.
+        Ex: user.can('treasury', 'write')
+        """
+        if self.is_superuser or self.role == "ADMIN":
+            return True
+        perms = self.get_effective_permissions()
+        return bool(perms.get(module, {}).get(action, False))
 
 
 class AuditLog(models.Model):

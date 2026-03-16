@@ -1,21 +1,22 @@
 """
-Serializers — Gestion des utilisateurs (étape 10)
-===================================================
+Serializers — Gestion des utilisateurs
+========================================
 UserListSerializer   : lecture (liste + détail), sans mot de passe
 UserCreateSerializer : création avec mot de passe obligatoire
-UserUpdateSerializer : modification (mot de passe optionnel)
+UserUpdateSerializer : modification (mot de passe optionnel, permissions granulaires)
 """
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from .models import User
+from .models import User, _default_permissions
 
 
 class UserListSerializer(serializers.ModelSerializer):
     """Lecture seule — utilisé pour GET list et GET detail."""
 
     mosque_name = serializers.CharField(source="mosque.name", read_only=True, default=None)
+    effective_permissions = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -29,8 +30,13 @@ class UserListSerializer(serializers.ModelSerializer):
             "mosque_name",
             "is_active",
             "date_joined",
+            "permissions_data",
+            "effective_permissions",
         ]
         read_only_fields = fields
+
+    def get_effective_permissions(self, obj):
+        return obj.get_effective_permissions()
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -49,12 +55,16 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["username", "email", "first_name", "last_name", "password", "role", "is_active"]
+        fields = [
+            "username", "email", "first_name", "last_name",
+            "password", "role", "is_active", "permissions_data",
+        ]
 
     def create(self, validated_data):
         password = validated_data.pop("password")
-        # Rattacher à la mosquée de l'admin qui crée
-        mosque = self.context["request"].mosque  # injecté par get_mosque() dans la vue
+        if "permissions_data" not in validated_data:
+            validated_data["permissions_data"] = _default_permissions()
+        mosque = self.context["request"].mosque
         user = User(**validated_data)
         user.mosque = mosque
         user.set_password(password)
@@ -63,7 +73,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    """Modification — mot de passe optionnel."""
+    """Modification — mot de passe optionnel, permissions granulaires."""
 
     password = serializers.CharField(
         write_only=True,
@@ -75,7 +85,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["email", "first_name", "last_name", "role", "is_active", "password"]
+        fields = [
+            "email", "first_name", "last_name",
+            "role", "is_active", "password", "permissions_data",
+        ]
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)

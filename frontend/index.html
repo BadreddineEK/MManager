@@ -886,13 +886,13 @@
     <!-- Dashboard -->
     <div class="nav-group">
       <div class="nav-group-label">Vue d'ensemble</div>
-      <button class="nav-item active" id="nav-school" onclick="showSection('school')">
+      <button class="nav-item active" onclick="showSection('school')">
         <span class="nav-icon">📊</span><span>Tableau de bord</span>
       </button>
     </div>
 
     <!-- École -->
-    <div class="nav-group">
+    <div class="nav-group" id="nav-school">
       <div class="nav-group-label">École coranique</div>
       <button class="nav-item" id="nav-families" onclick="showSection('families')">
         <span class="nav-icon">👨‍👩‍👧</span><span>Familles</span>
@@ -909,7 +909,7 @@
     </div>
 
     <!-- Adhésion -->
-    <div class="nav-group">
+    <div class="nav-group" id="nav-membership">
       <div class="nav-group-label">Adhésion</div>
       <button class="nav-item" id="nav-members" onclick="showSection('members')">
         <span class="nav-icon">🤝</span><span>Adhérents</span>
@@ -1060,7 +1060,7 @@
         <div class="page-header-actions">
           <button class="btn btn-success btn-sm" onclick="exportFile('families','excel')">⬇ Excel</button>
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('families','pdf')">⬇ PDF</button>
-          <button class="btn btn-primary" onclick="openFamilyModal()">+ Famille</button>
+          <button id="btn-add-school" class="btn btn-primary" onclick="openFamilyModal()">+ Famille</button>
         </div>
       </div>
       <div class="page-body">
@@ -1169,7 +1169,7 @@
           </select>
           <button class="btn btn-success btn-sm" onclick="exportFile('members','excel')">⬇ Excel</button>
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('members','pdf')">⬇ PDF</button>
-          <button class="btn btn-primary" onclick="openMemberModal()">+ Adhérent</button>
+          <button id="btn-add-member" class="btn btn-primary" onclick="openMemberModal()">+ Adhérent</button>
         </div>
       </div>
       <div class="page-body">
@@ -1242,7 +1242,7 @@
           <button class="btn btn-success btn-sm" onclick="exportFile('treasury','excel')">⬇ Excel</button>
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('treasury','pdf')">⬇ PDF</button>
           <button class="btn btn-sm" onclick="openAnnualReceiptModal()" title="Générer un reçu fiscal annuel">🧾 Récap annuel</button>
-          <button class="btn btn-primary" onclick="openTreasuryModal()">+ Transaction</button>
+          <button id="btn-add-treasury" class="btn btn-primary" onclick="openTreasuryModal()">+ Transaction</button>
         </div>
       </div>
       <div class="page-body">
@@ -1309,14 +1309,14 @@
           <div class="breadcrumb">Administration · Gestion des accès</div>
         </div>
         <div class="page-header-actions">
-          <button class="btn btn-primary" onclick="openUserModal()">+ Utilisateur</button>
+          <button id="btn-add-user" class="btn btn-primary" onclick="openUserModal()">+ Utilisateur</button>
         </div>
       </div>
       <div class="page-body">
         <div id="users-alert"></div>
         <div class="card table-wrapper">
           <table>
-            <thead><tr><th>Utilisateur</th><th>Email</th><th>Nom complet</th><th>Rôle</th><th>Mosquée</th><th>Actif</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Utilisateur</th><th>Email</th><th>Nom complet</th><th>Rôle</th><th>Modules accessibles</th><th>Actif</th><th>Actions</th></tr></thead>
             <tbody id="users-table"></tbody>
           </table>
         </div>
@@ -1331,7 +1331,7 @@
           <p class="page-sub">Gérez vos collectes avec objectif et suivi de progression</p>
         </div>
         <div class="page-header-right">
-          <button class="btn btn-primary" onclick="openCampaignModal()">+ Nouvelle cagnotte</button>
+          <button id="btn-add-campaign" class="btn btn-primary" onclick="openCampaignModal()">+ Nouvelle cagnotte</button>
         </div>
       </div>
 
@@ -1370,7 +1370,7 @@
         </div>
         <div class="page-header-actions">
           <button class="btn btn-sm" onclick="loadSettings()">↺ Recharger</button>
-          <button class="btn btn-primary" onclick="saveSettings()">💾 Enregistrer</button>
+          <button id="btn-save-settings" class="btn btn-primary" onclick="saveSettings()">💾 Enregistrer</button>
         </div>
       </div>
       <div class="page-body">
@@ -1742,7 +1742,7 @@
 
 <!-- Modal Utilisateur -->
 <div class="modal-overlay" id="modal-user">
-  <div class="modal">
+  <div class="modal" style="max-width:560px;">
     <div class="modal-header">
       <h3 id="user-modal-title">Créer un utilisateur</h3>
       <button class="modal-close" onclick="closeModal('modal-user')">✕</button>
@@ -1762,12 +1762,33 @@
       <label>Mot de passe <span id="user-modal-pw-hint" style="color:var(--muted);font-size:0.78em;font-weight:400;"></span></label>
       <input type="password" id="user-modal-password" placeholder="••••••••" autocomplete="new-password" />
       <label>Rôle *</label>
-      <select id="user-modal-role">
-        <option value="ADMIN">🔑 Admin</option>
+      <select id="user-modal-role" onchange="onUserRoleChange()">
+        <option value="ADMIN">🔑 Admin (accès complet)</option>
         <option value="TRESORIER">💼 Trésorier</option>
         <option value="ECOLE_MANAGER">🎓 École Manager</option>
+        <option value="VIEWER">👁️ Lecture seule</option>
       </select>
-      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500;">
+
+      <!-- Permissions granulaires — visible si rôle ≠ ADMIN -->
+      <div id="user-modal-perms-section" style="margin-top:16px;">
+        <label style="font-weight:600;font-size:0.85rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;">Accès par module</label>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">Cochez les droits accordés à cet utilisateur.</div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;">Module</th>
+              <th style="text-align:center;padding:6px 4px;color:var(--muted);font-weight:500;">👁 Voir</th>
+              <th style="text-align:center;padding:6px 4px;color:var(--muted);font-weight:500;">✏️ Modifier</th>
+              <th style="text-align:center;padding:6px 4px;color:var(--muted);font-weight:500;">🗑 Supprimer</th>
+            </tr>
+          </thead>
+          <tbody id="user-modal-perms-body">
+            <!-- généré par JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500; margin-top:12px;">
         <input type="checkbox" id="user-modal-active" checked style="width:auto; margin:0;" />
         Compte actif
       </label>
@@ -1990,6 +2011,7 @@ async function login() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-screen').classList.remove('hidden');
     loadDashboard();
+    loadCurrentUser(); // RBAC — charge les permissions et applique les restrictions UI
   } catch (e) {
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
@@ -3426,7 +3448,7 @@ if (accessToken) {
       const initials = (payload.email || 'U')[0].toUpperCase();
       document.getElementById('user-avatar').textContent = initials;
       document.getElementById('user-name-display').textContent = payload.email || '—';
-      const _rl = { ADMIN: 'Admin', TRESORIER: 'Trésorier', ECOLE_MANAGER: 'École Manager' };
+      const _rl = { ADMIN: 'Admin', TRESORIER: 'Trésorier', ECOLE_MANAGER: 'École Manager', VIEWER: 'Lecture seule' };
       document.getElementById('user-role-display').textContent = _rl[payload.role] || payload.role || '—';
       if (payload.mosque_slug) {
         document.getElementById('dashboard-mosque-name').textContent = payload.mosque_slug;
@@ -3434,6 +3456,7 @@ if (accessToken) {
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('app-screen').classList.remove('hidden');
       loadDashboard();
+      loadCurrentUser(); // RBAC
     } else {
       localStorage.clear();
     }
@@ -3444,7 +3467,76 @@ if (accessToken) {
 
 // ── Utilisateurs ─────────────────────────────────────────────────────────────
 
-const ROLE_LABELS = { ADMIN: '🔑 Admin', TRESORIER: '💼 Trésorier', ECOLE_MANAGER: '🎓 École Manager', '': '—' };
+const ROLE_LABELS = {
+  ADMIN: '🔑 Admin', TRESORIER: '💼 Trésorier',
+  ECOLE_MANAGER: '🎓 École Manager', VIEWER: '👁️ Lecture seule', '': '—'
+};
+const ROLE_BADGE = {
+  ADMIN: 'badge-red', TRESORIER: 'badge-blue',
+  ECOLE_MANAGER: 'badge-green', VIEWER: 'badge-gray', '': ''
+};
+
+// Modules disponibles avec libellé et existence de la permission "delete"
+const PERM_MODULES = [
+  { key: 'school',      label: '🎓 École',        hasDelete: true  },
+  { key: 'membership',  label: '🤝 Cotisations',   hasDelete: true  },
+  { key: 'treasury',    label: '💰 Trésorerie',    hasDelete: true  },
+  { key: 'campaigns',   label: '🎯 Cagnottes',     hasDelete: true  },
+  { key: 'users',       label: '👥 Utilisateurs',  hasDelete: true  },
+  { key: 'settings',    label: '⚙️ Paramètres',    hasDelete: false },
+];
+
+// currentUser : chargé après login, utilisé pour RBAC côté frontend
+let currentUser = null;
+
+async function loadCurrentUser() {
+  const res = await apiFetch('/users/me/');
+  if (!res || !res.ok) return;
+  currentUser = await res.json();
+  applyRBAC();
+}
+
+function applyRBAC() {
+  if (!currentUser) return;
+  const perms = currentUser.effective_permissions || {};
+  const role   = currentUser.role || '';
+  const isAdmin = role === 'ADMIN';
+
+  // Nav items — cacher si pas de droit "read" sur le module
+  const navMap = {
+    'nav-school':      perms.school?.read,
+    'nav-membership':  perms.membership?.read,
+    'nav-treasury':    perms.treasury?.read,
+    'nav-campaigns':   perms.campaigns?.read,
+    'nav-users':       perms.users?.read,
+    'nav-settings':    perms.settings?.read,
+  };
+  Object.entries(navMap).forEach(([id, allowed]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = allowed === false ? 'none' : '';
+  });
+
+  // Boutons d'ajout — cacher si pas de droit "write"
+  const writeBtns = [
+    ['btn-add-school',      perms.school?.write],
+    ['btn-add-member',      perms.membership?.write],
+    ['btn-add-treasury',    perms.treasury?.write],
+    ['btn-add-campaign',    perms.campaigns?.write],
+    ['btn-add-user',        perms.users?.write],
+  ];
+  writeBtns.forEach(([id, allowed]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = allowed === false ? 'none' : '';
+  });
+
+  // Bouton Enregistrer des paramètres
+  const saveSettingsBtn = document.getElementById('btn-save-settings');
+  if (saveSettingsBtn) saveSettingsBtn.style.display = perms.settings?.write === false ? 'none' : '';
+
+  // Mettre à jour l'affichage du rôle dans la navbar
+  const roleDisplay = document.getElementById('user-role-display');
+  if (roleDisplay) roleDisplay.textContent = ROLE_LABELS[role] || role || '—';
+}
 
 async function loadUsers() {
   document.getElementById('users-table').innerHTML = skeletonRows(3, 7);
@@ -3458,6 +3550,11 @@ async function loadUsers() {
     return;
   }
   users.forEach((u, i) => {
+    const perms = u.effective_permissions || {};
+    const permsSummary = PERM_MODULES
+      .filter(m => perms[m.key]?.read)
+      .map(m => m.label)
+      .join(', ') || '—';
     const tr = document.createElement('tr');
     tr.className = 'fade-in';
     tr.style.animationDelay = `${i * 30}ms`;
@@ -3465,8 +3562,8 @@ async function loadUsers() {
       <td><strong>${u.username}</strong></td>
       <td>${u.email}</td>
       <td>${u.first_name || ''} ${u.last_name || ''}</td>
-      <td><span class="badge badge-purple">${ROLE_LABELS[u.role] || u.role}</span></td>
-      <td>${u.mosque_name || '<span class="text-muted">global</span>'}</td>
+      <td><span class="badge ${ROLE_BADGE[u.role] || 'badge-gray'}">${ROLE_LABELS[u.role] || u.role}</span></td>
+      <td style="font-size:0.78rem;color:var(--muted);max-width:200px;">${u.role === 'ADMIN' ? '<em>Tout</em>' : permsSummary}</td>
       <td>${u.is_active ? '<span class="badge badge-green">✅ Actif</span>' : '<span class="badge badge-red">❌ Inactif</span>'}</td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="openUserModal(${u.id})" title="Modifier">✏️</button>
@@ -3474,6 +3571,114 @@ async function loadUsers() {
       </div></td>`;
     tbody.appendChild(tr);
   });
+}
+
+function renderPermsTable(permsData) {
+  const tbody = document.getElementById('user-modal-perms-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  PERM_MODULES.forEach(mod => {
+    const p = permsData?.[mod.key] || {};
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    tr.innerHTML = `
+      <td style="padding:7px 8px;font-weight:500;">${mod.label}</td>
+      <td style="text-align:center;padding:7px 4px;">
+        <input type="checkbox" data-mod="${mod.key}" data-act="read"   ${p.read   ? 'checked' : ''} onchange="syncPermCheckbox(this)" />
+      </td>
+      <td style="text-align:center;padding:7px 4px;">
+        <input type="checkbox" data-mod="${mod.key}" data-act="write"  ${p.write  ? 'checked' : ''} onchange="syncPermCheckbox(this)" />
+      </td>
+      <td style="text-align:center;padding:7px 4px;">
+        ${mod.hasDelete
+          ? `<input type="checkbox" data-mod="${mod.key}" data-act="delete" ${p.delete ? 'checked' : ''} onchange="syncPermCheckbox(this)" />`
+          : '<span style="color:var(--muted);">—</span>'
+        }
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function syncPermCheckbox(cb) {
+  // "write" implique "read" ; "delete" implique "write" et "read"
+  const mod = cb.dataset.mod;
+  const act = cb.dataset.act;
+  const checked = cb.checked;
+  const getBox = a => document.querySelector(`input[data-mod="${mod}"][data-act="${a}"]`);
+  if (checked) {
+    if (act === 'write')  { const r = getBox('read');  if (r) r.checked = true; }
+    if (act === 'delete') { const r = getBox('read'); const w = getBox('write'); if (r) r.checked = true; if (w) w.checked = true; }
+  } else {
+    if (act === 'read')  { const w = getBox('write'); const d = getBox('delete'); if (w) w.checked = false; if (d) d.checked = false; }
+    if (act === 'write') { const d = getBox('delete'); if (d) d.checked = false; }
+  }
+}
+
+function readPermsFromModal() {
+  const perms = {};
+  PERM_MODULES.forEach(mod => {
+    const r = document.querySelector(`input[data-mod="${mod.key}"][data-act="read"]`);
+    const w = document.querySelector(`input[data-mod="${mod.key}"][data-act="write"]`);
+    const d = document.querySelector(`input[data-mod="${mod.key}"][data-act="delete"]`);
+    perms[mod.key] = {
+      read:   r ? r.checked : false,
+      write:  w ? w.checked : false,
+      ...(mod.hasDelete ? { delete: d ? d.checked : false } : {}),
+    };
+  });
+  return perms;
+}
+
+function onUserRoleChange() {
+  const role = document.getElementById('user-modal-role').value;
+  const section = document.getElementById('user-modal-perms-section');
+  if (role === 'ADMIN') {
+    // Admin = tout coché, désactiver les cases (informatif)
+    section.style.opacity = '0.4';
+    section.style.pointerEvents = 'none';
+    renderPermsTable({
+      school:     { read: true, write: true, delete: true },
+      membership: { read: true, write: true, delete: true },
+      treasury:   { read: true, write: true, delete: true },
+      campaigns:  { read: true, write: true, delete: true },
+      users:      { read: true, write: true, delete: true },
+      settings:   { read: true, write: true },
+    });
+  } else {
+    section.style.opacity = '1';
+    section.style.pointerEvents = '';
+    // Presets par rôle
+    if (role === 'TRESORIER') {
+      renderPermsTable({
+        school:     { read: false, write: false, delete: false },
+        membership: { read: true,  write: true,  delete: false },
+        treasury:   { read: true,  write: true,  delete: false },
+        campaigns:  { read: true,  write: true,  delete: false },
+        users:      { read: false, write: false, delete: false },
+        settings:   { read: false, write: false },
+      });
+    } else if (role === 'ECOLE_MANAGER') {
+      renderPermsTable({
+        school:     { read: true,  write: true,  delete: false },
+        membership: { read: false, write: false, delete: false },
+        treasury:   { read: false, write: false, delete: false },
+        campaigns:  { read: false, write: false, delete: false },
+        users:      { read: false, write: false, delete: false },
+        settings:   { read: false, write: false },
+      });
+    } else if (role === 'VIEWER') {
+      renderPermsTable({
+        school:     { read: true,  write: false, delete: false },
+        membership: { read: true,  write: false, delete: false },
+        treasury:   { read: true,  write: false, delete: false },
+        campaigns:  { read: true,  write: false, delete: false },
+        users:      { read: false, write: false, delete: false },
+        settings:   { read: false, write: false },
+      });
+    } else {
+      renderPermsTable({});
+    }
+  }
 }
 
 function openUserModal(userId = null) {
@@ -3497,19 +3702,32 @@ function openUserModal(userId = null) {
       document.getElementById('user-modal-lastname').value = u.last_name || '';
       document.getElementById('user-modal-role').value = u.role || '';
       document.getElementById('user-modal-active').checked = u.is_active;
+      // Charger les permissions depuis permissions_data (pas effective, pour garder les custom)
+      const permsData = u.role === 'ADMIN' ? u.effective_permissions : (u.permissions_data || {});
+      const section = document.getElementById('user-modal-perms-section');
+      if (u.role === 'ADMIN') {
+        section.style.opacity = '0.4'; section.style.pointerEvents = 'none';
+      } else {
+        section.style.opacity = '1'; section.style.pointerEvents = '';
+      }
+      renderPermsTable(permsData);
     });
+  } else {
+    onUserRoleChange(); // preset par défaut
   }
   openModal('modal-user');
 }
 
 async function saveUser() {
   const userId = document.getElementById('user-modal-id').value;
+  const role = document.getElementById('user-modal-role').value;
   const payload = {
-    email:      document.getElementById('user-modal-email').value.trim(),
-    first_name: document.getElementById('user-modal-firstname').value.trim(),
-    last_name:  document.getElementById('user-modal-lastname').value.trim(),
-    role:       document.getElementById('user-modal-role').value,
-    is_active:  document.getElementById('user-modal-active').checked,
+    email:            document.getElementById('user-modal-email').value.trim(),
+    first_name:       document.getElementById('user-modal-firstname').value.trim(),
+    last_name:        document.getElementById('user-modal-lastname').value.trim(),
+    role:             role,
+    is_active:        document.getElementById('user-modal-active').checked,
+    permissions_data: role === 'ADMIN' ? {} : readPermsFromModal(),
   };
   const pw = document.getElementById('user-modal-password').value;
   if (pw) payload.password = pw;
@@ -3525,7 +3743,6 @@ async function saveUser() {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     toast(JSON.stringify(err), 'error', 5000);
-    closeModal('modal-user');
     return;
   }
   closeModal('modal-user');
