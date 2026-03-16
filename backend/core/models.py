@@ -89,6 +89,26 @@ class MosqueSettings(models.Model):
         verbose_name="Année scolaire active",
         help_text='Ex : "2025-2026"',
     )
+    # Reçus fiscaux
+    receipt_logo_url = models.URLField(
+        blank=True, default="",
+        verbose_name="URL du logo (reçus PDF)",
+        help_text="URL publique vers le logo de la mosquée (PNG/JPG recommandé)",
+    )
+    receipt_address = models.TextField(
+        blank=True, default="",
+        verbose_name="Adresse (reçus PDF)",
+        help_text="Adresse complète de la mosquée affichée sur les reçus",
+    )
+    receipt_phone = models.CharField(
+        max_length=30, blank=True, default="",
+        verbose_name="Téléphone (reçus PDF)",
+    )
+    receipt_legal_mention = models.TextField(
+        blank=True, default="",
+        verbose_name="Mention légale (reçus PDF)",
+        help_text='Ex : "Association loi 1901 — Reçu de don déductible à 66% dans la limite de 20% du revenu imposable"',
+    )
 
     class Meta:
         verbose_name = "Paramètres mosquée"

@@ -43,6 +43,11 @@ class MosqueSettingsSerializer(serializers.ModelSerializer):
             "membership_fee_mode",
             # Annee scolaire
             "active_school_year_label",
+            # Reçus fiscaux
+            "receipt_logo_url",
+            "receipt_address",
+            "receipt_phone",
+            "receipt_legal_mention",
         ]
         read_only_fields = ["id", "mosque_name", "mosque_slug", "mosque_timezone"]
 

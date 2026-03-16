@@ -1241,6 +1241,7 @@
         <div class="page-header-actions">
           <button class="btn btn-success btn-sm" onclick="exportFile('treasury','excel')">⬇ Excel</button>
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('treasury','pdf')">⬇ PDF</button>
+          <button class="btn btn-sm" onclick="openAnnualReceiptModal()" title="Générer un reçu fiscal annuel">🧾 Récap annuel</button>
           <button class="btn btn-primary" onclick="openTreasuryModal()">+ Transaction</button>
         </div>
       </div>
@@ -1409,6 +1410,22 @@
             <option value="per_person">Par personne</option>
             <option value="per_family">Par famille</option>
           </select>
+        </div>
+
+        <div class="settings-section">
+          <h3>🧾 Reçus fiscaux PDF</h3>
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+            Ces informations apparaîtront sur tous les reçus générés. Laissez vide les champs non pertinents.
+          </p>
+          <label>URL du logo <span style="color:var(--muted);font-size:0.8rem;">optionnel — lien public vers PNG/JPG</span></label>
+          <input type="url" id="s-receipt-logo" placeholder="https://..." />
+          <label>Adresse de la mosquée</label>
+          <textarea id="s-receipt-address" placeholder="12 rue de la Paix&#10;01800 Meximieux" rows="3"></textarea>
+          <label>Téléphone</label>
+          <input type="text" id="s-receipt-phone" placeholder="04 74 00 00 00" />
+          <label>Mention légale <span style="color:var(--muted);font-size:0.8rem;">apparaît en bas du reçu</span></label>
+          <textarea id="s-receipt-legal" rows="3"
+            placeholder="Association loi 1901 — Don déductible à 66% dans la limite de 20% du revenu imposable (art. 200 CGI)."></textarea>
         </div>
 
         <!-- ── SAUVEGARDE / RESTAURATION ─────────────────────────── -->
@@ -1710,6 +1727,39 @@
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-user')">Annuler</button>
       <button class="btn btn-primary" onclick="saveUser()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL REÇU ANNUEL ══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-annual-receipt">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h3>🧾 Récapitulatif annuel des dons</h3>
+      <button class="modal-close" onclick="closeModal('modal-annual-receipt')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+        Génère un PDF récapitulatif de toutes les entrées (dons, cotisations…) pour une année donnée.
+        Les informations mosquée proviennent des <strong>Paramètres → Reçus fiscaux</strong>.
+      </p>
+      <label>Nom du donateur / contribuable <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+      <input type="text" id="annual-receipt-donor" placeholder="Ex: Ahmed Benali" />
+      <label>Année *</label>
+      <input type="number" id="annual-receipt-year" min="2020" max="2099" />
+      <label>Catégorie <span style="color:var(--muted);font-size:0.8rem;">optionnel — toutes si vide</span></label>
+      <select id="annual-receipt-cat">
+        <option value="">Toutes les entrées</option>
+        <option value="don">Don / Sadaqa uniquement</option>
+        <option value="cotisation">Cotisation adhérent</option>
+        <option value="ecole">École coranique</option>
+        <option value="subvention">Subvention</option>
+        <option value="autre">Autre</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-annual-receipt')">Annuler</button>
+      <button class="btn btn-primary" onclick="downloadAnnualReceipt()">⬇ Générer PDF</button>
     </div>
   </div>
 </div>
@@ -2891,6 +2941,7 @@ function renderTreasury(txs) {
       <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(tx.note)||''}">${esc(tx.note) || '<span class="text-muted">—</span>'}</td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editTreasuryTransaction(${tx.id})" title="Modifier">✏️</button>
+        <button class="btn btn-sm btn-icon" onclick="downloadTxReceipt(${tx.id}, '${esc(tx.label).replace(/'/g,"\\'")}' )" title="Reçu PDF">🧾</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteTreasuryTransaction(${tx.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>`;
@@ -2984,6 +3035,71 @@ async function deleteTreasuryTransaction(id) {
   await apiFetch(`/treasury/transactions/${id}/`, 'DELETE');
   toast('Transaction supprimée', 'info');
   loadTreasury();
+}
+
+// ── Reçus fiscaux PDF ─────────────────────────────────────────────────────────
+
+async function downloadTxReceipt(id, label) {
+  const donor = prompt(`Reçu pour "${label}"\n\nNom du donateur (laisser vide si non applicable) :`);
+  if (donor === null) return; // annulé
+  showProgress();
+  const donorParam = donor.trim() ? `?donor=${encodeURIComponent(donor.trim())}` : '';
+  try {
+    const res = await fetch(`${API}/treasury/receipt/transaction/${id}/${donorParam}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) { toast('Erreur génération PDF', 'error'); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `recu_${id}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Reçu PDF téléchargé ✓');
+  } catch (e) {
+    toast('Erreur : ' + e.message, 'error');
+  } finally {
+    hideProgress();
+  }
+}
+
+function openAnnualReceiptModal() {
+  document.getElementById('annual-receipt-donor').value = '';
+  document.getElementById('annual-receipt-year').value  = new Date().getFullYear();
+  document.getElementById('annual-receipt-cat').value   = '';
+  openModal('modal-annual-receipt');
+}
+
+async function downloadAnnualReceipt() {
+  const donor = document.getElementById('annual-receipt-donor').value.trim();
+  const year  = document.getElementById('annual-receipt-year').value;
+  const cat   = document.getElementById('annual-receipt-cat').value;
+  let url = `/api/treasury/receipt/annual/?year=${year}`;
+  if (donor) url += `&donor=${encodeURIComponent(donor)}`;
+  if (cat)   url += `&category=${cat}`;
+  showProgress();
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.detail || 'Aucune transaction trouvée pour cette période', 'error', 5000);
+      return;
+    }
+    const blob = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objUrl;
+    a.download = `recap_dons_${year}.pdf`;
+    a.click();
+    URL.revokeObjectURL(objUrl);
+    closeModal('modal-annual-receipt');
+    toast('Récapitulatif PDF téléchargé ✓');
+  } catch (e) {
+    toast('Erreur : ' + e.message, 'error');
+  } finally {
+    hideProgress();
+  }
 }
 
 // ── Cagnottes ─────────────────────────────────────────────────────────────────
@@ -3188,6 +3304,10 @@ async function loadSettings() {
   document.getElementById('s-school-levels').value = levels;
   document.getElementById('s-membership-fee').value = data.membership_fee_amount || 0;
   document.getElementById('s-membership-mode').value = data.membership_fee_mode || 'per_person';
+  document.getElementById('s-receipt-logo').value    = data.receipt_logo_url    || '';
+  document.getElementById('s-receipt-address').value = data.receipt_address     || '';
+  document.getElementById('s-receipt-phone').value   = data.receipt_phone       || '';
+  document.getElementById('s-receipt-legal').value   = data.receipt_legal_mention || '';
 }
 
 async function saveSettings() {
@@ -3204,6 +3324,10 @@ async function saveSettings() {
     school_levels: levels,
     membership_fee_amount: parseFloat(document.getElementById('s-membership-fee').value) || 0,
     membership_fee_mode: document.getElementById('s-membership-mode').value,
+    receipt_logo_url:      document.getElementById('s-receipt-logo').value.trim(),
+    receipt_address:       document.getElementById('s-receipt-address').value.trim(),
+    receipt_phone:         document.getElementById('s-receipt-phone').value.trim(),
+    receipt_legal_mention: document.getElementById('s-receipt-legal').value.trim(),
   };
   const res = await apiFetch('/settings/', 'PUT', payload);
   if (!res) return;
