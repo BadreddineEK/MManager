@@ -18,7 +18,7 @@ from rest_framework.views import APIView
 from core.models import Mosque
 from membership.models import Member, MembershipPayment, MembershipYear
 from school.models import Child, Family, SchoolPayment, SchoolYear
-from treasury.models import TreasuryTransaction
+from treasury.models import Campaign, TreasuryTransaction
 
 
 class KPIMosqueListView(APIView):
@@ -149,6 +149,23 @@ class KPISummaryView(APIView):
             else:
                 by_category[cat]["out"] += float(tx["amount"])
 
+        # ── Cagnottes actives visibles KPI ───────────────────────────────────
+        campaigns_qs = Campaign.objects.filter(mosque=mosque, show_on_kpi=True)
+        campaigns_data = []
+        for c in campaigns_qs:
+            campaigns_data.append({
+                "id": c.id,
+                "name": c.name,
+                "description": c.description,
+                "icon": c.icon,
+                "goal_amount": float(c.goal_amount) if c.goal_amount else None,
+                "collected_amount": c.collected_amount,
+                "progress_percent": c.progress_percent,
+                "status": c.status,
+                "start_date": str(c.start_date) if c.start_date else None,
+                "end_date": str(c.end_date) if c.end_date else None,
+            })
+
         # ── Reponse finale (aucun PII) ────────────────────────────────────────
         return Response({
             "mosque": mosque.name,
@@ -177,4 +194,5 @@ class KPISummaryView(APIView):
                 "balance": round(total_in - total_out, 2),
                 "by_category": by_category,
             },
+            "campaigns": campaigns_data,
         })

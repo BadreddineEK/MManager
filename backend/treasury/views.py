@@ -1,6 +1,5 @@
 """
-Vues Tresorerie -- API REST transactions financieres
-=====================================================
+Vues Tresorerie -- API REST transactions financieres + cagnottes
 """
 from django.db.models import Q, Sum
 from rest_framework import filters, status, viewsets
@@ -11,8 +10,28 @@ from rest_framework.response import Response
 from core.permissions import HasMosquePermission
 from core.utils import get_mosque
 
-from .models import TreasuryTransaction
-from .serializers import TreasuryTransactionSerializer
+from .models import Campaign, TreasuryTransaction
+from .serializers import CampaignSerializer, TreasuryTransactionSerializer
+
+
+class CampaignViewSet(viewsets.ModelViewSet):
+    """CRUD cagnottes / collectes."""
+
+    serializer_class = CampaignSerializer
+    permission_classes = [IsAuthenticated, HasMosquePermission]
+
+    def get_queryset(self):
+        mosque = get_mosque(self.request)
+        if mosque is None:
+            return Campaign.objects.none()
+        qs = Campaign.objects.filter(mosque=mosque)
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(mosque=get_mosque(self.request))
 
 
 class TreasuryTransactionViewSet(viewsets.ModelViewSet):
@@ -56,6 +75,13 @@ class TreasuryTransactionViewSet(viewsets.ModelViewSet):
         search = self.request.query_params.get("search")
         if search:
             qs = qs.filter(Q(label__icontains=search) | Q(note__icontains=search))
+
+        # Filtrer par cagnotte spécifique ou toutes les tx liées à une cagnotte
+        campaign_id = self.request.query_params.get("campaign")
+        if campaign_id:
+            qs = qs.filter(campaign_id=campaign_id)
+        elif self.request.query_params.get("has_campaign"):
+            qs = qs.filter(campaign__isnull=False)
 
         return qs
 

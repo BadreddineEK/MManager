@@ -737,6 +737,88 @@
       to   { opacity: 1; transform: translateY(0); }
     }
     .stat-card { animation: fadeInUp 0.3s ease forwards; opacity: 0; }
+
+    /* ══ CAGNOTTES ══════════════════════════════════════════════════ */
+    .campaigns-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 4px;
+    }
+    .campaign-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      animation: fadeInUp 0.3s ease forwards;
+      opacity: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+    .campaign-card.closed { opacity: 0.65; }
+    .campaign-card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .campaign-icon-big {
+      font-size: 2rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .campaign-card-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+    }
+    .campaign-card-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .campaign-progress-bar {
+      height: 10px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .campaign-progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+    }
+    .campaign-progress-fill.complete {
+      background: linear-gradient(90deg, #16a34a, #4ade80);
+    }
+    .campaign-amounts {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .campaign-amounts strong { color: var(--text); }
+    .campaign-badge-closed {
+      position: absolute;
+      top: 14px; right: 14px;
+      background: var(--red-soft);
+      color: var(--red);
+      border-radius: 99px;
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      font-weight: 600;
+    }
+    .campaign-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    @media (max-width: 768px) {
+      .campaigns-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -843,6 +925,9 @@
       <div class="nav-group-label">Finance</div>
       <button class="nav-item" id="nav-treasury" onclick="showSection('treasury')">
         <span class="nav-icon">🏦</span><span>Trésorerie</span>
+      </button>
+      <button class="nav-item" id="nav-campaigns" onclick="showSection('campaigns')">
+        <span class="nav-icon">🎯</span><span>Cagnottes</span>
       </button>
     </div>
 
@@ -1230,6 +1315,44 @@
       </div>
     </div>
 
+    <!-- ── Cagnottes ── -->
+    <div id="section-campaigns" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>🎯 Cagnottes &amp; Collectes</h2>
+          <p class="page-sub">Gérez vos collectes avec objectif et suivi de progression</p>
+        </div>
+        <div class="page-header-right">
+          <button class="btn btn-primary" onclick="openCampaignModal()">+ Nouvelle cagnotte</button>
+        </div>
+      </div>
+
+      <!-- Grille des cagnottes -->
+      <div id="campaigns-grid" class="campaigns-grid"></div>
+
+      <!-- Liste des transactions liées -->
+      <div style="margin-top:32px;">
+        <div class="page-header" style="margin-bottom:12px;">
+          <div class="page-header-left">
+            <h3 style="font-size:1rem;font-weight:600;">Transactions liées à une cagnotte</h3>
+          </div>
+          <div class="page-header-right">
+            <select id="campaign-tx-filter" onchange="loadCampaignTransactions()" style="min-width:200px;">
+              <option value="">Toutes les cagnottes</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table">
+            <thead><tr>
+              <th>Date</th><th>Libellé</th><th>Cagnotte</th><th>Sens</th><th>Montant</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="campaign-tx-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Paramètres ── -->
     <div id="section-settings" class="hidden">
       <div class="page-header">
@@ -1526,6 +1649,10 @@
       </select>
       <label>Note</label>
       <textarea id="trs-note" placeholder="(optionnel)"></textarea>
+      <label>Cagnotte liée <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+      <select id="trs-campaign">
+        <option value="">— Aucune cagnotte —</option>
+      </select>
       <div id="modal-trs-error" class="alert alert-error hidden"></div>
     </div>
     <div class="modal-footer">
@@ -1574,7 +1701,58 @@
   </div>
 </div>
 
-<!-- ══ JAVASCRIPT ══════════════════════════════════════════════════════════ -->
+<!-- ══ MODAL CAGNOTTE ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-campaign">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="modal-campaign-title">Nouvelle cagnotte</h3>
+      <button class="modal-close" onclick="closeModal('modal-campaign')">✕</button>
+    </div>
+    <input type="hidden" id="campaign-id" />
+    <div id="modal-campaign-error" class="alert alert-error hidden"></div>
+    <div style="display:grid;grid-template-columns:60px 1fr;gap:12px;align-items:end;">
+      <div>
+        <label>Icône</label>
+        <input type="text" id="campaign-icon" value="🎯" maxlength="4" style="font-size:1.5rem;text-align:center;padding:8px;" />
+      </div>
+      <div>
+        <label>Nom de la cagnotte *</label>
+        <input type="text" id="campaign-name" placeholder="Ex: Cagnotte Ramadan 2026" />
+      </div>
+    </div>
+    <label>Description</label>
+    <textarea id="campaign-description" rows="2" placeholder="Objectif, contexte…" style="width:100%;resize:vertical;"></textarea>
+    <label>Objectif (€) <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+    <input type="number" id="campaign-goal" min="0" step="0.01" placeholder="5000" />
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div>
+        <label>Date de début</label>
+        <input type="date" id="campaign-start" />
+      </div>
+      <div>
+        <label>Date de fin</label>
+        <input type="date" id="campaign-end" />
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+      <div>
+        <label>Statut</label>
+        <select id="campaign-status">
+          <option value="active">✅ Active</option>
+          <option value="closed">🔒 Clôturée</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding-top:24px;">
+        <input type="checkbox" id="campaign-show-kpi" checked style="width:auto;margin:0;" />
+        <label for="campaign-show-kpi" style="margin:0;cursor:pointer;">Visible sur KPI</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-campaign')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveCampaign()">Enregistrer</button>
+    </div>
+  </div>
+</div>
 <script>
 // En dev (fichier ouvert directement) → localhost:8000
 // En prod (servi par Nginx) → URL relative /api (même origine)
@@ -1753,7 +1931,8 @@ function setBottomNav(activeId) {
 function showSection(name) {
   if (window.innerWidth <= 768) closeSidebar();
   const allSections = ['school', 'families', 'children', 'payments', 'arrears',
-                       'members', 'memberships', 'unpaid-members', 'treasury', 'users', 'settings'];
+                       'members', 'memberships', 'unpaid-members', 'treasury',
+                       'campaigns', 'users', 'settings'];
   allSections.forEach(s => {
     document.getElementById(`section-${s}`).classList.add('hidden');
     const nav = document.getElementById(`nav-${s}`);
@@ -1771,6 +1950,7 @@ function showSection(name) {
   if (name === 'memberships') loadMembershipPayments();
   if (name === 'unpaid-members') loadUnpaidMembers();
   if (name === 'treasury') loadTreasury();
+  if (name === 'campaigns') loadCampaigns();
   if (name === 'users') loadUsers();
   if (name === 'settings') loadSettings();
 }
@@ -2703,9 +2883,19 @@ function openTreasuryModal() {
   document.getElementById('trs-amount').value = '';
   document.getElementById('trs-method').value = 'cash';
   document.getElementById('trs-note').value = '';
+  document.getElementById('trs-campaign').value = '';
+  _fillCampaignSelect();
   document.getElementById('modal-treasury-title').textContent = 'Ajouter une transaction';
   document.getElementById('modal-trs-error').classList.add('hidden');
   openModal('modal-treasury');
+}
+
+function _fillCampaignSelect() {
+  const sel = document.getElementById('trs-campaign');
+  sel.innerHTML = '<option value="">— Aucune cagnotte —</option>';
+  (allCampaigns || []).forEach(c => {
+    sel.innerHTML += `<option value="${c.id}">${esc(c.icon)} ${esc(c.name)}</option>`;
+  });
 }
 
 async function editTreasuryTransaction(id) {
@@ -2720,6 +2910,9 @@ async function editTreasuryTransaction(id) {
   document.getElementById('trs-amount').value = tx.amount;
   document.getElementById('trs-method').value = tx.method;
   document.getElementById('trs-note').value = tx.note || '';
+  document.getElementById('trs-campaign').value = tx.campaign || '';
+  _fillCampaignSelect();
+  if (tx.campaign) document.getElementById('trs-campaign').value = tx.campaign;
   document.getElementById('modal-treasury-title').textContent = 'Modifier la transaction';
   document.getElementById('modal-trs-error').classList.add('hidden');
   openModal('modal-treasury');
@@ -2735,6 +2928,7 @@ async function saveTreasuryTransaction() {
     amount:    parseFloat(document.getElementById('trs-amount').value),
     method:    document.getElementById('trs-method').value,
     note:      document.getElementById('trs-note').value.trim(),
+    campaign:  document.getElementById('trs-campaign').value ? parseInt(document.getElementById('trs-campaign').value) : null,
   };
   const errEl = document.getElementById('modal-trs-error');
   if (!body.label || !body.date || !body.amount) {
@@ -2764,6 +2958,179 @@ async function deleteTreasuryTransaction(id) {
   await apiFetch(`/treasury/transactions/${id}/`, 'DELETE');
   toast('Transaction supprimée', 'info');
   loadTreasury();
+}
+
+// ── Cagnottes ─────────────────────────────────────────────────────────────────
+
+let allCampaigns = [];
+
+async function loadCampaigns() {
+  const grid = document.getElementById('campaigns-grid');
+  grid.innerHTML = '<div style="color:var(--muted);padding:32px 0;">Chargement…</div>';
+  const res = await apiFetch('/treasury/campaigns/');
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  allCampaigns = data.results || data;
+  renderCampaigns(allCampaigns);
+  // Alimenter le filtre transactions
+  const sel = document.getElementById('campaign-tx-filter');
+  sel.innerHTML = '<option value="">Toutes les cagnottes</option>';
+  allCampaigns.forEach(c => {
+    sel.innerHTML += `<option value="${c.id}">${esc(c.icon)} ${esc(c.name)}</option>`;
+  });
+  loadCampaignTransactions();
+}
+
+function renderCampaigns(campaigns) {
+  const grid = document.getElementById('campaigns-grid');
+  if (!campaigns.length) {
+    grid.innerHTML = emptyState({
+      icon: '🎯', title: 'Aucune cagnotte créée',
+      sub: 'Créez une première cagnotte pour suivre vos collectes.',
+      actionLabel: '+ Nouvelle cagnotte', actionFn: 'openCampaignModal()'
+    });
+    return;
+  }
+  grid.innerHTML = campaigns.map((c, i) => {
+    const pct = c.progress_percent || 0;
+    const isComplete = pct >= 100;
+    const haGoal = c.goal_amount !== null && c.goal_amount !== undefined;
+    const fmt = v => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(v);
+    return `
+    <div class="campaign-card ${c.status === 'closed' ? 'closed' : ''}" style="animation-delay:${i * 60}ms">
+      ${c.status === 'closed' ? '<span class="campaign-badge-closed">🔒 Clôturée</span>' : ''}
+      <div class="campaign-card-header">
+        <div class="campaign-icon-big">${esc(c.icon)}</div>
+        <div>
+          <div class="campaign-card-title">${esc(c.name)}</div>
+          ${c.description ? `<div class="campaign-card-desc">${esc(c.description)}</div>` : ''}
+        </div>
+      </div>
+      ${haGoal ? `
+        <div class="campaign-progress-bar">
+          <div class="campaign-progress-fill ${isComplete ? 'complete' : ''}" style="width:${pct}%"></div>
+        </div>
+        <div class="campaign-amounts">
+          <span>Collecté : <strong>${fmt(c.collected_amount)}</strong></span>
+          <span><strong>${pct}%</strong> — Objectif : ${fmt(c.goal_amount)}</span>
+        </div>
+      ` : `
+        <div class="campaign-amounts">
+          <span>Collecté : <strong>${fmt(c.collected_amount)}</strong></span>
+          <span style="color:var(--muted);font-size:0.8rem;">Pas d'objectif fixé</span>
+        </div>
+      `}
+      ${c.end_date ? `<div style="font-size:0.78rem;color:var(--muted);">📅 Fin : ${c.end_date}</div>` : ''}
+      <div class="campaign-card-actions">
+        <button class="btn btn-sm btn-icon" onclick="editCampaign(${c.id})" title="Modifier">✏️ Modifier</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteCampaign(${c.id})" title="Supprimer">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadCampaignTransactions() {
+  const tbody = document.getElementById('campaign-tx-table');
+  tbody.innerHTML = skeletonRows(3, 6);
+  const campaignId = document.getElementById('campaign-tx-filter').value;
+  let url = '/treasury/transactions/?ordering=-date';
+  if (campaignId) url += `&campaign=${campaignId}`;
+  else url += `&has_campaign=1`;
+  const res = await apiFetch(url);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  const txs = data.results || data;
+  if (!txs.length) {
+    tbody.innerHTML = emptyState({ icon: '📭', title: 'Aucune transaction liée', sub: 'Rattachez une transaction à une cagnotte depuis la Trésorerie.' });
+    return;
+  }
+  tbody.innerHTML = txs.map((tx, i) => {
+    const isIn = tx.direction === 'IN';
+    return `<tr class="fade-in" style="animation-delay:${i*30}ms">
+      <td>${tx.date}</td>
+      <td><strong>${esc(tx.label)}</strong></td>
+      <td><span class="badge badge-purple">${esc(tx.campaign_name) || '—'}</span></td>
+      <td>${isIn ? '<span class="badge badge-green">▲ Entrée</span>' : '<span class="badge badge-red">▼ Sortie</span>'}</td>
+      <td style="font-weight:700;" class="${isIn ? 'text-green' : 'text-red'}">${parseFloat(tx.amount).toFixed(2)} €</td>
+      <td><button class="btn btn-danger btn-sm btn-icon" onclick="deleteTreasuryTransaction(${tx.id})" title="Supprimer">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openCampaignModal() {
+  document.getElementById('campaign-id').value = '';
+  document.getElementById('campaign-icon').value = '🎯';
+  document.getElementById('campaign-name').value = '';
+  document.getElementById('campaign-description').value = '';
+  document.getElementById('campaign-goal').value = '';
+  document.getElementById('campaign-start').value = '';
+  document.getElementById('campaign-end').value = '';
+  document.getElementById('campaign-status').value = 'active';
+  document.getElementById('campaign-show-kpi').checked = true;
+  document.getElementById('modal-campaign-title').textContent = 'Nouvelle cagnotte';
+  document.getElementById('modal-campaign-error').classList.add('hidden');
+  openModal('modal-campaign');
+}
+
+async function editCampaign(id) {
+  const res = await apiFetch(`/treasury/campaigns/${id}/`);
+  if (!res || !res.ok) return;
+  const c = await res.json();
+  document.getElementById('campaign-id').value = c.id;
+  document.getElementById('campaign-icon').value = c.icon;
+  document.getElementById('campaign-name').value = c.name;
+  document.getElementById('campaign-description').value = c.description || '';
+  document.getElementById('campaign-goal').value = c.goal_amount || '';
+  document.getElementById('campaign-start').value = c.start_date || '';
+  document.getElementById('campaign-end').value = c.end_date || '';
+  document.getElementById('campaign-status').value = c.status;
+  document.getElementById('campaign-show-kpi').checked = c.show_on_kpi;
+  document.getElementById('modal-campaign-title').textContent = 'Modifier la cagnotte';
+  document.getElementById('modal-campaign-error').classList.add('hidden');
+  openModal('modal-campaign');
+}
+
+async function saveCampaign() {
+  const id = document.getElementById('campaign-id').value;
+  const goalRaw = document.getElementById('campaign-goal').value;
+  const body = {
+    icon: document.getElementById('campaign-icon').value.trim() || '🎯',
+    name: document.getElementById('campaign-name').value.trim(),
+    description: document.getElementById('campaign-description').value.trim(),
+    goal_amount: goalRaw ? parseFloat(goalRaw) : null,
+    start_date: document.getElementById('campaign-start').value || null,
+    end_date: document.getElementById('campaign-end').value || null,
+    status: document.getElementById('campaign-status').value,
+    show_on_kpi: document.getElementById('campaign-show-kpi').checked,
+  };
+  const errEl = document.getElementById('modal-campaign-error');
+  if (!body.name) {
+    errEl.textContent = 'Le nom de la cagnotte est obligatoire.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  const res = await apiFetch(
+    id ? `/treasury/campaigns/${id}/` : '/treasury/campaigns/',
+    id ? 'PUT' : 'POST',
+    body
+  );
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    errEl.classList.remove('hidden');
+    return;
+  }
+  closeModal('modal-campaign');
+  toast(id ? 'Cagnotte mise à jour ✓' : 'Cagnotte créée ✓');
+  loadCampaigns();
+}
+
+async function deleteCampaign(id) {
+  const ok = await confirmDialog({ title: 'Supprimer cette cagnotte ?', msg: 'Les transactions liées ne seront pas supprimées (juste délicées).', icon: '🗑️' });
+  if (!ok) return;
+  await apiFetch(`/treasury/campaigns/${id}/`, 'DELETE');
+  toast('Cagnotte supprimée', 'info');
+  loadCampaigns();
 }
 
 // ── Paramètres ────────────────────────────────────────────────────────────────

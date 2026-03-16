@@ -424,6 +424,17 @@
         </div>
       </div>
 
+      <!-- CAGNOTTES -->
+      <div class="kcard" id="kpi-campaigns-card" style="display:none;">
+        <div class="kcard-head">
+          <div class="kcard-icon" style="background:rgba(251,191,36,.15);color:var(--yellow);">🎯</div>
+          <div class="kcard-title">Cagnottes &amp; Collectes</div>
+        </div>
+        <div id="kpi-campaigns-list" style="display:flex;flex-direction:column;gap:16px;margin-top:4px;">
+          <div style="color:var(--muted);font-size:.82rem;text-align:center;padding:10px;">Chargement…</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -604,6 +615,47 @@ function renderKPI(d) {
           ${vals.out > 0 ? `<span class="cat-out">-${fmt(vals.out)}</span>` : ''}
         </div>
       </div>`).join('');
+  }
+  // Cagnottes
+  const campaigns = d.campaigns || [];
+  const campCard = document.getElementById('kpi-campaigns-card');
+  const campList = document.getElementById('kpi-campaigns-list');
+  if (campaigns.length === 0) {
+    campCard.style.display = 'none';
+  } else {
+    campCard.style.display = '';
+    campList.innerHTML = campaigns.map(c => {
+      const pct = c.progress_percent || 0;
+      const haGoal = c.goal_amount !== null && c.goal_amount !== undefined;
+      const isComplete = pct >= 100;
+      const barColor = isComplete ? 'var(--green)' : 'var(--purple)';
+      return `
+      <div style="padding:14px 0;border-top:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:1.6rem;line-height:1;">${esc(c.icon)}</span>
+          <div>
+            <div style="font-weight:700;font-size:.95rem;">${esc(c.name)}</div>
+            ${c.description ? `<div style="font-size:.78rem;color:var(--muted2);margin-top:2px;">${esc(c.description)}</div>` : ''}
+            ${c.end_date ? `<div style="font-size:.75rem;color:var(--muted2);">📅 Fin : ${c.end_date}</div>` : ''}
+          </div>
+          ${c.status === 'closed' ? '<span style="margin-left:auto;font-size:.72rem;background:rgba(248,113,113,.15);color:var(--red);border-radius:99px;padding:2px 8px;font-weight:600;">🔒 Clôturée</span>' : ''}
+        </div>
+        ${haGoal ? `
+          <div style="height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-bottom:6px;">
+            <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width .6s ease;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted2);">
+            <span>Collecté : <strong style="color:var(--text);">${fmt(c.collected_amount)}</strong></span>
+            <span><strong style="color:${barColor}">${pct}%</strong> / ${fmt(c.goal_amount)}</span>
+          </div>
+        ` : `
+          <div style="font-size:.82rem;color:var(--muted2);">
+            Collecté : <strong style="color:var(--text);">${fmt(c.collected_amount)}</strong>
+            <span style="margin-left:8px;font-size:.75rem;">(sans objectif fixé)</span>
+          </div>
+        `}
+      </div>`;
+    }).join('');
   }
 }
 
