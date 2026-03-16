@@ -308,7 +308,7 @@
     <div class="kpi-grid">
 
       <!-- ÉCOLE -->
-      <div class="kcard">
+      <div class="kcard" id="kpi-school-card">
         <div class="kcard-head">
           <div class="kcard-icon icon-school">🎓</div>
           <div class="kcard-title">École</div>
@@ -347,7 +347,7 @@
       </div>
 
       <!-- ADHÉRENTS -->
-      <div class="kcard">
+      <div class="kcard" id="kpi-membership-card">
         <div class="kcard-head">
           <div class="kcard-icon icon-members">🤝</div>
           <div class="kcard-title">Cotisations adhérents</div>
@@ -388,7 +388,7 @@
       </div>
 
       <!-- TRÉSORERIE -->
-      <div class="kcard">
+      <div class="kcard" id="kpi-treasury-card">
         <div class="kcard-head">
           <div class="kcard-icon icon-treasury">🏦</div>
           <div class="kcard-title">Trésorerie — <span id="t-period" style="color:var(--green);text-transform:none;font-weight:700;">—</span></div>
@@ -455,7 +455,7 @@ let mosqueSlug     = '';
 let refreshTimer   = null;
 let countdownTimer = null;
 let countdownValue = 60;
-const REFRESH_SECS = 60;
+let REFRESH_SECS   = 60;  // mis à jour depuis kpi_prefs
 
 // ── Liste des mosquées ─────────────────────────────────────────────────────────
 async function loadMosqueList() {
@@ -516,6 +516,10 @@ async function fetchKPI() {
     if (res.status === 404) { showError(`Mosquée "${mosqueSlug}" introuvable.`); return; }
     if (!res.ok)            { showError(`Erreur serveur (${res.status})`); return; }
     const data = await res.json();
+    // Appliquer les préférences KPI (widgets + refresh) AVANT renderKPI
+    const prefs = data.kpi_prefs || {};
+    REFRESH_SECS = prefs.refresh_secs || 60;
+    applyKPIPrefs(prefs);
     renderKPI(data);
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('kpi-screen').classList.remove('hidden');
@@ -552,6 +556,27 @@ function showError(msg) {
 }
 function hideError() {
   document.getElementById('setup-error').classList.add('hidden');
+}
+
+// ── Préférences KPI ──────────────────────────────────────────────────────────
+function applyKPIPrefs(prefs) {
+  const show = (id, flag) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = flag === false ? 'none' : '';
+  };
+  show('kpi-school-card',    prefs.show_school);
+  show('kpi-membership-card',prefs.show_membership);
+  show('kpi-treasury-card',  prefs.show_treasury);
+  // campaigns card géré dans renderKPI (dépend aussi du contenu)
+  if (prefs.show_campaigns === false) {
+    const el = document.getElementById('kpi-campaigns-card');
+    if (el) el.style.display = 'none';
+  }
+  // Mettre à jour l'affichage du countdown label
+  const cd = document.getElementById('kpi-countdown-label');
+  if (cd) cd.textContent = REFRESH_SECS >= 60
+    ? `${REFRESH_SECS / 60} min`
+    : `${REFRESH_SECS}s`;
 }
 
 // ── Rendu ────────────────────────────────────────────────────────────────────

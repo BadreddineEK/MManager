@@ -160,6 +160,26 @@ class KPISummaryView(APIView):
             else:
                 by_regime[regime]["out"] += float(tx["amount"])
 
+        # ── Préférences KPI (widgets + refresh) ──────────────────────────────
+        kpi_prefs = {
+            "show_school":     True,
+            "show_membership": True,
+            "show_treasury":   True,
+            "show_campaigns":  True,
+            "refresh_secs":    60,
+        }
+        try:
+            s = mosque.settings
+            kpi_prefs = {
+                "show_school":     s.show_kpi_school,
+                "show_membership": s.show_kpi_membership,
+                "show_treasury":   s.show_kpi_treasury,
+                "show_campaigns":  s.show_kpi_campaigns,
+                "refresh_secs":    s.kpi_refresh_secs,
+            }
+        except Exception:
+            pass
+
         # ── Cagnottes actives visibles KPI ───────────────────────────────────
         campaigns_qs = Campaign.objects.filter(mosque=mosque, show_on_kpi=True)
         campaigns_data = []
@@ -207,4 +227,5 @@ class KPISummaryView(APIView):
                 "by_regime": by_regime,
             },
             "campaigns": campaigns_data,
+            "kpi_prefs": kpi_prefs,
         })

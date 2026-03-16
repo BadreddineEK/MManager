@@ -1428,6 +1428,54 @@
             placeholder="Association loi 1901 — Don déductible à 66% dans la limite de 20% du revenu imposable (art. 200 CGI)."></textarea>
         </div>
 
+        <!-- ── ÉCRAN KPI ─────────────────────────────────────────── -->
+        <div class="settings-section">
+          <h3>📺 Écran KPI public</h3>
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+            Configurez l'affichage de l'écran KPI (tableau de bord public pour TV/tablette).
+          </p>
+
+          <!-- Widgets visibles -->
+          <label style="font-weight:600;margin-bottom:10px;display:block;">Widgets visibles</label>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+              <input type="checkbox" id="s-kpi-school" style="width:auto;margin:0;accent-color:var(--accent);" />
+              🎓 École coranique
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+              <input type="checkbox" id="s-kpi-membership" style="width:auto;margin:0;accent-color:var(--accent);" />
+              🤝 Adhérents
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+              <input type="checkbox" id="s-kpi-treasury" style="width:auto;margin:0;accent-color:var(--accent);" />
+              💰 Trésorerie
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+              <input type="checkbox" id="s-kpi-campaigns" style="width:auto;margin:0;accent-color:var(--accent);" />
+              🎯 Cagnottes &amp; Collectes
+            </label>
+          </div>
+
+          <!-- Fréquence de refresh -->
+          <label>Fréquence de rafraîchissement</label>
+          <select id="s-kpi-refresh">
+            <option value="30">30 secondes</option>
+            <option value="60">1 minute</option>
+            <option value="120">2 minutes</option>
+            <option value="300">5 minutes</option>
+          </select>
+
+          <!-- Bouton ouvrir KPI -->
+          <div style="margin-top:20px;padding:16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;">
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">
+              Ouvre l'écran KPI dans un nouvel onglet avec votre mosquée déjà sélectionnée.
+            </p>
+            <button class="btn btn-primary" onclick="openKPIScreen()">
+              📺 Ouvrir l'écran KPI
+            </button>
+          </div>
+        </div>
+
         <!-- ── SAUVEGARDE / RESTAURATION ─────────────────────────── -->
         <div class="settings-section">
           <h3>💾 Sauvegarde &amp; Restauration</h3>
@@ -3308,6 +3356,12 @@ async function loadSettings() {
   document.getElementById('s-receipt-address').value = data.receipt_address     || '';
   document.getElementById('s-receipt-phone').value   = data.receipt_phone       || '';
   document.getElementById('s-receipt-legal').value   = data.receipt_legal_mention || '';
+  // KPI widgets
+  document.getElementById('s-kpi-school').checked     = data.show_kpi_school     !== false;
+  document.getElementById('s-kpi-membership').checked = data.show_kpi_membership !== false;
+  document.getElementById('s-kpi-treasury').checked   = data.show_kpi_treasury   !== false;
+  document.getElementById('s-kpi-campaigns').checked  = data.show_kpi_campaigns  !== false;
+  document.getElementById('s-kpi-refresh').value      = data.kpi_refresh_secs    || 60;
 }
 
 async function saveSettings() {
@@ -3328,6 +3382,11 @@ async function saveSettings() {
     receipt_address:       document.getElementById('s-receipt-address').value.trim(),
     receipt_phone:         document.getElementById('s-receipt-phone').value.trim(),
     receipt_legal_mention: document.getElementById('s-receipt-legal').value.trim(),
+    show_kpi_school:       document.getElementById('s-kpi-school').checked,
+    show_kpi_membership:   document.getElementById('s-kpi-membership').checked,
+    show_kpi_treasury:     document.getElementById('s-kpi-treasury').checked,
+    show_kpi_campaigns:    document.getElementById('s-kpi-campaigns').checked,
+    kpi_refresh_secs:      parseInt(document.getElementById('s-kpi-refresh').value) || 60,
   };
   const res = await apiFetch('/settings/', 'PUT', payload);
   if (!res) return;
@@ -3338,6 +3397,24 @@ async function saveSettings() {
     return;
   }
   toast('Paramètres enregistrés ✓');
+}
+
+function openKPIScreen() {
+  // Récupère le slug depuis le champ settings (déjà chargé) ou depuis le token JWT
+  let slug = document.getElementById('s-mosque-slug').value.trim();
+  if (!slug) {
+    try {
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      slug = payload.mosque_slug || '';
+    } catch (e) {}
+  }
+  if (!slug) {
+    toast('Slug de mosquée introuvable — enregistrez d\'abord les paramètres.', 'error', 4000);
+    return;
+  }
+  // Pré-renseigne le slug dans kpi.html via localStorage puis ouvre l'onglet
+  localStorage.setItem('kpi_slug', slug);
+  window.open('/kpi.html', '_blank');
 }
 
 // ── Auto-login si token présent ───────────────────────────────────────────────

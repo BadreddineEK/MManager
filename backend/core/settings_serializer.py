@@ -48,6 +48,12 @@ class MosqueSettingsSerializer(serializers.ModelSerializer):
             "receipt_address",
             "receipt_phone",
             "receipt_legal_mention",
+            # KPI widgets
+            "show_kpi_school",
+            "show_kpi_membership",
+            "show_kpi_treasury",
+            "show_kpi_campaigns",
+            "kpi_refresh_secs",
         ]
         read_only_fields = ["id", "mosque_name", "mosque_slug", "mosque_timezone"]
 

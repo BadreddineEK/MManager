@@ -109,6 +109,16 @@ class MosqueSettings(models.Model):
         verbose_name="Mention légale (reçus PDF)",
         help_text='Ex : "Association loi 1901 — Reçu de don déductible à 66% dans la limite de 20% du revenu imposable"',
     )
+    # KPI — widgets visibles
+    show_kpi_school     = models.BooleanField(default=True, verbose_name="KPI : afficher École")
+    show_kpi_membership = models.BooleanField(default=True, verbose_name="KPI : afficher Adhérents")
+    show_kpi_treasury   = models.BooleanField(default=True, verbose_name="KPI : afficher Trésorerie")
+    show_kpi_campaigns  = models.BooleanField(default=True, verbose_name="KPI : afficher Cagnottes")
+    kpi_refresh_secs    = models.PositiveIntegerField(
+        default=60,
+        verbose_name="KPI : fréquence de rafraîchissement (secondes)",
+        help_text="Valeurs conseillées : 30, 60, 120, 300",
+    )
 
     class Meta:
         verbose_name = "Paramètres mosquée"
