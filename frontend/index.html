@@ -387,6 +387,8 @@
     .badge-gray   { background: #f3f4f6; color: #4b5563; }
     .badge-purple { background: var(--accent-soft); color: var(--accent); }
     .badge-blue   { background: var(--blue-soft);   color: #1e40af; }
+    .badge-1901   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-1905   { background: #faf5ff; color: #7c3aed; border: 1px solid #ddd6fe; }
 
     /* ══ MODAL ══════════════════════════════════════════════════ */
     .modal-overlay {
@@ -1280,13 +1282,18 @@
             <option value="subvention">Subvention</option>
             <option value="autre">Autre</option>
           </select>
+          <select id="trs-regime-filter" onchange="loadTreasury()" style="width:auto;margin:0;" title="Filtrer par régime fiscal">
+            <option value="">⚖️ Tous régimes</option>
+            <option value="1901">🔵 Loi 1901</option>
+            <option value="1905">🟣 Loi 1905</option>
+          </select>
           <input type="month" id="trs-month-filter" onchange="loadTreasury()" style="width:auto;margin:0;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;" />
           <input type="text" class="search-input" id="trs-search" placeholder="🔍  Rechercher..." oninput="loadTreasury()" />
         </div>
         <div id="treasury-alert"></div>
         <div class="card table-wrapper">
           <table>
-            <thead><tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Direction</th><th>Montant</th><th>Mode</th><th>Note</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Direction</th><th>Montant</th><th>Mode</th><th>Régime</th><th>Note</th><th>Actions</th></tr></thead>
             <tbody id="treasury-table"></tbody>
           </table>
         </div>
@@ -1649,6 +1656,12 @@
       </select>
       <label>Note</label>
       <textarea id="trs-note" placeholder="(optionnel)"></textarea>
+      <label>Régime fiscal <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+      <select id="trs-regime">
+        <option value="">— Non précisé —</option>
+        <option value="1901">🔵 Loi 1901 — Association</option>
+        <option value="1905">🟣 Loi 1905 — Culte</option>
+      </select>
       <label>Cagnotte liée <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
       <select id="trs-campaign">
         <option value="">— Aucune cagnotte —</option>
@@ -2813,15 +2826,17 @@ async function loadMembershipYearsForSelect(selectId) {
 // ── Trésorerie ────────────────────────────────────────────────────────────────
 
 async function loadTreasury() {
-  document.getElementById('treasury-table').innerHTML = skeletonRows(4, 8);
+  document.getElementById('treasury-table').innerHTML = skeletonRows(4, 9);
   const direction = document.getElementById('trs-direction-filter').value;
   const category  = document.getElementById('trs-category-filter').value;
+  const regime    = document.getElementById('trs-regime-filter').value;
   const month     = document.getElementById('trs-month-filter').value;
   const search    = document.getElementById('trs-search').value.trim();
 
   let url = '/treasury/transactions/?ordering=-date';
   if (direction) url += `&direction=${direction}`;
   if (category)  url += `&category=${category}`;
+  if (regime)    url += `&regime=${regime}`;
   if (month)     url += `&month=${month}`;
   if (search)    url += `&search=${encodeURIComponent(search)}`;
 
@@ -2859,6 +2874,11 @@ function renderTreasury(txs) {
     const dirBadge = isIn
       ? '<span class="badge badge-green">▲ Entrée</span>'
       : '<span class="badge badge-red">▼ Sortie</span>';
+    const regimeBadge = tx.regime_fiscal === '1901'
+      ? '<span class="badge badge-1901">1901</span>'
+      : tx.regime_fiscal === '1905'
+        ? '<span class="badge badge-1905">1905</span>'
+        : '<span style="color:var(--muted);font-size:.8rem;">—</span>';
     return `
     <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td>${tx.date}</td>
@@ -2867,6 +2887,7 @@ function renderTreasury(txs) {
       <td>${dirBadge}</td>
       <td style="font-weight:700;" class="${isIn ? 'text-green' : 'text-red'}">${parseFloat(tx.amount).toFixed(2)} €</td>
       <td><span class="badge badge-blue">${esc(tx.method_display)}</span></td>
+      <td>${regimeBadge}</td>
       <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(tx.note)||''}">${esc(tx.note) || '<span class="text-muted">—</span>'}</td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editTreasuryTransaction(${tx.id})" title="Modifier">✏️</button>
@@ -2885,6 +2906,7 @@ function openTreasuryModal() {
   document.getElementById('trs-amount').value = '';
   document.getElementById('trs-method').value = 'cash';
   document.getElementById('trs-note').value = '';
+  document.getElementById('trs-regime').value = '';
   document.getElementById('trs-campaign').value = '';
   _fillCampaignSelect();
   document.getElementById('modal-treasury-title').textContent = 'Ajouter une transaction';
@@ -2912,6 +2934,7 @@ async function editTreasuryTransaction(id) {
   document.getElementById('trs-amount').value = tx.amount;
   document.getElementById('trs-method').value = tx.method;
   document.getElementById('trs-note').value = tx.note || '';
+  document.getElementById('trs-regime').value = tx.regime_fiscal || '';
   document.getElementById('trs-campaign').value = tx.campaign || '';
   _fillCampaignSelect();
   if (tx.campaign) document.getElementById('trs-campaign').value = tx.campaign;
@@ -2930,6 +2953,7 @@ async function saveTreasuryTransaction() {
     amount:    parseFloat(document.getElementById('trs-amount').value),
     method:    document.getElementById('trs-method').value,
     note:      document.getElementById('trs-note').value.trim(),
+    regime_fiscal: document.getElementById('trs-regime').value || '',
     campaign:  document.getElementById('trs-campaign').value ? parseInt(document.getElementById('trs-campaign').value) : null,
   };
   const errEl = document.getElementById('modal-trs-error');

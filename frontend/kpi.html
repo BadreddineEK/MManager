@@ -422,6 +422,10 @@
             <div style="color:var(--muted);font-size:.82rem;text-align:center;padding:10px;">Aucune transaction ce mois</div>
           </div>
         </div>
+        <div id="t-regime-block" style="display:none;margin-top:14px;">
+          <div class="cat-title">⚖️ Régime fiscal</div>
+          <div class="cat-list" id="t-regime-list"></div>
+        </div>
       </div>
 
       <!-- CAGNOTTES -->
@@ -612,6 +616,25 @@ function renderKPI(d) {
         <span class="cat-row-name">${esc(cat)}</span>
         <div class="cat-amounts">
           ${vals.in  > 0 ? `<span class="cat-in">+${fmt(vals.in)}</span>` : ''}
+          ${vals.out > 0 ? `<span class="cat-out">-${fmt(vals.out)}</span>` : ''}
+        </div>
+      </div>`).join('');
+  }
+  // Régime fiscal
+  const regimeBlock = document.getElementById('t-regime-block');
+  const regimeList  = document.getElementById('t-regime-list');
+  const regimes = Object.entries(t.by_regime || {});
+  const regimesSignificant = regimes.filter(([k]) => k !== 'non_precise');
+  if (regimesSignificant.length === 0) {
+    regimeBlock.style.display = 'none';
+  } else {
+    regimeBlock.style.display = '';
+    const labels = { '1901': '🔵 Loi 1901', '1905': '🟣 Loi 1905', 'non_precise': '⬜ Non précisé' };
+    regimeList.innerHTML = regimes.map(([regime, vals]) => `
+      <div class="cat-row">
+        <span class="cat-row-name">${labels[regime] || regime}</span>
+        <div class="cat-amounts">
+          ${vals.in  > 0 ? `<span class="cat-in">+${fmt(vals.in)}</span>`  : ''}
           ${vals.out > 0 ? `<span class="cat-out">-${fmt(vals.out)}</span>` : ''}
         </div>
       </div>`).join('');

@@ -83,6 +83,11 @@ class TreasuryTransactionViewSet(viewsets.ModelViewSet):
         elif self.request.query_params.get("has_campaign"):
             qs = qs.filter(campaign__isnull=False)
 
+        # Filtrer par régime fiscal
+        regime = self.request.query_params.get("regime")
+        if regime in ("1901", "1905", ""):
+            qs = qs.filter(regime_fiscal=regime)
+
         return qs
 
     def perform_create(self, serializer):
@@ -131,9 +136,21 @@ class TreasuryTransactionViewSet(viewsets.ModelViewSet):
             else:
                 categories[cat]["out"] += float(tx["amount"])
 
+        # Repartition par régime fiscal
+        regime_totals = {}
+        for tx in qs.values("regime_fiscal", "direction", "amount"):
+            regime = tx["regime_fiscal"] or "non_precise"
+            if regime not in regime_totals:
+                regime_totals[regime] = {"in": 0, "out": 0}
+            if tx["direction"] == "IN":
+                regime_totals[regime]["in"] += float(tx["amount"])
+            else:
+                regime_totals[regime]["out"] += float(tx["amount"])
+
         return Response({
             "total_in": float(total_in),
             "total_out": float(total_out),
             "balance": float(balance),
             "categories": categories,
+            "by_regime": regime_totals,
         })

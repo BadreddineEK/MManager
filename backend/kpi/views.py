@@ -149,6 +149,17 @@ class KPISummaryView(APIView):
             else:
                 by_category[cat]["out"] += float(tx["amount"])
 
+        # Répartition par régime fiscal
+        by_regime = {}
+        for tx in tx_qs.values("regime_fiscal", "direction", "amount"):
+            regime = tx["regime_fiscal"] or "non_precise"
+            if regime not in by_regime:
+                by_regime[regime] = {"in": 0.0, "out": 0.0}
+            if tx["direction"] == "IN":
+                by_regime[regime]["in"] += float(tx["amount"])
+            else:
+                by_regime[regime]["out"] += float(tx["amount"])
+
         # ── Cagnottes actives visibles KPI ───────────────────────────────────
         campaigns_qs = Campaign.objects.filter(mosque=mosque, show_on_kpi=True)
         campaigns_data = []
@@ -193,6 +204,7 @@ class KPISummaryView(APIView):
                 "total_out": total_out,
                 "balance": round(total_in - total_out, 2),
                 "by_category": by_category,
+                "by_regime": by_regime,
             },
             "campaigns": campaigns_data,
         })

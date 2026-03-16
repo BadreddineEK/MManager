@@ -33,6 +33,7 @@ class TreasuryTransactionSerializer(serializers.ModelSerializer):
     direction_display = serializers.CharField(source="get_direction_display", read_only=True)
     category_display = serializers.CharField(source="get_category_display", read_only=True)
     method_display = serializers.CharField(source="get_method_display", read_only=True)
+    regime_fiscal_display = serializers.CharField(source="get_regime_fiscal_display", read_only=True)
     campaign_name = serializers.CharField(source="campaign.name", read_only=True, allow_null=True)
 
     class Meta:
@@ -49,8 +50,14 @@ class TreasuryTransactionSerializer(serializers.ModelSerializer):
             "method",
             "method_display",
             "note",
+            "regime_fiscal",
+            "regime_fiscal_display",
             "campaign",
             "campaign_name",
             "created_at",
         ]
-        read_only_fields = ["id", "created_at", "direction_display", "category_display", "method_display", "campaign_name"]
+        read_only_fields = [
+            "id", "created_at",
+            "direction_display", "category_display", "method_display",
+            "regime_fiscal_display", "campaign_name",
+        ]

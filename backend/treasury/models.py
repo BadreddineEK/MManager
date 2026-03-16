@@ -26,6 +26,12 @@ class TreasuryTransaction(models.Model):
         ("autre", "Autre"),
     ]
 
+    REGIME_CHOICES = [
+        ("",     "Non précisé"),
+        ("1901", "Loi 1901 — Association"),
+        ("1905", "Loi 1905 — Culte"),
+    ]
+
     CATEGORY_CHOICES = [
         ("don", "Don / Sadaqa"),
         ("loyer", "Loyer"),
@@ -50,6 +56,13 @@ class TreasuryTransaction(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     method = models.CharField(max_length=20, choices=METHOD_CHOICES, default="cash")
     note = models.TextField(blank=True, default="")
+    regime_fiscal = models.CharField(
+        max_length=4,
+        choices=REGIME_CHOICES,
+        blank=True,
+        default="",
+        verbose_name="Régime fiscal",
+    )
     campaign = models.ForeignKey(
         "Campaign",
         on_delete=models.SET_NULL,

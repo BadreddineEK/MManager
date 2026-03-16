@@ -5,8 +5,8 @@ from .models import Campaign, TreasuryTransaction
 
 @admin.register(TreasuryTransaction)
 class TreasuryTransactionAdmin(admin.ModelAdmin):
-    list_display = ("date", "label", "direction", "category", "amount", "method", "campaign", "mosque")
-    list_filter = ("mosque", "direction", "category", "method", "campaign")
+    list_display = ("date", "label", "direction", "category", "amount", "method", "regime_fiscal", "campaign", "mosque")
+    list_filter = ("mosque", "direction", "category", "method", "regime_fiscal", "campaign")
     search_fields = ("label", "note")
     ordering = ("-date",)
     date_hierarchy = "date"
