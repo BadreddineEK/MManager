@@ -614,12 +614,153 @@
       .stat-card .num { font-size: 1.3rem; }
       .page-body { padding: 12px 10px; }
     }
+
+    /* ══ PROGRESS BAR (top loader) ══════════════════════════════ */
+    #top-progress {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), #a78bfa, var(--accent));
+      background-size: 200% 100%;
+      z-index: 9999;
+      animation: progress-shimmer 1.2s linear infinite;
+      transform-origin: left;
+      transition: opacity 0.3s;
+    }
+    #top-progress.hidden { opacity: 0; pointer-events: none; }
+    @keyframes progress-shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ══ TOASTS ═════════════════════════════════════════════════ */
+    #toast-container {
+      position: fixed;
+      top: 18px; right: 18px;
+      z-index: 9000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      pointer-events: all;
+      min-width: 220px; max-width: 340px;
+      animation: toast-in 0.28s cubic-bezier(0.34,1.56,0.64,1);
+      border: 1px solid transparent;
+    }
+    .toast.removing { animation: toast-out 0.22s ease forwards; }
+    .toast-success { background: #f0fdf4; color: #15803d; border-color: #86efac; }
+    .toast-error   { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+    .toast-info    { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+    .toast-icon    { font-size: 1.05rem; flex-shrink: 0; }
+    .toast-msg     { flex: 1; }
+    .toast-close   {
+      background: none; border: none; cursor: pointer;
+      color: inherit; opacity: 0.5; font-size: 0.9rem; padding: 0 2px;
+      flex-shrink: 0;
+    }
+    .toast-close:hover { opacity: 1; }
+    @keyframes toast-in  { from { opacity:0; transform: translateX(30px) scale(0.95); } to { opacity:1; transform: none; } }
+    @keyframes toast-out { from { opacity:1; transform: none; } to { opacity:0; transform: translateX(30px); } }
+
+    /* ══ CONFIRM DIALOG ═════════════════════════════════════════ */
+    #confirm-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(15,10,40,0.55);
+      backdrop-filter: blur(3px);
+      z-index: 8000;
+      align-items: center; justify-content: center;
+    }
+    #confirm-overlay.open { display: flex; }
+    .confirm-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 28px 22px;
+      width: 380px; max-width: 94vw;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+      animation: modal-pop 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes modal-pop { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:none; } }
+    .confirm-icon  { font-size: 2rem; margin-bottom: 10px; }
+    .confirm-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .confirm-msg   { font-size: 0.84rem; color: var(--muted); line-height: 1.5; margin-bottom: 22px; }
+    .confirm-btns  { display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* ══ EMPTY STATE ════════════════════════════════════════════ */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+      text-align: center;
+    }
+    .empty-state-icon  { font-size: 2.8rem; margin-bottom: 14px; opacity: 0.5; }
+    .empty-state-title { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .empty-state-sub   { font-size: 0.82rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+    /* ══ SKELETON ═══════════════════════════════════════════════ */
+    .skeleton-row td {
+      padding: 13px 14px;
+    }
+    .skel {
+      height: 14px;
+      background: linear-gradient(90deg, #f0eef8 25%, #e8e5f5 50%, #f0eef8 75%);
+      background-size: 200% 100%;
+      border-radius: 6px;
+      animation: skel-shimmer 1.4s ease infinite;
+    }
+    @keyframes skel-shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skel-sm  { width: 60px; }
+    .skel-md  { width: 120px; }
+    .skel-lg  { width: 180px; }
+    .skel-xl  { width: 100%; }
+
+    /* ══ FADE-IN ANIMATION ══════════════════════════════════════ */
+    .fade-in {
+      animation: fadeInUp 0.35s ease forwards;
+      opacity: 0;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .stat-card { animation: fadeInUp 0.3s ease forwards; opacity: 0; }
   </style>
 </head>
 <body>
 
+<!-- ── Progress bar top ── -->
+<div id="top-progress" class="hidden"></div>
+
+<!-- ── Toast container ── -->
+<div id="toast-container"></div>
+
+<!-- ── Confirm dialog ── -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">Confirmation</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-sm" id="confirm-cancel-btn">Annuler</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">Supprimer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ ECRAN LOGIN ══════════════════════════════════════════════════════════ -->
-<div id="login-screen">
   <div class="login-card">
     <div class="login-logo">
       <span class="icon">🕌</span>
@@ -1445,6 +1586,83 @@ let allFamilies = [];
 let allChildren = [];
 let schoolYears = [];
 
+// ══ PROGRESS BAR ═════════════════════════════════════════════════════════════
+let _progressTimer = null;
+function showProgress() {
+  const el = document.getElementById('top-progress');
+  el.classList.remove('hidden');
+  clearTimeout(_progressTimer);
+}
+function hideProgress() {
+  _progressTimer = setTimeout(() => {
+    document.getElementById('top-progress').classList.add('hidden');
+  }, 300);
+}
+
+// ══ TOASTS ════════════════════════════════════════════════════════════════════
+function toast(msg, type = 'success', duration = 3500) {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `
+    <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+    <span class="toast-msg">${msg}</span>
+    <button class="toast-close" onclick="removeToast(this.parentElement)">✕</button>`;
+  container.appendChild(el);
+  setTimeout(() => removeToast(el), duration);
+}
+function removeToast(el) {
+  if (!el || !el.parentElement) return;
+  el.classList.add('removing');
+  setTimeout(() => el.remove(), 220);
+}
+
+// ══ CONFIRM DIALOG ════════════════════════════════════════════════════════════
+function confirmDialog({ title = 'Confirmation', msg = '', icon = '🗑️', okLabel = 'Supprimer', okClass = 'btn-danger' } = {}) {
+  return new Promise(resolve => {
+    document.getElementById('confirm-title').textContent  = title;
+    document.getElementById('confirm-msg').textContent    = msg;
+    document.getElementById('confirm-icon').textContent   = icon;
+    const okBtn     = document.getElementById('confirm-ok-btn');
+    const cancelBtn = document.getElementById('confirm-cancel-btn');
+    okBtn.textContent  = okLabel;
+    okBtn.className    = `btn ${okClass}`;
+    const overlay = document.getElementById('confirm-overlay');
+    overlay.classList.add('open');
+    const cleanup = (val) => {
+      overlay.classList.remove('open');
+      okBtn.onclick     = null;
+      cancelBtn.onclick = null;
+      resolve(val);
+    };
+    okBtn.onclick     = () => cleanup(true);
+    cancelBtn.onclick = () => cleanup(false);
+  });
+}
+
+// ══ SKELETON HELPERS ══════════════════════════════════════════════════════════
+function skeletonRows(n, cols) {
+  const widths = ['skel-lg', 'skel-md', 'skel-sm', 'skel-xl', 'skel-md'];
+  return Array.from({ length: n }, () =>
+    `<tr class="skeleton-row">${Array.from({ length: cols }, (_, i) =>
+      `<td><div class="skel ${widths[i % widths.length]}"></div></td>`
+    ).join('')}</tr>`
+  ).join('');
+}
+
+// ══ EMPTY STATE HELPER ════════════════════════════════════════════════════════
+function emptyState({ icon = '📭', title = 'Aucune donnée', sub = '', actionLabel = '', actionFn = '' } = {}) {
+  return `<tr><td colspan="99">
+    <div class="empty-state">
+      <div class="empty-state-icon">${icon}</div>
+      <div class="empty-state-title">${title}</div>
+      ${sub ? `<div class="empty-state-sub">${sub}</div>` : ''}
+      ${actionLabel && actionFn ? `<button class="btn btn-primary" onclick="${actionFn}">${actionLabel}</button>` : ''}
+    </div>
+  </td></tr>`;
+}
+
 // ── Auth ────────────────────────────────────────────────────────────────────
 
 async function login() {
@@ -1493,6 +1711,7 @@ async function logout() {
 }
 
 async function apiFetch(path, method = 'GET', body = null) {
+  showProgress();
   const opts = {
     method,
     headers: {
@@ -1502,6 +1721,7 @@ async function apiFetch(path, method = 'GET', body = null) {
   };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(`${API}${path}`, opts);
+  hideProgress();
   if (res.status === 401) { logout(); return null; }
   return res;
 }
@@ -1747,6 +1967,8 @@ async function loadSchoolYears() {
 // ── Familles ─────────────────────────────────────────────────────────────────
 
 async function loadFamilies(search = '') {
+  const tbody = document.getElementById('families-table');
+  tbody.innerHTML = skeletonRows(4, 6);
   const url = search ? `/school/families/?search=${encodeURIComponent(search)}` : '/school/families/';
   const res = await apiFetch(url);
   if (!res || !res.ok) return;
@@ -1758,11 +1980,15 @@ async function loadFamilies(search = '') {
 function renderFamilies(families) {
   const tbody = document.getElementById('families-table');
   if (!families.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">Aucune famille enregistrée</td></tr>';
+    tbody.innerHTML = emptyState({
+      icon: '👨‍👩‍👧', title: 'Aucune famille enregistrée',
+      sub: 'Commencez par ajouter la première famille.',
+      actionLabel: '+ Ajouter une famille', actionFn: 'openFamilyModal()'
+    });
     return;
   }
-  tbody.innerHTML = families.map(f => `
-    <tr>
+  tbody.innerHTML = families.map((f, i) => `
+    <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td><strong>${esc(f.primary_contact_name)}</strong></td>
       <td>${esc(f.phone1)}</td>
       <td>${esc(f.email) || '<span class="text-muted">—</span>'}</td>
@@ -1835,18 +2061,23 @@ async function saveFamily() {
     return;
   }
   closeModal('modal-family');
+  toast(id ? 'Famille mise à jour ✓' : 'Famille ajoutée ✓');
   loadFamilies();
 }
 
 async function deleteFamily(id) {
-  if (!confirm('Supprimer cette famille et tous ses enfants / paiements ?')) return;
+  const ok = await confirmDialog({ title: 'Supprimer la famille ?', msg: 'Cette action supprimera aussi tous les enfants et paiements associés.', icon: '🗑️' });
+  if (!ok) return;
   await apiFetch(`/school/families/${id}/`, 'DELETE');
+  toast('Famille supprimée', 'info');
   loadFamilies();
 }
 
 // ── Enfants ──────────────────────────────────────────────────────────────────
 
 async function loadChildren(search = '') {
+  const tbody = document.getElementById('children-table');
+  tbody.innerHTML = skeletonRows(4, 5);
   const level = document.getElementById('child-level-filter').value;
   let url = '/school/children/?';
   if (search) url += `search=${encodeURIComponent(search)}&`;
@@ -1861,11 +2092,15 @@ async function loadChildren(search = '') {
 function renderChildren(children) {
   const tbody = document.getElementById('children-table');
   if (!children.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Aucun enfant enregistré</td></tr>';
+    tbody.innerHTML = emptyState({
+      icon: '🧒', title: 'Aucun enfant enregistré',
+      sub: 'Ajoutez des enfants depuis le bouton ci-dessus.',
+      actionLabel: '+ Ajouter un enfant', actionFn: 'openChildModal()'
+    });
     return;
   }
-  tbody.innerHTML = children.map(c => `
-    <tr>
+  tbody.innerHTML = children.map((c, i) => `
+    <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td><strong>${esc(c.first_name)}</strong></td>
       <td><span class="badge badge-purple">${esc(c.level)}</span></td>
       <td>${esc(getFamilyName(c.family))}</td>
@@ -1940,18 +2175,23 @@ async function saveChild() {
     return;
   }
   closeModal('modal-child');
+  toast(id ? 'Enfant mis à jour ✓' : 'Enfant ajouté ✓');
   loadChildren();
 }
 
 async function deleteChild(id) {
-  if (!confirm('Supprimer cet enfant ?')) return;
+  const ok = await confirmDialog({ title: 'Supprimer l\'enfant ?', msg: 'Cette action est irréversible.', icon: '🗑️' });
+  if (!ok) return;
   await apiFetch(`/school/children/${id}/`, 'DELETE');
+  toast('Enfant supprimé', 'info');
   loadChildren();
 }
 
 // ── Paiements ────────────────────────────────────────────────────────────────
 
 async function loadPayments() {
+  const tbody = document.getElementById('payments-table');
+  tbody.innerHTML = skeletonRows(4, 8);
   const yearId = document.getElementById('payment-year-filter').value;
   let url = '/school/payments/?';
   if (yearId) url += `year_id=${yearId}`;
@@ -1959,13 +2199,12 @@ async function loadPayments() {
   if (!res || !res.ok) return;
   const data = await res.json();
   const payments = data.results || data;
-  const tbody = document.getElementById('payments-table');
   if (!payments.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">Aucun paiement enregistré</td></tr>';
+    tbody.innerHTML = emptyState({ icon: '💳', title: 'Aucun paiement enregistré', sub: 'Enregistrez un premier paiement.', actionLabel: '+ Ajouter un paiement', actionFn: 'openPaymentModal()' });
     return;
   }
-  tbody.innerHTML = payments.map(p => `
-    <tr>
+  tbody.innerHTML = payments.map((p, i) => `
+    <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td>${p.date}</td>
       <td><strong>${esc(p.family_name)}</strong></td>
       <td>${p.child_name ? esc(p.child_name) : '<span class="text-muted">—</span>'}</td>
@@ -2031,12 +2270,15 @@ async function savePayment() {
     return;
   }
   closeModal('modal-payment');
+  toast('Paiement enregistré ✓');
   loadPayments();
 }
 
 async function deletePayment(id) {
-  if (!confirm('Supprimer ce paiement ?')) return;
+  const ok = await confirmDialog({ title: 'Supprimer ce paiement ?', msg: 'Cette action est irréversible.', icon: '🗑️' });
+  if (!ok) return;
   await apiFetch(`/school/payments/${id}/`, 'DELETE');
+  toast('Paiement supprimé', 'info');
   loadPayments();
 }
 
@@ -2047,12 +2289,14 @@ async function loadArrears() {
   const alertEl = document.getElementById('arrears-alert');
   infoEl.classList.add('hidden');
   alertEl.innerHTML = '';
+  document.getElementById('arrears-table').innerHTML = skeletonRows(4, 4);
 
   const res = await apiFetch('/school/families/arrears/');
   if (!res) return;
 
   if (res.status === 404) {
-    alertEl.innerHTML = '<div class="alert alert-error">Aucune année scolaire active. Créez-en une depuis l\'Admin Django.</div>';
+    document.getElementById('arrears-table').innerHTML = '';
+    toast('Aucune année scolaire active. Créez-en une depuis l\'Admin Django.', 'error', 5000);
     return;
   }
 
@@ -2064,11 +2308,11 @@ async function loadArrears() {
 
   const tbody = document.getElementById('arrears-table');
   if (!data.families.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--green);padding:24px;">✅ Toutes les familles ont payé !</td></tr>';
+    tbody.innerHTML = emptyState({ icon: '✅', title: 'Toutes les familles ont payé !', sub: 'Aucun impayé pour l\'année en cours.' });
     return;
   }
-  tbody.innerHTML = data.families.map(f => `
-    <tr>
+  tbody.innerHTML = data.families.map((f, i) => `
+    <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td><strong>${esc(f.primary_contact_name)}</strong></td>
       <td>${esc(f.phone1)}</td>
       <td>${esc(f.email) || '<span class="text-muted">—</span>'}</td>
@@ -2124,6 +2368,7 @@ let allMembers = [];
 let membershipYears = [];
 
 async function loadMembers() {
+  document.getElementById('members-table').innerHTML = skeletonRows(4, 6);
   const status = document.getElementById('member-status-filter').value;
   const search = document.getElementById('member-search').value.trim();
   let url = '/membership/members/?';
@@ -2139,15 +2384,15 @@ async function loadMembers() {
 function renderMembers(members) {
   const tbody = document.getElementById('members-table');
   if (!members.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">Aucun adhérent enregistré</td></tr>';
+    tbody.innerHTML = emptyState({ icon: '🪪', title: 'Aucun adhérent enregistré', sub: 'Ajoutez des adhérents depuis le bouton ci-dessus.', actionLabel: '+ Ajouter un adhérent', actionFn: 'openMemberModal()' });
     return;
   }
-  tbody.innerHTML = members.map(m => {
+  tbody.innerHTML = members.map((m, i) => {
     const badge = m.is_current_year_paid
       ? '<span class="badge badge-green">✅ À jour</span>'
       : '<span class="badge badge-red">❌ Non cotisant</span>';
     return `
-    <tr>
+    <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td><strong>${esc(m.full_name)}</strong></td>
       <td>${esc(m.phone) || '<span class="text-muted">—</span>'}</td>
       <td>${esc(m.email) || '<span class="text-muted">—</span>'}</td>
@@ -2214,12 +2459,15 @@ async function saveMember() {
     return;
   }
   closeModal('modal-member');
+  toast(id ? 'Adhérent mis à jour ✓' : 'Adhérent ajouté ✓');
   loadMembers();
 }
 
 async function deleteMember(id) {
-  if (!confirm('Supprimer cet adhérent et toutes ses cotisations ?')) return;
+  const ok = await confirmDialog({ title: 'Supprimer l\'adhérent ?', msg: 'Toutes ses cotisations seront également supprimées.', icon: '🗑️' });
+  if (!ok) return;
   await apiFetch(`/membership/members/${id}/`, 'DELETE');
+  toast('Adhérent supprimé', 'info');
   loadMembers();
 }
 
@@ -2239,6 +2487,7 @@ async function loadMembershipYears() {
 }
 
 async function loadMembershipPayments() {
+  document.getElementById('memberships-table').innerHTML = skeletonRows(4, 7);
   if (!membershipYears.length) await loadMembershipYears();
   const yearId = document.getElementById('membership-year-filter').value;
   let url = '/membership/payments/?';
@@ -2249,11 +2498,11 @@ async function loadMembershipPayments() {
   const payments = data.results || data;
   const tbody = document.getElementById('memberships-table');
   if (!payments.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Aucune cotisation enregistrée</td></tr>';
+    tbody.innerHTML = emptyState({ icon: '💰', title: 'Aucune cotisation enregistrée', sub: 'Enregistrez une première cotisation.', actionLabel: '+ Ajouter une cotisation', actionFn: 'openMembershipPaymentModal()' });
     return;
   }
-  tbody.innerHTML = payments.map(p => `
-    <tr>
+  tbody.innerHTML = payments.map((p, i) => `
+    <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td>${p.date}</td>
       <td><strong>${esc(p.member_name)}</strong></td>
       <td>${esc(p.year_label)}</td>
@@ -2302,12 +2551,15 @@ async function saveMembershipPayment() {
     return;
   }
   closeModal('modal-membership-payment');
+  toast('Cotisation enregistrée ✓');
   loadMembershipPayments();
 }
 
 async function deleteMembershipPayment(id) {
-  if (!confirm('Supprimer cette cotisation ?')) return;
+  const ok = await confirmDialog({ title: 'Supprimer cette cotisation ?', msg: 'Cette action est irréversible.', icon: '🗑️' });
+  if (!ok) return;
   await apiFetch(`/membership/payments/${id}/`, 'DELETE');
+  toast('Cotisation supprimée', 'info');
   loadMembershipPayments();
 }
 
@@ -2318,12 +2570,14 @@ async function loadUnpaidMembers() {
   const alertEl = document.getElementById('unpaid-members-alert');
   infoEl.classList.add('hidden');
   alertEl.innerHTML = '';
+  document.getElementById('unpaid-members-table').innerHTML = skeletonRows(4, 4);
 
   const res = await apiFetch('/membership/members/unpaid/');
   if (!res) return;
 
   if (res.status === 404) {
-    alertEl.innerHTML = '<div class="alert alert-error">Aucune année de cotisation active. Créez-en une depuis l\'Admin Django.</div>';
+    document.getElementById('unpaid-members-table').innerHTML = '';
+    toast('Aucune année de cotisation active. Créez-en une depuis l\'Admin Django.', 'error', 5000);
     return;
   }
   if (!res.ok) return;
@@ -2334,11 +2588,11 @@ async function loadUnpaidMembers() {
 
   const tbody = document.getElementById('unpaid-members-table');
   if (!data.members.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--green);padding:24px;">✅ Tous les adhérents ont cotisé !</td></tr>';
+    tbody.innerHTML = emptyState({ icon: '✅', title: 'Tous les adhérents ont cotisé !', sub: 'Aucun impayé pour l\'année en cours.' });
     return;
   }
-  tbody.innerHTML = data.members.map(m => `
-    <tr>
+  tbody.innerHTML = data.members.map((m, i) => `
+    <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td><strong>${esc(m.full_name)}</strong></td>
       <td>${esc(m.phone) || '<span class="text-muted">—</span>'}</td>
       <td>${esc(m.email) || '<span class="text-muted">—</span>'}</td>
@@ -2376,10 +2630,10 @@ async function loadMembershipYearsForSelect(selectId) {
 // ── Trésorerie ────────────────────────────────────────────────────────────────
 
 async function loadTreasury() {
-  // Construire l'URL avec tous les filtres
+  document.getElementById('treasury-table').innerHTML = skeletonRows(4, 8);
   const direction = document.getElementById('trs-direction-filter').value;
   const category  = document.getElementById('trs-category-filter').value;
-  const month     = document.getElementById('trs-month-filter').value;   // "2026-03"
+  const month     = document.getElementById('trs-month-filter').value;
   const search    = document.getElementById('trs-search').value.trim();
 
   let url = '/treasury/transactions/?ordering=-date';
@@ -2394,11 +2648,9 @@ async function loadTreasury() {
   const txs = data.results || data;
   renderTreasury(txs);
 
-  // Résumé financier selon les mêmes filtres
   let sumUrl = '/treasury/transactions/summary/?';
   if (month) sumUrl += `month=${month}`;
   else {
-    // par défaut : mois courant
     const today = new Date().toISOString().slice(0, 7);
     sumUrl += `month=${today}`;
   }
@@ -2416,16 +2668,16 @@ async function loadTreasury() {
 function renderTreasury(txs) {
   const tbody = document.getElementById('treasury-table');
   if (!txs.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">Aucune transaction enregistrée</td></tr>';
+    tbody.innerHTML = emptyState({ icon: '🏦', title: 'Aucune transaction enregistrée', sub: 'Ajoutez une entrée ou sortie depuis le bouton ci-dessus.', actionLabel: '+ Ajouter une transaction', actionFn: 'openTreasuryModal()' });
     return;
   }
-  tbody.innerHTML = txs.map(tx => {
+  tbody.innerHTML = txs.map((tx, i) => {
     const isIn  = tx.direction === 'IN';
     const dirBadge = isIn
       ? '<span class="badge badge-green">▲ Entrée</span>'
       : '<span class="badge badge-red">▼ Sortie</span>';
     return `
-    <tr>
+    <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td>${tx.date}</td>
       <td><strong>${esc(tx.label)}</strong></td>
       <td><span class="badge badge-gray">${esc(tx.category_display)}</span></td>
@@ -2501,12 +2753,15 @@ async function saveTreasuryTransaction() {
     return;
   }
   closeModal('modal-treasury');
+  toast(id ? 'Transaction mise à jour ✓' : 'Transaction enregistrée ✓');
   loadTreasury();
 }
 
 async function deleteTreasuryTransaction(id) {
-  if (!confirm('Supprimer cette transaction ?')) return;
+  const ok = await confirmDialog({ title: 'Supprimer cette transaction ?', msg: 'Cette action est irréversible.', icon: '🗑️' });
+  if (!ok) return;
   await apiFetch(`/treasury/transactions/${id}/`, 'DELETE');
+  toast('Transaction supprimée', 'info');
   loadTreasury();
 }
 
@@ -2555,11 +2810,10 @@ async function saveSettings() {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const msg = JSON.stringify(err);
-    alert.innerHTML = `<div class="alert alert-error">Erreur : ${msg}</div>`;
+    toast('Erreur : ' + msg, 'error', 5000);
     return;
   }
-  alert.innerHTML = `<div class="alert alert-success" style="background:#14532d;color:#86efac;padding:10px 14px;border-radius:6px;">✅ Paramètres enregistrés</div>`;
-  setTimeout(() => { alert.textContent = ''; }, 3000);
+  toast('Paramètres enregistrés ✓');
 }
 
 // ── Auto-login si token présent ───────────────────────────────────────────────
@@ -2592,16 +2846,20 @@ if (accessToken) {
 const ROLE_LABELS = { ADMIN: '🔑 Admin', TRESORIER: '💼 Trésorier', ECOLE_MANAGER: '🎓 École Manager', '': '—' };
 
 async function loadUsers() {
-  const alert = document.getElementById('users-alert');
-  alert.textContent = '';
+  document.getElementById('users-table').innerHTML = skeletonRows(3, 7);
   const res = await apiFetch('/users/');
-  if (!res || !res.ok) { alert.innerHTML = '<div class="alert alert-error">Erreur chargement utilisateurs</div>'; return; }
+  if (!res || !res.ok) { toast('Erreur chargement utilisateurs', 'error'); return; }
   const users = await res.json();
   const tbody = document.getElementById('users-table');
   tbody.innerHTML = '';
-  if (!users.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Aucun utilisateur</td></tr>'; return; }
-  users.forEach(u => {
+  if (!users.length) {
+    tbody.innerHTML = emptyState({ icon: '👤', title: 'Aucun utilisateur', sub: 'Créez un premier compte utilisateur.', actionLabel: '+ Ajouter un utilisateur', actionFn: 'openUserModal()' });
+    return;
+  }
+  users.forEach((u, i) => {
     const tr = document.createElement('tr');
+    tr.className = 'fade-in';
+    tr.style.animationDelay = `${i * 30}ms`;
     tr.innerHTML = `
       <td><strong>${u.username}</strong></td>
       <td>${u.email}</td>
@@ -2665,18 +2923,23 @@ async function saveUser() {
   if (!res) return;
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    document.getElementById('users-alert').innerHTML = `<div class="alert alert-error">${JSON.stringify(err)}</div>`;
+    toast(JSON.stringify(err), 'error', 5000);
     closeModal('modal-user');
     return;
   }
   closeModal('modal-user');
+  toast(userId ? 'Utilisateur mis à jour ✓' : 'Utilisateur créé ✓');
   loadUsers();
 }
 
 async function deleteUser(userId, username) {
-  if (!confirm(`Supprimer l'utilisateur "${username}" ?`)) return;
+  const ok = await confirmDialog({ title: `Supprimer "${username}" ?`, msg: 'Cet utilisateur sera définitivement supprimé.', icon: '🗑️' });
+  if (!ok) return;
   const res = await apiFetch(`/users/${userId}/`, 'DELETE');
-  if (res && res.status === 204) loadUsers();
+  if (res && res.status === 204) {
+    toast('Utilisateur supprimé', 'info');
+    loadUsers();
+  }
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
@@ -2686,7 +2949,7 @@ async function exportFile(resource, format) {
   const res = await fetch(url, {
     headers: { 'Authorization': `Bearer ${localStorage.getItem('access')}` }
   });
-  if (!res.ok) { alert('Erreur export'); return; }
+  if (!res.ok) { toast('Erreur export', 'error'); return; }
   const blob = await res.blob();
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
