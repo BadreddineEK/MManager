@@ -469,9 +469,9 @@ async function loadMosqueList() {
         + list.map(m => `<option value="${esc(m.slug)}">${esc(m.name)}</option>`).join('');
     }
   } catch (e) {
-    // API indisponible (Pi pas encore mis à jour) → on cache le dropdown silencieusement
-    const wrap = document.getElementById('select-block');
-    if (wrap) wrap.style.display = 'none';
+    // API indisponible → conserver le dropdown visible pour saisie manuelle
+    const sel = document.getElementById('mosque-select');
+    if (sel) sel.innerHTML = '<option value="">— Saisir manuellement ci-dessous —</option>';
   }
 }
 
@@ -681,14 +681,16 @@ function applyTheme(theme) {
 const savedTheme = localStorage.getItem('kpi_theme') || 'dark';
 applyTheme(savedTheme);
 
-loadMosqueList();
-
-const saved = localStorage.getItem('kpi_slug');
-if (saved) {
-  document.getElementById('slug-input').value = saved;
-  mosqueSlug = saved;
-  fetchKPI();
+async function init() {
+  await loadMosqueList(); // on attend la liste avant de vérifier le slug sauvegardé
+  const saved = localStorage.getItem('kpi_slug');
+  if (saved) {
+    document.getElementById('slug-input').value = saved;
+    mosqueSlug = saved;
+    fetchKPI();
+  }
 }
+init();
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('slug-input').addEventListener('keydown', e => {

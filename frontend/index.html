@@ -1708,43 +1708,45 @@
       <h3 id="modal-campaign-title">Nouvelle cagnotte</h3>
       <button class="modal-close" onclick="closeModal('modal-campaign')">✕</button>
     </div>
-    <input type="hidden" id="campaign-id" />
-    <div id="modal-campaign-error" class="alert alert-error hidden"></div>
-    <div style="display:grid;grid-template-columns:60px 1fr;gap:12px;align-items:end;">
-      <div>
-        <label>Icône</label>
-        <input type="text" id="campaign-icon" value="🎯" maxlength="4" style="font-size:1.5rem;text-align:center;padding:8px;" />
+    <div class="modal-body">
+      <input type="hidden" id="campaign-id" />
+      <div id="modal-campaign-error" class="alert alert-error hidden"></div>
+      <div style="display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:end;">
+        <div>
+          <label>Icône</label>
+          <input type="text" id="campaign-icon" value="🎯" maxlength="4" style="font-size:1.4rem;text-align:center;padding:8px;" />
+        </div>
+        <div>
+          <label>Nom de la cagnotte *</label>
+          <input type="text" id="campaign-name" placeholder="Ex: Cagnotte Ramadan 2026" />
+        </div>
       </div>
-      <div>
-        <label>Nom de la cagnotte *</label>
-        <input type="text" id="campaign-name" placeholder="Ex: Cagnotte Ramadan 2026" />
+      <label>Description</label>
+      <textarea id="campaign-description" rows="2" placeholder="Objectif, contexte…" style="width:100%;resize:vertical;"></textarea>
+      <label>Objectif (€) <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+      <input type="number" id="campaign-goal" min="0" step="0.01" placeholder="5000" />
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label>Date de début</label>
+          <input type="date" id="campaign-start" />
+        </div>
+        <div>
+          <label>Date de fin</label>
+          <input type="date" id="campaign-end" />
+        </div>
       </div>
-    </div>
-    <label>Description</label>
-    <textarea id="campaign-description" rows="2" placeholder="Objectif, contexte…" style="width:100%;resize:vertical;"></textarea>
-    <label>Objectif (€) <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
-    <input type="number" id="campaign-goal" min="0" step="0.01" placeholder="5000" />
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div>
-        <label>Date de début</label>
-        <input type="date" id="campaign-start" />
-      </div>
-      <div>
-        <label>Date de fin</label>
-        <input type="date" id="campaign-end" />
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
-      <div>
-        <label>Statut</label>
-        <select id="campaign-status">
-          <option value="active">✅ Active</option>
-          <option value="closed">🔒 Clôturée</option>
-        </select>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;padding-top:24px;">
-        <input type="checkbox" id="campaign-show-kpi" checked style="width:auto;margin:0;" />
-        <label for="campaign-show-kpi" style="margin:0;cursor:pointer;">Visible sur KPI</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+        <div>
+          <label>Statut</label>
+          <select id="campaign-status">
+            <option value="active">✅ Active</option>
+            <option value="closed">🔒 Clôturée</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding-top:26px;">
+          <input type="checkbox" id="campaign-show-kpi" checked style="width:auto;margin:0;" />
+          <label for="campaign-show-kpi" style="margin:0;cursor:pointer;font-size:0.85rem;">Visible sur KPI</label>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2966,9 +2968,15 @@ let allCampaigns = [];
 
 async function loadCampaigns() {
   const grid = document.getElementById('campaigns-grid');
-  grid.innerHTML = '<div style="color:var(--muted);padding:32px 0;">Chargement…</div>';
+  grid.innerHTML = skeletonRows(3, 3);
   const res = await apiFetch('/treasury/campaigns/');
-  if (!res || !res.ok) return;
+  if (!res || !res.ok) {
+    grid.innerHTML = emptyState({
+      icon: '⚠️', title: 'Impossible de charger les cagnottes',
+      sub: 'Vérifiez que la migration a bien été appliquée sur le serveur (docker compose exec backend python manage.py migrate).',
+    });
+    return;
+  }
   const data = await res.json();
   allCampaigns = data.results || data;
   renderCampaigns(allCampaigns);
