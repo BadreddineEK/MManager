@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0004_user_permissions_data'),
+        ('core', '0005_alter_mosquesettings_kpi_refresh_secs_and_more'),
     ]
 
     operations = [
