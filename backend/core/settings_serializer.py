@@ -71,7 +71,7 @@ class OnboardingSerializer(serializers.Serializer):
 
     # Ecole
     active_school_year_label = serializers.CharField(
-        max_length=50, help_text='Ex: "2025-2026"'
+        max_length=50, required=False, allow_blank=True, help_text='Ex: "2025-2026"'
     )
     school_levels = serializers.ListField(
         child=serializers.CharField(max_length=10),
