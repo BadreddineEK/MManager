@@ -36,5 +36,7 @@ urlpatterns = [
     path("api/audit/", include("core.audit_urls", namespace="audit")),
     # Notifications email (ADMIN)
     path("api/notifications/", include("core.notification_urls", namespace="notifications")),
+    # Import en masse CSV/Excel (ADMIN)
+    path("api/import/", include("core.import_urls", namespace="import")),
 ]
 

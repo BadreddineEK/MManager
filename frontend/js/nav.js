@@ -5,7 +5,7 @@
 const ALL_SECTIONS = [
   'school', 'families', 'children', 'payments', 'arrears',
   'members', 'memberships', 'unpaid-members', 'treasury',
-  'campaigns', 'users', 'settings', 'audit',
+  'campaigns', 'users', 'settings', 'audit', 'import',
 ];
 
 function showSection(name) {
@@ -34,6 +34,7 @@ function showSection(name) {
   if (name === 'users')          loadUsers();
   if (name === 'settings')       loadSettings();
   if (name === 'audit')          loadAudit();
+  if (name === 'import')         initImportSection();
 }
 
 // ── Mobile sidebar ────────────────────────────────────────────────────────────
