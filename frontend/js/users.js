@@ -56,6 +56,9 @@ function applyRBAC() {
     ['btn-add-treasury',  perms.treasury?.write],
     ['btn-add-campaign',  perms.campaigns?.write],
     ['btn-add-user',      perms.users?.write],
+    ['btn-bulk-school',   perms.school?.write],
+    ['btn-bulk-members',  perms.membership?.write],
+    ['btn-bulk-treasury', perms.treasury?.write],
   ];
   writeBtns.forEach(([id, allowed]) => {
     const el = document.getElementById(id);

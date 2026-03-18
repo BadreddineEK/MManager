@@ -215,8 +215,10 @@ tbody tr:hover td { background: #faf8ff; }
   width: 96vw;
   max-width: 1100px;
   max-height: 90vh;
+  flex-direction: column;  /* display:flex vient de .modal-overlay.open → .modal via flex context */
+}
+#modal-bulk.open .modal {
   display: flex;
-  flex-direction: column;
 }
 #modal-bulk .modal-body {
   flex: 1;
