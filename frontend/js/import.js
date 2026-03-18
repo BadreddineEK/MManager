@@ -82,7 +82,7 @@ async function loadSchoolYearsForImport() {
 async function runImport(type) {
   const mosqueId = getMosqueId();
   if (!mosqueId) {
-    showToast('Mosquée non identifiée — reconnectez-vous.', 'error');
+    toast('Mosquée non identifiée — reconnectez-vous.', 'error');
     return;
   }
 
@@ -104,11 +104,11 @@ async function runImport(type) {
   }
 
   if (!fileInput?.files?.length) {
-    showToast('Sélectionnez un fichier CSV ou Excel.', 'error');
+    toast('Sélectionnez un fichier CSV ou Excel.', 'error');
     return;
   }
   if (extraField && !extraValue) {
-    showToast('Sélectionnez une année cible.', 'error');
+    toast('Sélectionnez une année cible.', 'error');
     return;
   }
 
@@ -128,7 +128,7 @@ async function runImport(type) {
     renderImportResult(result, type, dryRun);
   } catch (err) {
     hideProgress();
-    showToast(err.message || 'Erreur lors de l\'import.', 'error');
+    toast(err.message || 'Erreur lors de l\'import.', 'error');
   }
   hideProgress();
 }
@@ -257,13 +257,4 @@ async function apiPostForm(url, formData) {
     throw new Error(msg);
   }
   return json;
-}
-
-function showProgress() {
-  const bar = document.getElementById('top-progress');
-  if (bar) bar.classList.remove('hidden');
-}
-function hideProgress() {
-  const bar = document.getElementById('top-progress');
-  if (bar) bar.classList.add('hidden');
 }
