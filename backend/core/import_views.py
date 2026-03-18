@@ -554,10 +554,10 @@ class ImportSchoolView(APIView):
                 skipped += 1
                 continue
 
-            phone1 = row.get("tel_papa", "").strip() or ""
-            phone2 = row.get("tel_maman", "").strip() or ""
+            phone1 = (row.get("tel_papa", "").strip() or "")[:50]
+            phone2 = (row.get("tel_maman", "").strip() or "")[:50]
             email = row.get("email", "").strip()
-            niveau = row.get("niveau", "").strip().upper() or "N1"
+            niveau = (row.get("niveau", "").strip().upper() or "N1")[:50]
 
             is_new = (nom_parents not in existing_families) and (nom_parents not in batch_families)
             if is_new:

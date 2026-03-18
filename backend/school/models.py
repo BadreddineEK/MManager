@@ -47,8 +47,8 @@ class Family(models.Model):
     )
     primary_contact_name = models.CharField(max_length=200, verbose_name="Nom du contact principal")
     email = models.EmailField(blank=True, default="", verbose_name="Email")
-    phone1 = models.CharField(max_length=20, verbose_name="Telephone principal")
-    phone2 = models.CharField(max_length=20, blank=True, default="", verbose_name="Telephone secondaire")
+    phone1 = models.CharField(max_length=50, blank=True, default="", verbose_name="Telephone principal")
+    phone2 = models.CharField(max_length=50, blank=True, default="", verbose_name="Telephone secondaire")
     address = models.TextField(blank=True, default="", verbose_name="Adresse")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -79,7 +79,7 @@ class Child(models.Model):
     )
     first_name = models.CharField(max_length=100, verbose_name="Prenom")
     birth_date = models.DateField(null=True, blank=True, verbose_name="Date de naissance")
-    level = models.CharField(max_length=20, verbose_name="Niveau", help_text="Ex: NP, N1, N2...")
+    level = models.CharField(max_length=50, verbose_name="Niveau", help_text="Ex: NP, N1, N2...")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
