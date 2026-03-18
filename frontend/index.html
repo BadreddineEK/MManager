@@ -251,6 +251,7 @@
           <button class="btn btn-success btn-sm" onclick="exportFile('families','excel')">⬇ Excel</button>
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('families','pdf')">⬇ PDF</button>
           <button class="btn btn-sm" onclick="showSection('import');switchImportTab('school')" title="Importer plusieurs familles via CSV">📥 Import CSV</button>
+          <button class="btn btn-sm" onclick="openBulkModal('families')" title="Saisir plusieurs familles d'un coup">✏️ Saisie multiple</button>
           <button id="btn-add-school" class="btn btn-primary" onclick="openFamilyModal()">+ Famille</button>
         </div>
       </div>
@@ -277,6 +278,7 @@
         </div>
         <div class="page-header-actions">
           <button class="btn btn-sm" onclick="showSection('import');switchImportTab('school')" title="Importer plusieurs élèves via CSV">📥 Import CSV</button>
+          <button class="btn btn-sm" onclick="openBulkModal('children')" title="Saisir plusieurs enfants d'un coup">✏️ Saisie multiple</button>
           <button class="btn btn-primary" onclick="openChildModal()">+ Enfant</button>
         </div>
       </div>
@@ -367,6 +369,7 @@
           <button class="btn btn-success btn-sm" onclick="exportFile('members','excel')">⬇ Excel</button>
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('members','pdf')">⬇ PDF</button>
           <button class="btn btn-sm" onclick="showSection('import');switchImportTab('members')" title="Importer plusieurs adhérents via CSV">📥 Import CSV</button>
+          <button class="btn btn-sm" onclick="openBulkModal('members')" title="Saisir plusieurs adhérents d'un coup">✏️ Saisie multiple</button>
           <button id="btn-add-member" class="btn btn-primary" onclick="openMemberModal()">+ Adhérent</button>
         </div>
       </div>
@@ -446,6 +449,7 @@
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('treasury','pdf')">⬇ PDF</button>
           <button class="btn btn-sm" onclick="openAnnualReceiptModal()" title="Générer un reçu fiscal annuel">🧾 Récap annuel</button>
           <button class="btn btn-sm" onclick="showSection('import');switchImportTab('transactions')" title="Importer plusieurs transactions via CSV">📥 Import CSV</button>
+          <button class="btn btn-sm" onclick="openBulkModal('treasury')" title="Saisir plusieurs transactions d'un coup">✏️ Saisie multiple</button>
           <button id="btn-add-treasury" class="btn btn-primary" onclick="openTreasuryModal()">+ Transaction</button>
         </div>
       </div>
@@ -933,7 +937,32 @@
 </div><!-- /#app-screen -->
 
 <!-- ══ MODALS ══════════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="modal-family">
+<!-- ══ MODAL BULK — Saisie multiple type tableur ══════════════════════════ -->
+<div class="modal-overlay" id="modal-bulk">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="bulk-modal-title">Saisie multiple</h3>
+      <button class="modal-close" onclick="closeModal('modal-bulk')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="bulk-table-wrap">
+        <table class="bulk-table">
+          <thead id="bulk-thead"></thead>
+          <tbody id="bulk-tbody"></tbody>
+        </table>
+      </div>
+      <div class="bulk-toolbar">
+        <span class="bulk-row-count" id="bulk-row-count">0 ligne(s)</span>
+        <button class="btn btn-sm" onclick="_bulkAddRow()">+ Ligne</button>
+        <button class="btn btn-primary" id="bulk-save-btn" onclick="saveBulk()">💾 Enregistrer tout</button>
+        <button class="btn btn-sm" onclick="closeModal('modal-bulk')">Annuler</button>
+      </div>
+      <div id="bulk-report" class="hidden"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Famille -->
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-family-title">Ajouter une famille</h3>
@@ -1317,6 +1346,7 @@
 <script src="js/audit.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/import.js"></script>
+<script src="js/bulk.js"></script>
 <script src="js/auth.js"></script><!-- DOIT être chargé EN DERNIER -->
 
 </body>

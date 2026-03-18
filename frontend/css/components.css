@@ -210,7 +210,104 @@ tbody tr:hover td { background: #faf8ff; }
 .import-summary li  { margin-bottom: 2px; }
 .import-errors-table-wrap { max-height: 320px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); }
 
-/* ── CARD HEADER / BODY / FOOTER (partagés) ──────────────────── */
+/* ── MODAL BULK (tableur multi-lignes) ───────────────────── */
+#modal-bulk .modal {
+  width: 96vw;
+  max-width: 1100px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+#modal-bulk .modal-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+.bulk-table-wrap {
+  overflow: auto;
+  flex: 1;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.bulk-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+.bulk-table thead th {
+  position: sticky;
+  top: 0;
+  background: #faf9fe;
+  padding: 9px 10px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  z-index: 2;
+}
+.bulk-table td {
+  padding: 4px 5px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.bulk-table tbody tr:hover td { background: #faf8ff; }
+.bulk-cell {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  margin-bottom: 0;
+  transition: border-color 0.12s, background 0.12s;
+}
+.bulk-cell:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(109,40,217,0.1);
+}
+.bulk-cell:hover { border-color: var(--border); background: #fff; }
+.bulk-del-btn { opacity: 0.35; transition: opacity 0.15s; padding: 4px 7px; font-size: 0.75rem; }
+.bulk-table tbody tr:hover .bulk-del-btn { opacity: 1; }
+
+/* Couleurs état ligne */
+.bulk-row-ok      td { background: #f0fdf4 !important; }
+.bulk-row-error   td { background: #fef2f2 !important; }
+.bulk-row-saving  td { background: #f5f3ff !important; opacity: 0.7; }
+
+/* Barre d'infos + boutons sous le tableau */
+.bulk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: #faf9fe;
+  flex-shrink: 0;
+}
+.bulk-toolbar .bulk-row-count { font-size: 0.8rem; color: var(--muted); margin-right: auto; }
+
+/* Rapport de résultat */
+#bulk-report {
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.bulk-report-line { font-size: 0.8rem; padding: 2px 0; }
+.bulk-report-ok   { color: #15803d; }
+.bulk-report-err  { color: #b91c1c; font-weight: 600; }
+
 .card-header {
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
