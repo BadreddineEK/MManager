@@ -51,8 +51,9 @@ async function loadMembershipYearsForImport() {
   const sel = document.getElementById('import-members-year');
   if (!sel) return;
   try {
-    const data = await apiGet('/api/membership/years/');
-    const years = Array.isArray(data) ? data : (data.results || []);
+    const res = await apiFetch('/membership/years/');
+    const data = res && res.ok ? await res.json() : null;
+    const years = data ? (Array.isArray(data) ? data : (data.results || [])) : [];
     sel.innerHTML = years.length
       ? years.map(y => `<option value="${y.id}">${y.year}${y.is_active ? ' ✓' : ''}</option>`).join('')
       : '<option value="">Aucune année disponible</option>';
@@ -65,8 +66,9 @@ async function loadSchoolYearsForImport() {
   const sel = document.getElementById('import-school-year');
   if (!sel) return;
   try {
-    const data = await apiGet('/api/school/years/');
-    const years = Array.isArray(data) ? data : (data.results || []);
+    const res = await apiFetch('/school/years/');
+    const data = res && res.ok ? await res.json() : null;
+    const years = data ? (Array.isArray(data) ? data : (data.results || [])) : [];
     sel.innerHTML = years.length
       ? years.map(y => `<option value="${y.id}">${y.label}${y.is_active ? ' ✓' : ''}</option>`).join('')
       : '<option value="">Aucune année disponible</option>';
