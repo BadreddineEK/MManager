@@ -48,7 +48,7 @@ class Member(models.Model):
     )
     full_name = models.CharField(max_length=200, verbose_name="Nom complet")
     email = models.EmailField(blank=True, default="", verbose_name="Email")
-    phone = models.CharField(max_length=20, verbose_name="Telephone")
+    phone = models.CharField(max_length=50, blank=True, default="", verbose_name="Telephone")
     address = models.TextField(blank=True, default="", verbose_name="Adresse")
     created_at = models.DateTimeField(auto_now_add=True)
 

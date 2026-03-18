@@ -356,7 +356,7 @@ class ImportMembersView(APIView):
                 skipped += 1
                 continue
 
-            phone = row.get("telephone", "").strip() or row.get("tel", "").strip() or ""
+            phone = (row.get("telephone", "").strip() or row.get("tel", "").strip() or "")[:50]
             email = row.get("email", "").strip()
             address = row.get("adresse", "").strip()
             method = _normalize_method(row.get("mode_paiement", ""))
