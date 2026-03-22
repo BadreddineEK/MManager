@@ -216,19 +216,19 @@ Deux niveaux de config, bien séparés :
 
 ```bash
 # Connexion rapide
-alias sshpi="ssh mosquee@192.168.0.13"
+alias sshpi="ssh mosquee@192.168.0.14"
 
 # Mise à jour rapide frontend
-alias pi-front="ssh mosquee@192.168.0.13 'cd ~/MManager && git pull && docker compose --profile prod restart nginx'"
+alias pi-front="ssh mosquee@192.168.0.14 'cd ~/MManager && git pull && docker compose --profile prod restart nginx'"
 
 # Mise à jour complète
-alias pi-deploy="ssh mosquee@192.168.0.13 'cd ~/MManager && ./deploy.sh'"
+alias pi-deploy="ssh mosquee@192.168.0.14 'cd ~/MManager && ./deploy.sh'"
 
 # Voir les logs live
-alias pi-logs="ssh mosquee@192.168.0.13 'cd ~/MManager && docker compose --profile prod logs -f'"
+alias pi-logs="ssh mosquee@192.168.0.14 'cd ~/MManager && docker compose --profile prod logs -f'"
 
 # État des containers
-alias pi-status="ssh mosquee@192.168.0.13 'docker compose --profile prod ps'"
+alias pi-status="ssh mosquee@192.168.0.14 'docker compose --profile prod ps'"
 ```
 
 ```bash
@@ -377,8 +377,8 @@ git pull origin main
 Ajoute ça sur ton Mac dans `~/.zshrc` pour ne pas retaper l'IP :
 
 ```bash
-alias sshpi="ssh mosquee@192.168.0.13"
-alias piupdate="ssh mosquee@192.168.0.13 'cd ~/MManager && git pull origin main && docker compose --profile prod restart nginx'"
+alias sshpi="ssh mosquee@192.168.0.14"
+alias piupdate="ssh mosquee@192.168.0.14 'cd ~/MManager && git pull origin main && docker compose --profile prod restart nginx'"
 ```
 
 Rechargement :

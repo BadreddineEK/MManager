@@ -42,7 +42,7 @@ if [ -f "$INSTANCES_FILE" ]; then
 else
     # ⚠️ Modifier cette liste avec vos instances
     INSTANCES=(
-        "mosquee@192.168.0.13 Meximieux"
+        "mosquee@192.168.0.14 Meximieux"
         # "mosquee@192.168.1.20 Lyon"
         # "mosquee@10.0.0.5    Paris"
     )
