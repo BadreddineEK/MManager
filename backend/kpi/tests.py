@@ -91,9 +91,9 @@ class TestKPISummary(TestCase):
             amount=500, date="2026-01-15",
         )
 
-        # Adhésion
+        # Adhésion — utilise l'année créée par le signal (2026, is_active=True)
         self.mbr_year, _ = MembershipYear.objects.get_or_create(
-            mosque=self.mosque, year=2025,
+            mosque=self.mosque, year=2026,
             defaults={"amount_expected": 50, "is_active": True},
         )
         self.member1 = Member.objects.create(mosque=self.mosque, full_name="Membre1", phone="0600000010")
