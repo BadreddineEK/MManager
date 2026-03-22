@@ -15,7 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.permissions import IsAdminRole
+from core.permissions import HasMosquePermission, IsAdminRole
 from core.utils import get_mosque, log_action
 
 from .models import User
@@ -43,7 +43,7 @@ class UserListCreateView(APIView):
     POST /api/users/   → créer un utilisateur (ADMIN)
     """
 
-    permission_classes = [IsAuthenticated, IsAdminRole]
+    permission_classes = [IsAuthenticated, HasMosquePermission, IsAdminRole]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -77,7 +77,7 @@ class UserDetailView(APIView):
     ADMIN uniquement. Un ADMIN ne peut modifier que les users de sa mosquée.
     """
 
-    permission_classes = [IsAuthenticated, IsAdminRole]
+    permission_classes = [IsAuthenticated, HasMosquePermission, IsAdminRole]
 
     def _get_user(self, request, user_id: int):
         """Retourne le user s'il appartient à la même mosquée, sinon 404."""

@@ -119,6 +119,8 @@ class TreasuryTransactionViewSet(viewsets.ModelViewSet):
         """
         GET /api/treasury/transactions/summary/
         Params optionnels : ?month=2025-03  ou  ?year=2025
+        Sans paramètre : retourne le solde du mois courant.
+        Avec ?total=1   : retourne le solde cumulé de toutes les transactions.
         Retourne : total_in, total_out, balance, par categorie
         """
         mosque = get_mosque(request)
@@ -126,6 +128,16 @@ class TreasuryTransactionViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Aucune mosquee trouvee."}, status=status.HTTP_404_NOT_FOUND)
 
         qs = TreasuryTransaction.objects.filter(mosque=mosque)
+
+        # Solde total (toutes transactions, sans filtre de période)
+        if request.query_params.get("total"):
+            total_in  = qs.filter(direction="IN").aggregate(s=Sum("amount"))["s"] or 0
+            total_out = qs.filter(direction="OUT").aggregate(s=Sum("amount"))["s"] or 0
+            return Response({
+                "total_in":  float(total_in),
+                "total_out": float(total_out),
+                "balance":   float(total_in - total_out),
+            })
 
         month = request.query_params.get("month")
         year_param = request.query_params.get("year")

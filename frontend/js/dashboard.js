@@ -45,23 +45,25 @@ function _monthLabel(ym) {
 async function loadDashboard() {
   const months = _last6Months();
 
-  const [fRes, cRes, pRes, aRes, mRes, tSummaryRes, unpaidRes] = await Promise.all([
+  const [fRes, cRes, pRes, aRes, mRes, tTotalRes, tMonthRes, unpaidRes] = await Promise.all([
     apiFetch('/school/families/'),
     apiFetch('/school/children/'),
     apiFetch('/school/payments/'),
     apiFetch('/school/families/arrears/'),
     apiFetch('/membership/members/'),
-    apiFetch('/treasury/transactions/summary/'),
+    apiFetch('/treasury/transactions/summary/?total=1'),
+    apiFetch(`/treasury/transactions/summary/?month=${new Date().toISOString().slice(0, 7)}`),
     apiFetch('/membership/members/unpaid/'),
   ]);
 
-  const fData  = fRes?.ok        ? await fRes.json()        : null;
-  const cData  = cRes?.ok        ? await cRes.json()        : null;
-  const pData  = pRes?.ok        ? await pRes.json()        : null;
-  const aData  = aRes?.ok        ? await aRes.json()        : null;
-  const mData  = mRes?.ok        ? await mRes.json()        : null;
-  const tSum   = tSummaryRes?.ok ? await tSummaryRes.json() : null;
-  const unpaid = unpaidRes?.ok   ? await unpaidRes.json()   : null;
+  const fData    = fRes?.ok      ? await fRes.json()      : null;
+  const cData    = cRes?.ok      ? await cRes.json()      : null;
+  const pData    = pRes?.ok      ? await pRes.json()      : null;
+  const aData    = aRes?.ok      ? await aRes.json()      : null;
+  const mData    = mRes?.ok      ? await mRes.json()      : null;
+  const tTotal   = tTotalRes?.ok ? await tTotalRes.json() : null;
+  const tSum     = tMonthRes?.ok ? await tMonthRes.json() : null;
+  const unpaid   = unpaidRes?.ok ? await unpaidRes.json() : null;
 
   const families   = fData  ? (fData.results  || fData)  : [];
   const children   = cData  ? (cData.results  || cData)  : [];
@@ -76,11 +78,19 @@ async function loadDashboard() {
   document.getElementById('stat-arrears').textContent  = aData?.count ?? (aData?.families?.length ?? 0);
   document.getElementById('stat-members').textContent  = mData?.count ?? members.length;
 
-  if (tSum) {
-    const bal = parseFloat(tSum.balance ?? ((tSum.total_in ?? 0) - (tSum.total_out ?? 0)));
+  if (tTotal) {
+    const bal = parseFloat(tTotal.balance);
     const el  = document.getElementById('stat-balance');
     el.textContent = `${bal >= 0 ? '+' : ''}${bal.toFixed(0)} €`;
     el.style.color = bal >= 0 ? '#16a34a' : '#dc2626';
+    // Sous-titre : entrées/sorties du mois courant
+    if (tSum) {
+      const mBal = parseFloat(tSum.balance ?? 0);
+      const now = new Date();
+      const monthLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      const sub = document.getElementById('stat-balance-month');
+      if (sub) sub.textContent = `${monthLabel} : ${mBal >= 0 ? '+' : ''}${mBal.toFixed(0)} €`;
+    }
   }
 
   await loadSchoolYears();
