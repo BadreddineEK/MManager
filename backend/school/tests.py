@@ -90,9 +90,9 @@ class TestFamilyCRUD:
         assert res.data["primary_contact_name"] == "Ahmed Benali"
 
     def test_create_family_missing_required_field(self, admin_client):
-        """phone1 est obligatoire."""
+        """primary_contact_name est obligatoire."""
         res = admin_client.post(FAMILIES_URL, {
-            "primary_contact_name": "Sans Téléphone",
+            "phone1": "0600000000",
         }, format="json")
         assert res.status_code == 400
 

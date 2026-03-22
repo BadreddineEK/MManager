@@ -77,9 +77,9 @@ class TestKPISummary(TestCase):
         )
 
         # École
-        self.school_year = SchoolYear.objects.create(
+        self.school_year, _ = SchoolYear.objects.get_or_create(
             mosque=self.mosque, label="2025-2026",
-            start_date="2025-09-01", end_date="2026-06-30", is_active=True,
+            defaults={"start_date": "2025-09-01", "end_date": "2026-06-30", "is_active": True},
         )
         self.family1 = Family.objects.create(mosque=self.mosque, primary_contact_name="Famille1", phone1="0600000001")
         self.family2 = Family.objects.create(mosque=self.mosque, primary_contact_name="Famille2", phone1="0600000002")
@@ -92,8 +92,9 @@ class TestKPISummary(TestCase):
         )
 
         # Adhésion
-        self.mbr_year = MembershipYear.objects.create(
-            mosque=self.mosque, year=2025, amount_expected=50, is_active=True
+        self.mbr_year, _ = MembershipYear.objects.get_or_create(
+            mosque=self.mosque, year=2025,
+            defaults={"amount_expected": 50, "is_active": True},
         )
         self.member1 = Member.objects.create(mosque=self.mosque, full_name="Membre1", phone="0600000010")
         self.member2 = Member.objects.create(mosque=self.mosque, full_name="Membre2", phone="0600000011")
