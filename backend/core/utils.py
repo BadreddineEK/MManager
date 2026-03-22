@@ -13,18 +13,19 @@ def get_mosque(request):
     Retourne la mosquée associée à la requête.
 
     - Utilisateur normal : request.mosque injecté par HasMosquePermission
-    - Superuser sans mosquée assignée : prend la première mosquée disponible
-      (utile pour les tests et la gestion admin)
+    - Superuser sans mosquée assignée : retourne None
+      (les vues doivent gérer ce cas explicitement)
 
-    Retourne None si aucune mosquée n'existe du tout.
+    Retourne None si aucune mosquée n'est assignée ou si l'utilisateur est superuser.
+
+    NOTE: Ne plus utiliser Mosque.objects.first() comme fallback superuser —
+    cela causait des bugs de multi-tenant (affichage de données de la mosquée 1
+    pour toutes les opérations superuser, y compris les reçus PDF).
     """
-    from core.models import Mosque
+    from core.models import Mosque  # noqa: F401 (import local pour éviter les imports circulaires)
 
     mosque = getattr(request, "mosque", None)
-    if mosque is not None:
-        return mosque
-    # Superuser fallback
-    return Mosque.objects.first()
+    return mosque
 
 
 def log_action(request, action: str, entity: str, entity_id=None, payload: dict | None = None):

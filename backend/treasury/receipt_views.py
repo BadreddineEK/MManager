@@ -28,6 +28,7 @@ from rest_framework import status
 from core.permissions import HasMosquePermission
 from core.utils import get_mosque
 from .models import TreasuryTransaction
+from membership.models import Member, MembershipPayment
 
 
 # ── Palette couleurs ─────────────────────────────────────────────────────────
@@ -322,14 +323,19 @@ class TransactionReceiptView(APIView):
     permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request, pk):
-        mosque = get_mosque(request)
-        if mosque is None:
-            return Response({"detail": "Mosquée introuvable."}, status=404)
-
+        # Récupère la transaction en premier pour dériver la mosquée depuis l'objet
+        # (évite le bug du fallback superuser qui renverrait toujours mosque 1)
         try:
-            tx = TreasuryTransaction.objects.get(pk=pk, mosque=mosque)
+            tx = TreasuryTransaction.objects.select_related("mosque__settings").get(pk=pk)
         except TreasuryTransaction.DoesNotExist:
             return Response({"detail": "Transaction introuvable."}, status=404)
+
+        # Vérification d'accès : superuser peut tout voir, sinon doit être sur la même mosquée
+        request_mosque = getattr(request, "mosque", None)
+        if request_mosque is not None and request_mosque != tx.mosque:
+            return Response({"detail": "Transaction introuvable."}, status=404)
+
+        mosque = tx.mosque
 
         mosque_info = _get_settings(mosque)
         donor_name  = request.query_params.get("donor", "")
@@ -362,9 +368,9 @@ class AnnualSummaryReceiptView(APIView):
     permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
-        mosque = get_mosque(request)
+        mosque = getattr(request, "mosque", None)
         if mosque is None:
-            return Response({"detail": "Mosquée introuvable."}, status=404)
+            return Response({"detail": "Mosquée non déterminée. Utilisez un compte rattaché à une mosquée."}, status=400)
 
         donor_name = request.query_params.get("donor", "").strip()
         year_param = request.query_params.get("year", str(date.today().year))
@@ -399,5 +405,163 @@ class AnnualSummaryReceiptView(APIView):
 
         filename = f"recap_dons_{year}_{donor_name.replace(' ', '_') or 'tous'}.pdf"
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
+# ── Reçu de cotisation (adhérent) ────────────────────────────────────────────
+
+def _build_pdf_membership_receipt(mosque_info, member_name, payment_date, amount, year_label, method, note=""):
+    """
+    Génère le PDF d'un reçu de cotisation pour un adhérent.
+    """
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        rightMargin=20 * mm,
+        leftMargin=20 * mm,
+        topMargin=15 * mm,
+        bottomMargin=20 * mm,
+    )
+
+    styles = getSampleStyleSheet()
+    normal   = styles["Normal"]
+    title_st = ParagraphStyle("m_title",  parent=normal, fontSize=20, textColor=COLOR_PRIMARY, fontName="Helvetica-Bold", spaceAfter=2)
+    sub_st   = ParagraphStyle("m_sub",    parent=normal, fontSize=10, textColor=COLOR_ACCENT,  fontName="Helvetica-Bold", spaceAfter=6)
+    muted_st = ParagraphStyle("m_muted",  parent=normal, fontSize=8,  textColor=COLOR_MUTED,   leading=12)
+    amount_st= ParagraphStyle("m_amt",    parent=normal, fontSize=22, textColor=COLOR_GREEN,   fontName="Helvetica-Bold", alignment=1)
+    legal_st = ParagraphStyle("m_legal",  parent=normal, fontSize=7,  textColor=COLOR_MUTED,   leading=11, alignment=1)
+
+    story = []
+
+    # En-tête mosquée + numéro de reçu
+    receipt_num = f"ADH-{payment_date.year}-{hash(f'{member_name}{payment_date}') % 1000000:06d}"
+    header_data = [[
+        Paragraph(f"<b>{mosque_info['name']}</b>",
+                  ParagraphStyle("mh", parent=normal, fontSize=13, textColor=COLOR_PRIMARY, fontName="Helvetica-Bold")),
+        Paragraph(f"<b>REÇU N° {receipt_num}</b>",
+                  ParagraphStyle("mrn", parent=normal, fontSize=11, textColor=COLOR_WHITE, fontName="Helvetica-Bold", alignment=2)),
+    ]]
+    header_table = Table(header_data, colWidths=[110 * mm, 60 * mm])
+    header_table.setStyle(TableStyle([
+        ("BACKGROUND",   (1, 0), (1, 0), COLOR_ACCENT),
+        ("TEXTCOLOR",    (1, 0), (1, 0), COLOR_WHITE),
+        ("ALIGN",        (1, 0), (1, 0), "RIGHT"),
+        ("VALIGN",       (0, 0), (-1, -1), "MIDDLE"),
+        ("PADDING",      (0, 0), (-1, -1), 8),
+    ]))
+    story.append(header_table)
+    story.append(Spacer(1, 4 * mm))
+
+    addr_parts = []
+    if mosque_info["address"]:
+        addr_parts.append(mosque_info["address"].replace("\n", "<br/>"))
+    if mosque_info["phone"]:
+        addr_parts.append(f"📞 {mosque_info['phone']}")
+    if addr_parts:
+        story.append(Paragraph("<br/>".join(addr_parts), muted_st))
+        story.append(Spacer(1, 2 * mm))
+
+    story.append(HRFlowable(width="100%", thickness=1, color=COLOR_BORDER, spaceAfter=5 * mm))
+
+    # Titre
+    story.append(Paragraph("🪙 REÇU DE COTISATION", sub_st))
+    story.append(Spacer(1, 2 * mm))
+
+    # Montant
+    story.append(Paragraph(_fmt_amount(amount), amount_st))
+    story.append(Spacer(1, 3 * mm))
+
+    # Détails
+    method_labels = {
+        "cash": "Espèces", "cheque": "Chèque",
+        "virement": "Virement", "autre": "Autre",
+    }
+    details = [
+        ["Adhérent :",      member_name],
+        ["Année :",         year_label],
+        ["Date :",          payment_date.strftime("%d/%m/%Y")],
+        ["Mode :",          method_labels.get(method, method)],
+    ]
+    if note:
+        details.append(["Note :", note])
+    details.append(["Émis le :", date.today().strftime("%d/%m/%Y")])
+
+    detail_table = Table(details, colWidths=[35 * mm, 135 * mm])
+    detail_table.setStyle(TableStyle([
+        ("FONTNAME",        (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTSIZE",        (0, 0), (-1, -1), 9),
+        ("TEXTCOLOR",       (0, 0), (0, -1), COLOR_MUTED),
+        ("TEXTCOLOR",       (1, 0), (1, -1), COLOR_TEXT),
+        ("TOPPADDING",      (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING",   (0, 0), (-1, -1), 5),
+        ("ROWBACKGROUNDS",  (0, 0), (-1, -1), [COLOR_LIGHT_BG, COLOR_WHITE]),
+    ]))
+    story.append(detail_table)
+    story.append(Spacer(1, 8 * mm))
+
+    # Signature
+    story.append(HRFlowable(width="100%", thickness=1, color=COLOR_BORDER))
+    story.append(Spacer(1, 4 * mm))
+    sig_data = [[
+        Paragraph("<b>Pour la mosquée,</b><br/><br/><br/>_______________________<br/><i>Signature et cachet</i>",
+                  ParagraphStyle("ms", parent=normal, fontSize=9, textColor=COLOR_TEXT, leading=14)),
+        Paragraph(f"<b>Émis le</b> {date.today().strftime('%d/%m/%Y')}<br/><br/>"
+                  f"<b>Reçu n°</b> {receipt_num}",
+                  ParagraphStyle("mi", parent=normal, fontSize=9, textColor=COLOR_MUTED, leading=14, alignment=2)),
+    ]]
+    sig_table = Table(sig_data, colWidths=[85 * mm, 85 * mm])
+    sig_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    story.append(sig_table)
+
+    if mosque_info["legal_mention"]:
+        story.append(Spacer(1, 6 * mm))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=COLOR_BORDER))
+        story.append(Spacer(1, 2 * mm))
+        story.append(Paragraph(mosque_info["legal_mention"], legal_st))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf.read()
+
+
+class MembershipPaymentReceiptView(APIView):
+    """
+    GET /api/membership/receipt/payment/{id}/
+    Génère le PDF d'un reçu de cotisation pour un adhérent.
+    """
+    permission_classes = [IsAuthenticated, HasMosquePermission]
+
+    def get(self, request, pk):
+        # Dérive la mosquée depuis le paiement lui-même
+        try:
+            payment = MembershipPayment.objects.select_related(
+                "member", "membership_year", "mosque__settings"
+            ).get(pk=pk)
+        except MembershipPayment.DoesNotExist:
+            return Response({"detail": "Paiement introuvable."}, status=404)
+
+        # Contrôle d'accès : utilisateur normal doit être sur la même mosquée
+        request_mosque = getattr(request, "mosque", None)
+        if request_mosque is not None and request_mosque != payment.mosque:
+            return Response({"detail": "Paiement introuvable."}, status=404)
+
+        mosque_info = _get_settings(payment.mosque)
+        year_label  = str(payment.membership_year.year) if payment.membership_year else "—"
+
+        pdf_bytes = _build_pdf_membership_receipt(
+            mosque_info  = mosque_info,
+            member_name  = payment.member.full_name,
+            payment_date = payment.date,
+            amount       = payment.amount,
+            year_label   = year_label,
+            method       = payment.method,
+            note         = payment.note,
+        )
+
+        safe_name = payment.member.full_name.replace(" ", "_")
+        filename  = f"cotisation_{safe_name}_{year_label}.pdf"
+        response  = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response

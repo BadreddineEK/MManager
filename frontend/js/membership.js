@@ -156,6 +156,7 @@ async function loadMembershipPayments() {
       <td><span class="badge badge-blue">${esc(p.method)}</span></td>
       <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.note) || '<span class="text-muted">—</span>'}</td>
       <td><div class="td-actions">
+        <button class="btn btn-sm btn-icon" onclick="downloadMembershipReceipt(${p.id}, '${esc(p.member_name).replace(/'/g, "\\'")}')" title="Reçu PDF">🧾</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMembershipPayment(${p.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>
@@ -207,6 +208,28 @@ async function deleteMembershipPayment(id) {
   await apiFetch(`/membership/payments/${id}/`, 'DELETE');
   toast('Cotisation supprimée', 'info');
   loadMembershipPayments();
+}
+
+async function downloadMembershipReceipt(id, memberName) {
+  showProgress();
+  try {
+    const res = await fetch(`${API}/membership/receipt/payment/${id}/`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) { toast('Erreur génération du reçu PDF', 'error'); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `cotisation_${memberName.replace(/\s+/g, '_')}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Reçu de cotisation téléchargé ✓');
+  } catch (e) {
+    toast('Erreur : ' + e.message, 'error');
+  } finally {
+    hideProgress();
+  }
 }
 
 // ── Non cotisants ─────────────────────────────────────────────────────────────
