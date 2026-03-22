@@ -31,14 +31,17 @@ from membership.models import MembershipYear
 @pytest.fixture
 def mosque(db):
     m = Mosque.objects.create(name="Mosquée Test", slug="test", timezone="Europe/Paris")
-    MosqueSettings.objects.create(
+    # Le signal crée déjà MosqueSettings — on met à jour avec les valeurs de test
+    MosqueSettings.objects.update_or_create(
         mosque=m,
-        active_school_year_label="2025-2026",
-        school_fee_default=500,
-        school_fee_mode="annual",
-        school_levels=["NP", "N1", "N2", "N3"],
-        membership_fee_amount=50,
-        membership_fee_mode="per_person",
+        defaults={
+            "active_school_year_label": "2025-2026",
+            "school_fee_default": 500,
+            "school_fee_mode": "annual",
+            "school_levels": ["NP", "N1", "N2", "N3"],
+            "membership_fee_amount": 50,
+            "membership_fee_mode": "per_person",
+        },
     )
     return m
 
@@ -47,11 +50,13 @@ def mosque(db):
 def mosque_b(db):
     """Deuxième mosquée — pour tester l'isolation multi-tenant."""
     m = Mosque.objects.create(name="Autre Mosquée", slug="autre", timezone="Europe/Paris")
-    MosqueSettings.objects.create(
+    MosqueSettings.objects.update_or_create(
         mosque=m,
-        active_school_year_label="2025-2026",
-        school_fee_default=500,
-        membership_fee_amount=50,
+        defaults={
+            "active_school_year_label": "2025-2026",
+            "school_fee_default": 500,
+            "membership_fee_amount": 50,
+        },
     )
     return m
 
@@ -147,14 +152,18 @@ def other_client(other_user):
 
 @pytest.fixture
 def school_year(mosque):
-    return SchoolYear.objects.create(
+    # Le signal a peut-être déjà créé une SchoolYear "2025-2026" — on update
+    sy, _ = SchoolYear.objects.update_or_create(
         mosque=mosque, label="2025-2026",
-        start_date="2025-09-01", end_date="2026-06-30", is_active=True,
+        defaults={"start_date": "2025-09-01", "end_date": "2026-06-30", "is_active": True},
     )
+    return sy
 
 
 @pytest.fixture
 def membership_year(mosque):
-    return MembershipYear.objects.create(
-        mosque=mosque, year=2026, amount_expected=50, is_active=True,
+    my, _ = MembershipYear.objects.update_or_create(
+        mosque=mosque, year=2026,
+        defaults={"amount_expected": 50, "is_active": True},
     )
+    return my
