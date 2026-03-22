@@ -204,15 +204,20 @@ docker compose --profile prod up -d
 
 ## Onboarding — première configuration
 
+> ✨ **Auto-init** : à la création d'une mosquée, `MosqueSettings`, `SchoolYear` et `MembershipYear` sont créés automatiquement par signal Django.
+
 ```
 1. Admin Django (/admin/)
-2. Créer une Mosque         → nom + slug unique + timezone
-3. Configurer MosqueSettings → frais scolarité, cotisation, SMTP, widgets KPI
-4. Créer les utilisateurs   → rôle ADMIN / ECOLE_MANAGER / TRESORIER
-5. Créer une SchoolYear active    → ex: "2025-2026"
-6. Créer une MembershipYear active → ex: 2026
-7. ✅ Prêt
+2. Créer une Mosque   → nom + slug unique + timezone
+                        ↳ MosqueSettings + SchoolYear + MembershipYear créés auto
+3. Configurer les paramètres → frais scolarité, cotisation, SMTP, widgets KPI
+4. Créer les utilisateurs    → rôle ADMIN / ECOLE_MANAGER / TRESORIER
+5. ✅ Prêt
 ```
+
+> ⚠️ **Multi-mosquée** : chaque utilisateur est rattaché à **une seule mosquée** (`mosque_id`).  
+> Le compte superuser Django (admin) n'est rattaché à aucune mosquée — il sert uniquement à l'administration Django.  
+> Pour accéder à l'application, utiliser un compte utilisateur normal avec rôle `ADMIN`.
 
 ---
 
@@ -246,17 +251,21 @@ Authentification requise (sauf KPI) : `Authorization: Bearer <access_token>`
 | Méthode | URL | Description |
 |---------|-----|-------------|
 | `GET/POST` | `/api/membership/members/` | Membres |
-| `GET` | `/api/membership/members/unpaid/` | Membres sans cotisation |
+| `GET` | `/api/membership/members/unpaid/` | Membres sans cotisation (année active) |
+| `GET/POST` | `/api/membership/years/` | Années de cotisation |
 | `GET/POST` | `/api/membership/payments/` | Paiements cotisation |
-| `GET` | `/api/membership/payments/{id}/receipt/` | Reçu PDF |
+| `GET` | `/api/membership/receipt/payment/{id}/` | Reçu PDF cotisation adhérent |
 
 ### Trésorerie
 
 | Méthode | URL | Description |
 |---------|-----|-------------|
 | `GET/POST` | `/api/treasury/transactions/` | Journal de trésorerie |
+| `GET` | `/api/treasury/transactions/summary/` | Solde (cumulé ou par mois) |
 | `GET/POST` | `/api/treasury/campaigns/` | Cagnottes |
 | `PATCH` | `/api/treasury/campaigns/{id}/` | Mettre à jour cagnotte |
+| `GET` | `/api/treasury/receipt/transaction/{id}/` | Reçu PDF transaction |
+| `GET` | `/api/treasury/receipt/annual/` | Récap annuel dons PDF |
 
 ### KPI — Public (sans authentification)
 
