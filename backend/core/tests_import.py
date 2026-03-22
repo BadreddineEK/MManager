@@ -91,13 +91,16 @@ def membership_year(mosque):
 @pytest.fixture
 def school_year(mosque):
     from datetime import date
-    return SchoolYear.objects.create(
+    sy, _ = SchoolYear.objects.update_or_create(
         mosque=mosque,
         label="2025-2026",
-        start_date=date(2025, 9, 1),
-        end_date=date(2026, 6, 30),
-        is_active=True,
+        defaults={
+            "start_date": date(2025, 9, 1),
+            "end_date":   date(2026, 6, 30),
+            "is_active":  True,
+        },
     )
+    return sy
 
 
 def _make_csv(rows: list[dict]) -> io.BytesIO:
