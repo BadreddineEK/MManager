@@ -16,8 +16,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.models import Mosque
-from membership.models import Member, MembershipPayment, MembershipYear
-from school.models import Child, Family, SchoolPayment, SchoolYear
+from membership.models import Member, MembershipYear
+from school.models import Child, Family, SchoolYear
 from treasury.models import Campaign, TreasuryTransaction
 
 
@@ -87,14 +87,16 @@ class KPISummaryView(APIView):
 
         if active_year:
             active_year_label = active_year.label
-            payments_qs = SchoolPayment.objects.filter(
-                mosque=mosque, school_year=active_year
+            # Lire depuis TreasuryTransaction (source unique de vérité)
+            tx_school_qs = TreasuryTransaction.objects.filter(
+                mosque=mosque, school_year=active_year, category="ecole", direction="IN"
             )
             amount_paid_school = float(
-                payments_qs.aggregate(s=Sum("amount"))["s"] or 0
+                tx_school_qs.aggregate(s=Sum("amount"))["s"] or 0
             )
             families_paid_ids = set(
-                payments_qs.values_list("family_id", flat=True).distinct()
+                tx_school_qs.filter(family__isnull=False)
+                .values_list("family_id", flat=True).distinct()
             )
 
         families_unpaid = max(total_families - len(families_paid_ids), 0)
@@ -113,16 +115,18 @@ class KPISummaryView(APIView):
         if active_mbr_year:
             mbr_year_label = active_mbr_year.year
             amount_expected_per_member = float(active_mbr_year.amount_expected)
+            # Lire depuis TreasuryTransaction (source unique de vérité)
+            tx_mbr_qs = TreasuryTransaction.objects.filter(
+                mosque=mosque, membership_year=active_mbr_year,
+                category="cotisation", direction="IN"
+            )
             paid_ids = set(
-                MembershipPayment.objects.filter(
-                    mosque=mosque, membership_year=active_mbr_year
-                ).values_list("member_id", flat=True).distinct()
+                tx_mbr_qs.filter(member__isnull=False)
+                .values_list("member_id", flat=True).distinct()
             )
             members_paid = len(paid_ids)
             total_collected_mbr = float(
-                MembershipPayment.objects.filter(
-                    mosque=mosque, membership_year=active_mbr_year
-                ).aggregate(s=Sum("amount"))["s"] or 0
+                tx_mbr_qs.aggregate(s=Sum("amount"))["s"] or 0
             )
 
         members_unpaid = max(total_members - members_paid, 0)

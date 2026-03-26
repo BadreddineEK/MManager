@@ -10,7 +10,7 @@
 | Base de données | PostgreSQL 16 |
 | Frontend | HTML/CSS/JS pur — aucun framework, aucun build step |
 | Infrastructure | Docker Compose · Gunicorn · Nginx · Raspberry Pi |
-| Tests | pytest 8.3.5 · pytest-django · 113 tests automatisés |
+| Tests | pytest 8.3.5 · pytest-django · 160 tests automatisés |
 
 **Multi-tenant** — chaque donnée est isolée par mosquée (`mosque_id` sur tous les modèles). Une instance = plusieurs mosquées possibles sur le même serveur.
 
@@ -253,8 +253,8 @@ Authentification requise (sauf KPI) : `Authorization: Bearer <access_token>`
 | `GET/POST` | `/api/membership/members/` | Membres |
 | `GET` | `/api/membership/members/unpaid/` | Membres sans cotisation (année active) |
 | `GET/POST` | `/api/membership/years/` | Années de cotisation |
-| `GET/POST` | `/api/membership/payments/` | Paiements cotisation |
-| `GET` | `/api/membership/receipt/payment/{id}/` | Reçu PDF cotisation adhérent |
+| `GET/POST` | `/api/membership/payments/` | Paiements cotisation (legacy) |
+| `GET` | `/api/treasury/receipt/membership/{id}/` | Reçu PDF cotisation adhérent |
 
 ### Trésorerie
 
@@ -335,15 +335,15 @@ docker compose exec backend pytest school/tests.py -v
 ./scripts/run_tests.sh
 ```
 
-### Résultat actuel : **113 tests ✅**
+### Résultat actuel : **160 tests ✅**
 
 | App | Tests | Couverture |
 |-----|-------|------------|
 | `core` | 27 | Auth JWT, RBAC, Audit Log, gestion utilisateurs |
-| `kpi` | 20 | Endpoint public, agrégats, isolation multi-tenant, absence de PII |
+| `kpi` | 20 | Endpoint public, agrégats TreasuryTransaction, isolation multi-tenant, absence de PII |
 | `school` | 15 | CRUD familles/enfants, paiements, arrears, isolation |
 | `membership` | 15 | CRUD membres, paiements, unpaid, isolation |
-| `treasury` | 12 | CRUD transactions, cagnottes, isolation |
+| `treasury` | 36 | CRUD transactions, FK école/cotisation, filtres family_id/member_id/school_year_id/membership_year_id, cagnottes, isolation |
 
 ---
 
@@ -462,7 +462,7 @@ MManager/
 - [x] **Step 5** — RBAC granulaire (ADMIN / ECOLE_MANAGER / TRESORIER)
 - [x] **Step 6** — Frontend modulaire (14 modules JS, SPA)
 - [x] **Step 7** — Audit Log + Notifications email
-- [x] **Step 8** — Tests automatisés (113 tests pytest — core, school, membership, treasury, kpi)
+- [x] **Step 8** — Tests automatisés (160 tests pytest — core, school, membership, treasury, kpi)
 - [ ] **Step 9** — Import / Migration de données (CSV / Excel)
 - [ ] **Step 10** — Saisie rapide multi-transactions (tableau inline)
 - [ ] **Step 11** — Intégration HelloAsso / Cotizup (webhook)
