@@ -122,9 +122,6 @@ class Command(BaseCommand):
                     )
                 created_member += 1
 
-            if dry_run:
-                raise db_transaction.rollback  # type: ignore
-
         self.stdout.write(self.style.SUCCESS(
             f"École   : {created_school} créées, {skipped_school} déjà présentes"
         ))
