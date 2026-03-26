@@ -3,8 +3,8 @@
 ═══════════════════════════════════════════════════════════ */
 
 const ALL_SECTIONS = [
-  'school', 'families', 'children', 'payments', 'arrears',
-  'members', 'memberships', 'unpaid-members', 'treasury',
+  'school', 'families', 'children', 'arrears',
+  'members', 'unpaid-members', 'treasury',
   'campaigns', 'users', 'settings', 'audit', 'import',
 ];
 
@@ -24,10 +24,8 @@ function showSection(name) {
   // Charger les données de la section affichée
   if (name === 'families')       loadFamilies();
   if (name === 'children')       loadChildren();
-  if (name === 'payments')       loadPayments();
   if (name === 'arrears')        loadArrears();
   if (name === 'members')        loadMembers();
-  if (name === 'memberships')    loadMembershipPayments();
   if (name === 'unpaid-members') loadUnpaidMembers();
   if (name === 'treasury')       loadTreasury();
   if (name === 'campaigns')      loadCampaigns();

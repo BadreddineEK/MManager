@@ -28,7 +28,6 @@ from rest_framework import status
 from core.permissions import HasMosquePermission
 from core.utils import get_mosque
 from .models import TreasuryTransaction
-from membership.models import Member, MembershipPayment
 
 
 # ── Palette couleurs ─────────────────────────────────────────────────────────
@@ -528,39 +527,40 @@ def _build_pdf_membership_receipt(mosque_info, member_name, payment_date, amount
 
 class MembershipPaymentReceiptView(APIView):
     """
-    GET /api/membership/receipt/payment/{id}/
-    Génère le PDF d'un reçu de cotisation pour un adhérent.
+    GET /api/treasury/receipt/membership/{id}/
+    Génère le PDF d'un reçu de cotisation depuis une TreasuryTransaction
+    (category='cotisation', direction='IN').
     """
     permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request, pk):
-        # Dérive la mosquée depuis le paiement lui-même
         try:
-            payment = MembershipPayment.objects.select_related(
+            tx = TreasuryTransaction.objects.select_related(
                 "member", "membership_year", "mosque__settings"
-            ).get(pk=pk)
-        except MembershipPayment.DoesNotExist:
-            return Response({"detail": "Paiement introuvable."}, status=404)
+            ).get(pk=pk, category="cotisation")
+        except TreasuryTransaction.DoesNotExist:
+            return Response({"detail": "Transaction de cotisation introuvable."}, status=404)
 
-        # Contrôle d'accès : utilisateur normal doit être sur la même mosquée
+        # Contrôle d'accès
         request_mosque = getattr(request, "mosque", None)
-        if request_mosque is not None and request_mosque != payment.mosque:
-            return Response({"detail": "Paiement introuvable."}, status=404)
+        if request_mosque is not None and request_mosque != tx.mosque:
+            return Response({"detail": "Transaction introuvable."}, status=404)
 
-        mosque_info = _get_settings(payment.mosque)
-        year_label  = str(payment.membership_year.year) if payment.membership_year else "—"
+        mosque_info = _get_settings(tx.mosque)
+        member_name = tx.member.full_name if tx.member else (tx.label or "—")
+        year_label  = str(tx.membership_year.year) if tx.membership_year else "—"
 
         pdf_bytes = _build_pdf_membership_receipt(
             mosque_info  = mosque_info,
-            member_name  = payment.member.full_name,
-            payment_date = payment.date,
-            amount       = payment.amount,
+            member_name  = member_name,
+            payment_date = tx.date,
+            amount       = tx.amount,
             year_label   = year_label,
-            method       = payment.method,
-            note         = payment.note,
+            method       = tx.method,
+            note         = tx.note,
         )
 
-        safe_name = payment.member.full_name.replace(" ", "_")
+        safe_name = member_name.replace(" ", "_")
         filename  = f"cotisation_{safe_name}_{year_label}.pdf"
         response  = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'

@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
-   school.js — Familles, enfants, paiements, impayés
+   school.js — Familles, enfants, impayés
+   (les paiements école passent par la trésorerie)
 ═══════════════════════════════════════════════════════════ */
 
 // ── Familles ──────────────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ function renderFamilies(families) {
       <td><span class="badge badge-green">${f.total_paid.toFixed(2)} €</span></td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editFamily(${f.id})" title="Modifier">✏️</button>
+        <button class="btn btn-sm btn-icon" onclick="addSchoolPayment(${f.id}, '${esc(f.primary_contact_name).replace(/'/g, "\\'")}')" title="Enregistrer un paiement">💳</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteFamily(${f.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>
@@ -227,158 +229,19 @@ async function deleteChild(id) {
   loadChildren();
 }
 
-// ── Paiements école ───────────────────────────────────────────────────────────
-async function loadPayments() {
-  const tbody  = document.getElementById('payments-table');
-  tbody.innerHTML = skeletonRows(4, 8);
-  const yearId = document.getElementById('payment-year-filter').value;
-  let url = '/school/payments/?';
-  if (yearId) url += `year_id=${yearId}`;
-  const res = await apiFetch(url);
-  if (!res || !res.ok) return;
-  const data = await res.json();
-  const payments = data.results || data;
-  if (!payments.length) {
-    tbody.innerHTML = emptyState({
-      icon: '💳', title: 'Aucun paiement enregistré',
-      sub: 'Enregistrez un premier paiement.',
-      actionLabel: '+ Ajouter un paiement', actionFn: 'openPaymentModal()',
-    });
+// ── Paiements école → Trésorerie ─────────────────────────────────────────────
+/**
+ * Ouvre le modal trésorerie pré-rempli pour un paiement école.
+ * @param {number} familyId  - ID de la famille (optionnel)
+ * @param {string} familyName - Nom affiché dans le libellé (optionnel)
+ */
+function addSchoolPayment(familyId = null, familyName = '') {
+  // S'assurer que le modal trésorerie est disponible
+  if (typeof openTreasuryModal !== 'function') {
+    toast('Module trésorerie non chargé', 'error');
     return;
   }
-  tbody.innerHTML = payments.map((p, i) => `
-    <tr class="fade-in" style="animation-delay:${i * 30}ms">
-      <td>${p.date}</td>
-      <td><strong>${esc(p.family_name)}</strong></td>
-      <td>${p.child_name ? esc(p.child_name) : '<span class="text-muted">—</span>'}</td>
-      <td>${esc(p.school_year_label)}</td>
-      <td><strong>${parseFloat(p.amount).toFixed(2)} €</strong></td>
-      <td><span class="badge badge-blue">${esc(p.method_display || p.method)}</span></td>
-      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.note)||''}">${esc(p.note) || '<span class="text-muted">—</span>'}</td>
-      <td><div class="td-actions">
-        <button class="btn btn-sm btn-icon" onclick="editPayment(${p.id})" title="Modifier">✏️</button>
-        <button class="btn btn-sm btn-icon" onclick="downloadSchoolReceipt(${p.id}, '${esc(p.family_name).replace(/'/g, "\\'")}')" title="Reçu PDF">🧾</button>
-        <button class="btn btn-danger btn-sm btn-icon" onclick="deletePayment(${p.id})" title="Supprimer">🗑</button>
-      </div></td>
-    </tr>
-  `).join('');
-}
-
-async function openPaymentModal() {
-  await loadFamiliesForSelect('payment-family');
-  await loadYearsForSelect('payment-year');
-  document.getElementById('payment-id').value       = '';
-  document.getElementById('payment-child').innerHTML = '<option value="">-- Aucun --</option>';
-  document.getElementById('payment-date').value     = new Date().toISOString().split('T')[0];
-  document.getElementById('payment-amount').value   = '';
-  document.getElementById('payment-method').value   = 'cash';
-  document.getElementById('payment-note').value     = '';
-  document.getElementById('modal-payment-title').textContent = 'Enregistrer un paiement';
-  document.getElementById('modal-payment-error').classList.add('hidden');
-  openModal('modal-payment');
-}
-
-async function editPayment(id) {
-  await loadFamiliesForSelect('payment-family');
-  await loadYearsForSelect('payment-year');
-  const res = await apiFetch(`/school/payments/${id}/`);
-  if (!res || !res.ok) return;
-  const p = await res.json();
-  document.getElementById('payment-id').value     = p.id;
-  document.getElementById('payment-family').value = p.family;
-  document.getElementById('payment-year').value   = p.school_year;
-  await loadChildrenForFamily();
-  document.getElementById('payment-child').value  = p.child || '';
-  document.getElementById('payment-date').value   = p.date;
-  document.getElementById('payment-amount').value = p.amount;
-  document.getElementById('payment-method').value = p.method;
-  document.getElementById('payment-note').value   = p.note || '';
-  document.getElementById('modal-payment-title').textContent = 'Modifier le paiement';
-  document.getElementById('modal-payment-error').classList.add('hidden');
-  openModal('modal-payment');
-}
-
-async function loadChildrenForFamily() {
-  const familyId = document.getElementById('payment-family').value;
-  const sel = document.getElementById('payment-child');
-  sel.innerHTML = '<option value="">-- Aucun --</option>';
-  if (!familyId) return;
-  const res = await apiFetch('/school/children/?search=');
-  if (!res || !res.ok) return;
-  const data = await res.json();
-  const children = (data.results || data).filter(c => c.family === parseInt(familyId));
-  children.forEach(c => {
-    sel.innerHTML += `<option value="${c.id}">${esc(c.first_name)} (${esc(c.level)})</option>`;
-  });
-}
-
-async function savePayment() {
-  const id   = document.getElementById('payment-id').value;
-  const body = {
-    family:      parseInt(document.getElementById('payment-family').value),
-    school_year: parseInt(document.getElementById('payment-year').value),
-    child:       document.getElementById('payment-child').value
-                   ? parseInt(document.getElementById('payment-child').value)
-                   : null,
-    date:        document.getElementById('payment-date').value,
-    amount:      parseFloat(document.getElementById('payment-amount').value),
-    method:      document.getElementById('payment-method').value,
-    note:        document.getElementById('payment-note').value.trim(),
-  };
-  const errEl = document.getElementById('modal-payment-error');
-  if (!body.family || !body.school_year || !body.date || !body.amount) {
-    errEl.textContent = 'Famille, année, date et montant sont obligatoires.';
-    errEl.classList.remove('hidden');
-    return;
-  }
-  const res = await apiFetch(
-    id ? `/school/payments/${id}/` : '/school/payments/',
-    id ? 'PUT' : 'POST',
-    body
-  );
-  if (!res || !res.ok) {
-    const err = await res.json().catch(() => ({}));
-    errEl.textContent = JSON.stringify(err);
-    errEl.classList.remove('hidden');
-    return;
-  }
-  closeModal('modal-payment');
-  toast(id ? 'Paiement mis à jour ✓' : 'Paiement enregistré ✓');
-  loadPayments();
-}
-
-async function downloadSchoolReceipt(id, familyName) {
-  showProgress();
-  try {
-    const res = await fetch(`${API}/school/payments/${id}/receipt/`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      toast(err.detail || 'Erreur génération PDF', 'error');
-      return;
-    }
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `recu_ecole_${familyName.replace(/\s+/g, '_')}_${id}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast('Reçu PDF téléchargé ✓');
-  } catch (e) {
-    toast('Erreur : ' + e.message, 'error');
-  } finally {
-    hideProgress();
-  }
-}
-
-async function deletePayment(id) {
-  const ok = await confirmDialog({ title: 'Supprimer ce paiement ?', msg: 'Cette action est irréversible.', icon: '🗑️' });
-  if (!ok) return;
-  await apiFetch(`/school/payments/${id}/`, 'DELETE');
-  toast('Paiement supprimé', 'info');
-  loadPayments();
+  openTreasuryModal({ category: 'ecole', familyId, familyName });
 }
 
 // ── Impayés ───────────────────────────────────────────────────────────────────

@@ -1,7 +1,8 @@
 """
 Vues school -- API REST Ecole coranique
 =========================================
-Toutes les vues filtrent automatiquement par mosque (multi-tenant).
+Ressources humaines uniquement : familles, enfants, années scolaires.
+Les paiements sont dans TreasuryTransaction (category='ecole').
 """
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -11,11 +12,10 @@ from rest_framework.response import Response
 from core.permissions import HasMosquePermission
 from core.utils import get_mosque, log_action
 
-from .models import Child, Family, SchoolPayment, SchoolYear
+from .models import Child, Family, SchoolYear
 from .serializers import (
     ChildSerializer,
     FamilySerializer,
-    SchoolPaymentSerializer,
     SchoolYearSerializer,
 )
 
@@ -55,7 +55,7 @@ class FamilyViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         mosque = get_mosque(self.request)
-        qs = Family.objects.prefetch_related("children", "payments")
+        qs = Family.objects.prefetch_related("children")
         if mosque is None:
             return qs.none()
         return qs.filter(mosque=mosque)
@@ -76,7 +76,7 @@ class FamilyViewSet(viewsets.ModelViewSet):
     def arrears(self, request):
         """
         GET /api/school/families/arrears/
-        Retourne les familles sans paiement pour l'annee active.
+        Familles sans aucune TreasuryTransaction ecole pour l'année active.
         """
         mosque = get_mosque(request)
         if mosque is None:
@@ -89,9 +89,13 @@ class FamilyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        paid_family_ids = SchoolPayment.objects.filter(
-            mosque=mosque, school_year=active_year
-        ).values_list("family_id", flat=True)
+        # Familles ayant au moins une transaction école cette année
+        from treasury.models import TreasuryTransaction
+        paid_family_ids = TreasuryTransaction.objects.filter(
+            mosque=mosque,
+            category="ecole",
+            school_year=active_year,
+        ).values_list("family_id", flat=True).distinct()
 
         families_in_arrears = Family.objects.filter(mosque=mosque).exclude(
             id__in=paid_family_ids
@@ -135,39 +139,4 @@ class ChildViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         log_action(self.request, "DELETE", "Child", instance.id, {"name": instance.first_name})
-        instance.delete()
-
-
-class SchoolPaymentViewSet(viewsets.ModelViewSet):
-    """CRUD paiements ecole."""
-
-    serializer_class = SchoolPaymentSerializer
-    permission_classes = [IsAuthenticated, HasMosquePermission]
-    filter_backends = [filters.OrderingFilter]
-    ordering_fields = ["date", "amount", "created_at"]
-
-    def get_queryset(self):
-        mosque = get_mosque(self.request)
-        qs = SchoolPayment.objects.select_related("family", "child", "school_year")
-        if mosque is None:
-            return qs.none()
-        qs = qs.filter(mosque=mosque)
-        year_id = self.request.query_params.get("year_id")
-        if year_id:
-            qs = qs.filter(school_year_id=year_id)
-        return qs
-
-    def perform_create(self, serializer):
-        obj = serializer.save(mosque=get_mosque(self.request))
-        log_action(self.request, "CREATE", "SchoolPayment", obj.id,
-                   {"family": str(obj.family), "amount": float(obj.amount), "date": str(obj.date)})
-
-    def perform_update(self, serializer):
-        obj = serializer.save()
-        log_action(self.request, "UPDATE", "SchoolPayment", obj.id,
-                   {"family": str(obj.family), "amount": float(obj.amount)})
-
-    def perform_destroy(self, instance):
-        log_action(self.request, "DELETE", "SchoolPayment", instance.id,
-                   {"family": str(instance.family), "amount": float(instance.amount)})
         instance.delete()

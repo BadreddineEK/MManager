@@ -35,6 +35,11 @@ class TreasuryTransactionSerializer(serializers.ModelSerializer):
     method_display = serializers.CharField(source="get_method_display", read_only=True)
     regime_fiscal_display = serializers.CharField(source="get_regime_fiscal_display", read_only=True)
     campaign_name = serializers.CharField(source="campaign.name", read_only=True, allow_null=True)
+    # Liens ressources humaines (lecture seule)
+    family_name = serializers.CharField(source="family.primary_contact_name", read_only=True, allow_null=True)
+    member_name = serializers.CharField(source="member.full_name", read_only=True, allow_null=True)
+    school_year_label = serializers.CharField(source="school_year.label", read_only=True, allow_null=True)
+    membership_year_label = serializers.IntegerField(source="membership_year.year", read_only=True, allow_null=True)
 
     class Meta:
         model = TreasuryTransaction
@@ -54,10 +59,19 @@ class TreasuryTransactionSerializer(serializers.ModelSerializer):
             "regime_fiscal_display",
             "campaign",
             "campaign_name",
+            "family",
+            "family_name",
+            "school_year",
+            "school_year_label",
+            "member",
+            "member_name",
+            "membership_year",
+            "membership_year_label",
             "created_at",
         ]
         read_only_fields = [
             "id", "created_at",
             "direction_display", "category_display", "method_display",
             "regime_fiscal_display", "campaign_name",
+            "family_name", "member_name", "school_year_label", "membership_year_label",
         ]

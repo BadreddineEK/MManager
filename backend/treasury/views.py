@@ -97,6 +97,35 @@ class TreasuryTransactionViewSet(viewsets.ModelViewSet):
         if regime in ("1901", "1905", ""):
             qs = qs.filter(regime_fiscal=regime)
 
+        # Filtres FK école / cotisation
+        family_id = self.request.query_params.get("family_id")
+        if family_id:
+            try:
+                qs = qs.filter(family_id=int(family_id))
+            except ValueError:
+                pass
+
+        school_year_id = self.request.query_params.get("school_year_id")
+        if school_year_id:
+            try:
+                qs = qs.filter(school_year_id=int(school_year_id))
+            except ValueError:
+                pass
+
+        member_id = self.request.query_params.get("member_id")
+        if member_id:
+            try:
+                qs = qs.filter(member_id=int(member_id))
+            except ValueError:
+                pass
+
+        membership_year_id = self.request.query_params.get("membership_year_id")
+        if membership_year_id:
+            try:
+                qs = qs.filter(membership_year_id=int(membership_year_id))
+            except ValueError:
+                pass
+
         return qs
 
     def perform_create(self, serializer):

@@ -48,7 +48,7 @@ async function loadDashboard() {
   const [fRes, cRes, pRes, aRes, mRes, tTotalRes, tMonthRes, unpaidRes] = await Promise.all([
     apiFetch('/school/families/'),
     apiFetch('/school/children/'),
-    apiFetch('/school/payments/'),
+    apiFetch('/treasury/transactions/?category=ecole&direction=IN&page_size=1000'),
     apiFetch('/school/families/arrears/'),
     apiFetch('/membership/members/'),
     apiFetch('/treasury/transactions/summary/?total=1'),

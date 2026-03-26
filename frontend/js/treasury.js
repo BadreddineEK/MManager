@@ -92,17 +92,17 @@ function renderTreasury(txs) {
       <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(tx.note)||''}">${esc(tx.note) || '<span class="text-muted">—</span>'}</td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editTreasuryTransaction(${tx.id})" title="Modifier">✏️</button>
-        <button class="btn btn-sm btn-icon" onclick="downloadTxReceipt(${tx.id}, '${esc(tx.label).replace(/'/g, "\\'")}')" title="Reçu PDF">🧾</button>
+        <button class="btn btn-sm btn-icon" onclick="downloadTxReceipt(${tx.id}, '${esc(tx.label).replace(/'/g, "\\'")}', '${tx.category}')" title="Reçu PDF">🧾</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteTreasuryTransaction(${tx.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>`;
   }).join('');
 }
 
-function openTreasuryModal() {
+function openTreasuryModal(prefill = {}) {
   document.getElementById('trs-id').value        = '';
   document.getElementById('trs-direction').value = 'IN';
-  document.getElementById('trs-category').value  = 'don';
+  document.getElementById('trs-category').value  = prefill.category || 'don';
   document.getElementById('trs-label').value     = '';
   document.getElementById('trs-date').value      = new Date().toISOString().split('T')[0];
   document.getElementById('trs-amount').value    = '';
@@ -113,6 +113,24 @@ function openTreasuryModal() {
   _fillCampaignSelect();
   document.getElementById('modal-treasury-title').textContent = 'Ajouter une transaction';
   document.getElementById('modal-trs-error').classList.add('hidden');
+
+  // Pré-remplissage conditionnel
+  _onTrsCategoryChange().then(() => {
+    if (prefill.familyId) {
+      const sel = document.getElementById('trs-family');
+      if (sel) sel.value = prefill.familyId;
+    }
+    if (prefill.memberId) {
+      const sel = document.getElementById('trs-member');
+      if (sel) sel.value = prefill.memberId;
+    }
+    if (prefill.familyName || prefill.memberName) {
+      const name = prefill.familyName || prefill.memberName;
+      const catLabel = prefill.category === 'ecole' ? 'Paiement école' : 'Cotisation';
+      document.getElementById('trs-label').value = `${catLabel} — ${name}`;
+    }
+  });
+
   openModal('modal-treasury');
 }
 
@@ -122,6 +140,68 @@ function _fillCampaignSelect() {
   (allCampaigns || []).forEach(c => {
     sel.innerHTML += `<option value="${c.id}">${esc(c.icon)} ${esc(c.name)}</option>`;
   });
+}
+
+/**
+ * Affiche/masque les sélecteurs famille+année-école ou adhérent+année-cotisation
+ * selon la catégorie sélectionnée. Charge les options au besoin.
+ * @returns {Promise<void>}
+ */
+async function _onTrsCategoryChange() {
+  const cat = document.getElementById('trs-category').value;
+  const schoolBlock  = document.getElementById('trs-school-block');
+  const memberBlock  = document.getElementById('trs-member-block');
+
+  if (!schoolBlock || !memberBlock) return;
+
+  schoolBlock.classList.add('hidden');
+  memberBlock.classList.add('hidden');
+
+  if (cat === 'ecole') {
+    schoolBlock.classList.remove('hidden');
+    // Charger familles si nécessaire
+    if (!allFamilies || !allFamilies.length) {
+      const res = await apiFetch('/school/families/');
+      if (res && res.ok) {
+        const data = await res.json();
+        allFamilies = data.results || data;
+      }
+    }
+    const famSel = document.getElementById('trs-family');
+    famSel.innerHTML = '<option value="">— Famille (optionnel) —</option>';
+    (allFamilies || []).forEach(f => {
+      famSel.innerHTML += `<option value="${f.id}">${esc(f.primary_contact_name)}</option>`;
+    });
+    // Charger années scolaires
+    if (!schoolYears || !schoolYears.length) await loadSchoolYears();
+    const ySel = document.getElementById('trs-school-year');
+    ySel.innerHTML = '<option value="">— Année scolaire (optionnel) —</option>';
+    (schoolYears || []).forEach(y => {
+      ySel.innerHTML += `<option value="${y.id}">${esc(y.label)}${y.is_active ? ' ✓' : ''}</option>`;
+    });
+  } else if (cat === 'cotisation') {
+    memberBlock.classList.remove('hidden');
+    // Charger adhérents si nécessaire
+    if (!allMembers || !allMembers.length) {
+      const res = await apiFetch('/membership/members/');
+      if (res && res.ok) {
+        const data = await res.json();
+        allMembers = data.results || data;
+      }
+    }
+    const mSel = document.getElementById('trs-member');
+    mSel.innerHTML = '<option value="">— Adhérent (optionnel) —</option>';
+    (allMembers || []).forEach(m => {
+      mSel.innerHTML += `<option value="${m.id}">${esc(m.full_name)}</option>`;
+    });
+    // Charger années cotisation
+    if (!membershipYears || !membershipYears.length) await loadMembershipYears();
+    const mySel = document.getElementById('trs-membership-year');
+    mySel.innerHTML = '<option value="">— Année (optionnel) —</option>';
+    (membershipYears || []).forEach(y => {
+      mySel.innerHTML += `<option value="${y.id}">${y.year}${y.is_active ? ' ✓' : ''}</option>`;
+    });
+  }
 }
 
 async function editTreasuryTransaction(id) {
@@ -141,14 +221,36 @@ async function editTreasuryTransaction(id) {
   document.getElementById('trs-campaign').value  = tx.campaign || '';
   document.getElementById('modal-treasury-title').textContent = 'Modifier la transaction';
   document.getElementById('modal-trs-error').classList.add('hidden');
+
+  // Charger sélecteurs conditionnels puis pré-remplir
+  await _onTrsCategoryChange();
+  if (tx.family) {
+    const s = document.getElementById('trs-family');
+    if (s) s.value = tx.family;
+  }
+  if (tx.school_year) {
+    const s = document.getElementById('trs-school-year');
+    if (s) s.value = tx.school_year;
+  }
+  if (tx.member) {
+    const s = document.getElementById('trs-member');
+    if (s) s.value = tx.member;
+  }
+  if (tx.membership_year) {
+    const s = document.getElementById('trs-membership-year');
+    if (s) s.value = tx.membership_year;
+  }
+
   openModal('modal-treasury');
 }
 
 async function saveTreasuryTransaction() {
-  const id   = document.getElementById('trs-id').value;
+  const id  = document.getElementById('trs-id').value;
+  const cat = document.getElementById('trs-category').value;
+
   const body = {
     direction:     document.getElementById('trs-direction').value,
-    category:      document.getElementById('trs-category').value,
+    category:      cat,
     label:         document.getElementById('trs-label').value.trim(),
     date:          document.getElementById('trs-date').value,
     amount:        parseFloat(document.getElementById('trs-amount').value),
@@ -158,6 +260,16 @@ async function saveTreasuryTransaction() {
     campaign:      document.getElementById('trs-campaign').value
                      ? parseInt(document.getElementById('trs-campaign').value)
                      : null,
+    // FK optionnels école
+    family:      (cat === 'ecole' && document.getElementById('trs-family')?.value)
+                   ? parseInt(document.getElementById('trs-family').value) : null,
+    school_year: (cat === 'ecole' && document.getElementById('trs-school-year')?.value)
+                   ? parseInt(document.getElementById('trs-school-year').value) : null,
+    // FK optionnels cotisation
+    member:          (cat === 'cotisation' && document.getElementById('trs-member')?.value)
+                       ? parseInt(document.getElementById('trs-member').value) : null,
+    membership_year: (cat === 'cotisation' && document.getElementById('trs-membership-year')?.value)
+                       ? parseInt(document.getElementById('trs-membership-year').value) : null,
   };
   const errEl = document.getElementById('modal-trs-error');
   if (!body.label || !body.date || !body.amount) {
@@ -190,8 +302,33 @@ async function deleteTreasuryTransaction(id) {
 }
 
 // ── Reçus fiscaux PDF ─────────────────────────────────────────────────────────
-async function downloadTxReceipt(id, label) {
-  const donor = prompt(`Reçu pour "${label}"\n\nNom du donateur (laisser vide si non applicable) :`);
+async function downloadTxReceipt(id, label, category) {
+  // Cotisation → reçu spécifique adhérent
+  if (category === 'cotisation') {
+    showProgress();
+    try {
+      const res = await fetch(`${API}/treasury/receipt/membership/${id}/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) { toast('Erreur génération PDF cotisation', 'error'); return; }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `cotisation_${id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Reçu de cotisation téléchargé ✓');
+    } catch (e) {
+      toast('Erreur : ' + e.message, 'error');
+    } finally {
+      hideProgress();
+    }
+    return;
+  }
+
+  // Autres catégories → reçu générique (don, école…)
+  const donor = prompt(`Reçu pour "${label}"\n\nNom du donateur / bénéficiaire (laisser vide si non applicable) :`);
   if (donor === null) return;
   showProgress();
   const donorParam = donor.trim() ? `?donor=${encodeURIComponent(donor.trim())}` : '';

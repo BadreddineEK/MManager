@@ -86,9 +86,6 @@
       <button class="nav-item" id="nav-children" onclick="showSection('children')">
         <span class="nav-icon">🧒</span><span>Enfants</span>
       </button>
-      <button class="nav-item" id="nav-payments" onclick="showSection('payments')">
-        <span class="nav-icon">💰</span><span>Paiements</span>
-      </button>
       <button class="nav-item" id="nav-arrears" onclick="showSection('arrears')">
         <span class="nav-icon">⚠️</span><span>Impayés</span>
       </button>
@@ -99,9 +96,6 @@
       <div class="nav-group-label">Adhésion</div>
       <button class="nav-item" id="nav-members" onclick="showSection('members')">
         <span class="nav-icon">🤝</span><span>Adhérents</span>
-      </button>
-      <button class="nav-item" id="nav-memberships" onclick="showSection('memberships')">
-        <span class="nav-icon">💳</span><span>Cotisations</span>
       </button>
       <button class="nav-item" id="nav-unpaid-members" onclick="showSection('unpaid-members')">
         <span class="nav-icon">🔴</span><span>Non cotisants</span>
@@ -201,7 +195,7 @@
           <div class="stat-card">
             <div class="stat-icon">💰</div>
             <div class="num" id="stat-payments">—</div>
-            <div class="lbl">Paiements école</div>
+            <div class="lbl">Paiements école (trésorerie)</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon">⚠️</div>
@@ -253,6 +247,7 @@
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('families','pdf')">⬇ PDF</button>
           <button class="btn btn-sm" onclick="showSection('import');switchImportTab('school')" title="Importer plusieurs familles via CSV">📥 Import CSV</button>
           <button id="btn-bulk-school" class="btn btn-sm" onclick="openBulkModal('families')" title="Saisir plusieurs familles d'un coup">✏️ Saisie multiple</button>
+          <button class="btn btn-sm" onclick="addSchoolPayment()" title="Enregistrer un paiement école dans la trésorerie">💳 Paiement école</button>
           <button id="btn-add-school" class="btn btn-primary" onclick="openFamilyModal()">+ Famille</button>
         </div>
       </div>
@@ -302,32 +297,7 @@
       </div>
     </div>
 
-    <!-- ── Paiements école ── -->
-    <div id="section-payments" class="hidden">
-      <div class="page-header">
-        <div class="page-header-left">
-          <h2>Paiements École</h2>
-          <div class="breadcrumb">École coranique · Suivi des paiements</div>
-        </div>
-        <div class="page-header-actions">
-          <select id="payment-year-filter" onchange="loadPayments()" style="width:auto;margin:0;font-size:0.82rem;">
-            <option value="">Toutes les années</option>
-          </select>
-          <button class="btn btn-success btn-sm" onclick="exportFile('school-payments','excel')">⬇ Excel</button>
-          <button class="btn btn-purple-soft btn-sm" onclick="exportFile('school-payments','pdf')">⬇ PDF</button>
-          <button class="btn btn-primary" onclick="openPaymentModal()">+ Paiement</button>
-        </div>
-      </div>
-      <div class="page-body">
-        <div id="payments-alert"></div>
-        <div class="card table-wrapper">
-          <table>
-            <thead><tr><th>Date</th><th>Famille</th><th>Enfant</th><th>Année</th><th>Montant</th><th>Mode</th><th>Note</th><th>Actions</th></tr></thead>
-            <tbody id="payments-table"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <!-- ── Paiements école ── (supprimé : passe par la trésorerie) -->
 
     <!-- ── Impayés ── -->
     <div id="section-arrears" class="hidden">
@@ -371,6 +341,7 @@
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('members','pdf')">⬇ PDF</button>
           <button class="btn btn-sm" onclick="showSection('import');switchImportTab('members')" title="Importer plusieurs adhérents via CSV">📥 Import CSV</button>
           <button id="btn-bulk-members" class="btn btn-sm" onclick="openBulkModal('members')" title="Saisir plusieurs adhérents d'un coup">✏️ Saisie multiple</button>
+          <button class="btn btn-sm" onclick="addMembershipPayment()" title="Enregistrer une cotisation dans la trésorerie">💳 Cotisation</button>
           <button id="btn-add-member" class="btn btn-primary" onclick="openMemberModal()">+ Adhérent</button>
         </div>
       </div>
@@ -388,30 +359,7 @@
       </div>
     </div>
 
-    <!-- ── Cotisations ── -->
-    <div id="section-memberships" class="hidden">
-      <div class="page-header">
-        <div class="page-header-left">
-          <h2>Cotisations</h2>
-          <div class="breadcrumb">Adhésion · Paiements de cotisations</div>
-        </div>
-        <div class="page-header-actions">
-          <select id="membership-year-filter" onchange="loadMembershipPayments()" style="width:auto;margin:0;font-size:0.82rem;">
-            <option value="">Toutes les années</option>
-          </select>
-          <button class="btn btn-primary" onclick="openMembershipPaymentModal()">+ Cotisation</button>
-        </div>
-      </div>
-      <div class="page-body">
-        <div id="memberships-alert"></div>
-        <div class="card table-wrapper">
-          <table>
-            <thead><tr><th>Date</th><th>Adhérent</th><th>Année</th><th>Montant</th><th>Mode</th><th>Note</th><th>Actions</th></tr></thead>
-            <tbody id="memberships-table"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <!-- ── Cotisations ── (supprimé : passe par la trésorerie) -->
 
     <!-- ── Non cotisants ── -->
     <div id="section-unpaid-members" class="hidden">
@@ -1023,42 +971,7 @@
   </div>
 </div>
 
-<!-- Modal Paiement École -->
-<div class="modal-overlay" id="modal-payment">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="modal-payment-title">Enregistrer un paiement</h3>
-      <button class="modal-close" onclick="closeModal('modal-payment')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="payment-id" />
-      <label>Famille *</label>
-      <select id="payment-family" onchange="loadChildrenForFamily()"></select>
-      <label>Enfant (optionnel)</label>
-      <select id="payment-child"><option value="">-- Aucun --</option></select>
-      <label>Année scolaire *</label>
-      <select id="payment-year"></select>
-      <label>Date *</label>
-      <input type="date" id="payment-date" />
-      <label>Montant (€) *</label>
-      <input type="number" id="payment-amount" placeholder="300" min="0" step="0.01" />
-      <label>Mode de paiement</label>
-      <select id="payment-method">
-        <option value="cash">Espèces</option>
-        <option value="cheque">Chèque</option>
-        <option value="virement">Virement</option>
-        <option value="autre">Autre</option>
-      </select>
-      <label>Note</label>
-      <textarea id="payment-note" placeholder="(optionnel)"></textarea>
-      <div id="modal-payment-error" class="alert alert-error hidden"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-sm" onclick="closeModal('modal-payment')">Annuler</button>
-      <button class="btn btn-primary" onclick="savePayment()">Enregistrer</button>
-    </div>
-  </div>
-</div>
+<!-- Modal Paiement École → voir Modal Transaction Trésorerie avec category=ecole -->
 
 <!-- Modal Adhérent -->
 <div class="modal-overlay" id="modal-member">
@@ -1086,40 +999,7 @@
   </div>
 </div>
 
-<!-- Modal Cotisation -->
-<div class="modal-overlay" id="modal-membership-payment">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Enregistrer une cotisation</h3>
-      <button class="modal-close" onclick="closeModal('modal-membership-payment')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="mp-id" />
-      <label>Adhérent *</label>
-      <select id="mp-member"></select>
-      <label>Année de cotisation *</label>
-      <select id="mp-year"></select>
-      <label>Date *</label>
-      <input type="date" id="mp-date" />
-      <label>Montant (€) *</label>
-      <input type="number" id="mp-amount" placeholder="150" min="0" step="0.01" />
-      <label>Mode de paiement</label>
-      <select id="mp-method">
-        <option value="cash">Espèces</option>
-        <option value="cheque">Chèque</option>
-        <option value="virement">Virement</option>
-        <option value="autre">Autre</option>
-      </select>
-      <label>Note</label>
-      <textarea id="mp-note" placeholder="(optionnel)"></textarea>
-      <div id="modal-mp-error" class="alert alert-error hidden"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-sm" onclick="closeModal('modal-membership-payment')">Annuler</button>
-      <button class="btn btn-primary" onclick="saveMembershipPayment()">Enregistrer</button>
-    </div>
-  </div>
-</div>
+<!-- Modal Cotisation → voir Modal Transaction Trésorerie avec category=cotisation -->
 
 <!-- Modal Transaction Trésorerie -->
 <div class="modal-overlay" id="modal-treasury">
@@ -1136,7 +1016,7 @@
         <option value="OUT">📤 Sortie (dépense)</option>
       </select>
       <label>Catégorie *</label>
-      <select id="trs-category">
+      <select id="trs-category" onchange="_onTrsCategoryChange()">
         <option value="don">Don / Sadaqa</option>
         <option value="loyer">Loyer</option>
         <option value="salaire">Salaire / Honoraires</option>
@@ -1147,6 +1027,22 @@
         <option value="subvention">Subvention</option>
         <option value="autre">Autre</option>
       </select>
+
+      <!-- Bloc école (affiché si category=ecole) -->
+      <div id="trs-school-block" class="hidden">
+        <label>Famille <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+        <select id="trs-family"><option value="">— Famille —</option></select>
+        <label>Année scolaire <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+        <select id="trs-school-year"><option value="">— Année scolaire —</option></select>
+      </div>
+
+      <!-- Bloc cotisation (affiché si category=cotisation) -->
+      <div id="trs-member-block" class="hidden">
+        <label>Adhérent <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+        <select id="trs-member"><option value="">— Adhérent —</option></select>
+        <label>Année de cotisation <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+        <select id="trs-membership-year"><option value="">— Année —</option></select>
+      </div>
       <label>Libellé *</label>
       <input type="text" id="trs-label" placeholder="Ex: Don vendredi 14 mars" />
       <label>Date *</label>

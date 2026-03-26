@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
-   membership.js — Adhérents, cotisations, non-cotisants
+   membership.js — Adhérents, non-cotisants
+   (les cotisations passent par la trésorerie)
 ═══════════════════════════════════════════════════════════ */
 
 // ── Adhérents ─────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ function renderMembers(members) {
       <td><span class="badge badge-gray">${parseFloat(m.total_paid || 0).toFixed(2)} €</span></td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editMember(${m.id})" title="Modifier">✏️</button>
+        <button class="btn btn-sm btn-icon" onclick="addMembershipPayment(${m.id}, '${esc(m.full_name).replace(/'/g, "\\'")}')" title="Enregistrer une cotisation">💳</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMember(${m.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>`;
@@ -114,122 +116,18 @@ async function deleteMember(id) {
   loadMembers();
 }
 
-// ── Cotisations ───────────────────────────────────────────────────────────────
-async function loadMembershipYears() {
-  const res = await apiFetch('/membership/years/');
-  if (!res || !res.ok) return;
-  const data = await res.json();
-  membershipYears = data.results || data;
-
-  const sel = document.getElementById('membership-year-filter');
-  sel.innerHTML = '<option value="">Toutes les années</option>';
-  membershipYears.forEach(y => {
-    sel.innerHTML += `<option value="${y.id}">${y.year}${y.is_active ? ' ✓' : ''}</option>`;
-  });
-}
-
-async function loadMembershipPayments() {
-  document.getElementById('memberships-table').innerHTML = skeletonRows(4, 7);
-  if (!membershipYears.length) await loadMembershipYears();
-  const yearId = document.getElementById('membership-year-filter').value;
-  let url = '/membership/payments/?';
-  if (yearId) url += `year_id=${yearId}`;
-  const res = await apiFetch(url);
-  if (!res || !res.ok) return;
-  const data = await res.json();
-  const payments = data.results || data;
-  const tbody = document.getElementById('memberships-table');
-  if (!payments.length) {
-    tbody.innerHTML = emptyState({
-      icon: '💰', title: 'Aucune cotisation enregistrée',
-      sub: 'Enregistrez une première cotisation.',
-      actionLabel: '+ Ajouter une cotisation', actionFn: 'openMembershipPaymentModal()',
-    });
+// ── Cotisations → Trésorerie ──────────────────────────────────────────────────
+/**
+ * Ouvre le modal trésorerie pré-rempli pour une cotisation adhérent.
+ * @param {number} memberId   - ID de l'adhérent (optionnel)
+ * @param {string} memberName - Nom affiché dans le libellé (optionnel)
+ */
+function addMembershipPayment(memberId = null, memberName = '') {
+  if (typeof openTreasuryModal !== 'function') {
+    toast('Module trésorerie non chargé', 'error');
     return;
   }
-  tbody.innerHTML = payments.map((p, i) => `
-    <tr class="fade-in" style="animation-delay:${i * 30}ms">
-      <td>${p.date}</td>
-      <td><strong>${esc(p.member_name)}</strong></td>
-      <td>${esc(p.year_label)}</td>
-      <td><strong>${parseFloat(p.amount).toFixed(2)} €</strong></td>
-      <td><span class="badge badge-blue">${esc(p.method)}</span></td>
-      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.note) || '<span class="text-muted">—</span>'}</td>
-      <td><div class="td-actions">
-        <button class="btn btn-sm btn-icon" onclick="downloadMembershipReceipt(${p.id}, '${esc(p.member_name).replace(/'/g, "\\'")}')" title="Reçu PDF">🧾</button>
-        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMembershipPayment(${p.id})" title="Supprimer">🗑</button>
-      </div></td>
-    </tr>
-  `).join('');
-}
-
-async function openMembershipPaymentModal() {
-  await loadMembersForSelect('mp-member');
-  await loadMembershipYearsForSelect('mp-year');
-  document.getElementById('mp-id').value     = '';
-  document.getElementById('mp-date').value   = new Date().toISOString().split('T')[0];
-  document.getElementById('mp-amount').value = '';
-  document.getElementById('mp-method').value = 'cash';
-  document.getElementById('mp-note').value   = '';
-  document.getElementById('modal-mp-error').classList.add('hidden');
-  openModal('modal-membership-payment');
-}
-
-async function saveMembershipPayment() {
-  const body = {
-    member:           parseInt(document.getElementById('mp-member').value),
-    membership_year:  parseInt(document.getElementById('mp-year').value),
-    date:             document.getElementById('mp-date').value,
-    amount:           parseFloat(document.getElementById('mp-amount').value),
-    method:           document.getElementById('mp-method').value,
-    note:             document.getElementById('mp-note').value.trim(),
-  };
-  const errEl = document.getElementById('modal-mp-error');
-  if (!body.member || !body.membership_year || !body.date || !body.amount) {
-    errEl.textContent = 'Adhérent, année, date et montant sont obligatoires.';
-    errEl.classList.remove('hidden');
-    return;
-  }
-  const res = await apiFetch('/membership/payments/', 'POST', body);
-  if (!res || !res.ok) {
-    const err = await res.json().catch(() => ({}));
-    errEl.textContent = JSON.stringify(err);
-    errEl.classList.remove('hidden');
-    return;
-  }
-  closeModal('modal-membership-payment');
-  toast('Cotisation enregistrée ✓');
-  loadMembershipPayments();
-}
-
-async function deleteMembershipPayment(id) {
-  const ok = await confirmDialog({ title: 'Supprimer cette cotisation ?', msg: 'Cette action est irréversible.', icon: '🗑️' });
-  if (!ok) return;
-  await apiFetch(`/membership/payments/${id}/`, 'DELETE');
-  toast('Cotisation supprimée', 'info');
-  loadMembershipPayments();
-}
-
-async function downloadMembershipReceipt(id, memberName) {
-  showProgress();
-  try {
-    const res = await fetch(`${API}/membership/receipt/payment/${id}/`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (!res.ok) { toast('Erreur génération du reçu PDF', 'error'); return; }
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `cotisation_${memberName.replace(/\s+/g, '_')}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast('Reçu de cotisation téléchargé ✓');
-  } catch (e) {
-    toast('Erreur : ' + e.message, 'error');
-  } finally {
-    hideProgress();
-  }
+  openTreasuryModal({ category: 'cotisation', memberId, memberName });
 }
 
 // ── Non cotisants ─────────────────────────────────────────────────────────────
@@ -268,6 +166,13 @@ async function loadUnpaidMembers() {
 }
 
 // ── Helpers sélects ───────────────────────────────────────────────────────────
+async function loadMembershipYears() {
+  const res = await apiFetch('/membership/years/');
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  membershipYears = data.results || data;
+}
+
 async function loadMembersForSelect(selectId) {
   if (!allMembers.length) {
     const res = await apiFetch('/membership/members/');
