@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.permissions import IsAdminRole
+from core.permissions import HasMosquePermission, IsAdminRole
 from core.utils import get_mosque
 
 from .models import Mosque, MosqueSettings
@@ -28,7 +28,7 @@ class SettingsView(APIView):
     ADMIN uniquement.
     """
 
-    permission_classes = [IsAuthenticated, IsAdminRole]
+    permission_classes = [IsAuthenticated, HasMosquePermission, IsAdminRole]
 
     def get(self, request):
         mosque = get_mosque(request)
