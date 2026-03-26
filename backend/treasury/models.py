@@ -4,6 +4,10 @@ Modeles Tresorerie -- transactions financieres de la mosquee
 TreasuryTransaction : toute entree ou sortie d'argent
   - direction : IN (entree) ou OUT (sortie)
   - category  : don, loyer, salaire, facture, ecole, cotisation, autre, ...
+  - family    : FK optionnelle vers Family (paiement école)
+  - school_year : FK optionnelle vers SchoolYear
+  - member    : FK optionnelle vers Member (cotisation adhérent)
+  - membership_year : FK optionnelle vers MembershipYear
 """
 from django.db import models
 
@@ -69,6 +73,36 @@ class TreasuryTransaction(models.Model):
         null=True, blank=True,
         related_name="transactions",
         verbose_name="Cagnotte liée",
+    )
+    # ── Liens optionnels vers les ressources humaines ──────────────────────
+    # Remplis automatiquement lors de la saisie d'un paiement école ou cotisation
+    family = models.ForeignKey(
+        "school.Family",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="transactions",
+        verbose_name="Famille (école)",
+    )
+    school_year = models.ForeignKey(
+        "school.SchoolYear",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="transactions",
+        verbose_name="Année scolaire",
+    )
+    member = models.ForeignKey(
+        "membership.Member",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="transactions",
+        verbose_name="Adhérent",
+    )
+    membership_year = models.ForeignKey(
+        "membership.MembershipYear",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="transactions",
+        verbose_name="Année de cotisation",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
