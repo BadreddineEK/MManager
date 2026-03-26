@@ -10,7 +10,7 @@
 | Base de données | PostgreSQL 16 |
 | Frontend | HTML/CSS/JS pur — aucun framework, aucun build step |
 | Infrastructure | Docker Compose · Gunicorn · Nginx · Raspberry Pi |
-| Tests | pytest 8.3.5 · pytest-django · 89 tests automatisés |
+| Tests | pytest 8.3.5 · pytest-django · 113 tests automatisés |
 
 **Multi-tenant** — chaque donnée est isolée par mosquée (`mosque_id` sur tous les modèles). Une instance = plusieurs mosquées possibles sur le même serveur.
 
@@ -335,7 +335,7 @@ docker compose exec backend pytest school/tests.py -v
 ./scripts/run_tests.sh
 ```
 
-### Résultat actuel : **89 tests ✅**
+### Résultat actuel : **113 tests ✅**
 
 | App | Tests | Couverture |
 |-----|-------|------------|
@@ -462,7 +462,7 @@ MManager/
 - [x] **Step 5** — RBAC granulaire (ADMIN / ECOLE_MANAGER / TRESORIER)
 - [x] **Step 6** — Frontend modulaire (14 modules JS, SPA)
 - [x] **Step 7** — Audit Log + Notifications email
-- [x] **Step 8** — Tests automatisés (89 tests pytest — core, school, membership, treasury, kpi)
+- [x] **Step 8** — Tests automatisés (113 tests pytest — core, school, membership, treasury, kpi)
 - [ ] **Step 9** — Import / Migration de données (CSV / Excel)
 - [ ] **Step 10** — Saisie rapide multi-transactions (tableau inline)
 - [ ] **Step 11** — Intégration HelloAsso / Cotizup (webhook)

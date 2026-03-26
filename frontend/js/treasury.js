@@ -8,13 +8,20 @@ async function loadTreasury() {
   const category  = document.getElementById('trs-category-filter').value;
   const regime    = document.getElementById('trs-regime-filter').value;
   const month     = document.getElementById('trs-month-filter').value;
+  const year      = document.getElementById('trs-year-filter').value;
   const search    = document.getElementById('trs-search').value.trim();
+
+  // Si mois est sélectionné, effacer le filtre année (et vice versa)
+  if (month && year) {
+    document.getElementById('trs-year-filter').value = '';
+  }
 
   let url = '/treasury/transactions/?ordering=-date';
   if (direction) url += `&direction=${direction}`;
   if (category)  url += `&category=${category}`;
   if (regime)    url += `&regime=${regime}`;
   if (month)     url += `&month=${month}`;
+  else if (year) url += `&year=${year}`;
   if (search)    url += `&search=${encodeURIComponent(search)}`;
 
   const res = await apiFetch(url);
@@ -22,9 +29,16 @@ async function loadTreasury() {
   const data = await res.json();
   renderTreasury(data.results || data);
 
-  // Résumé du mois
-  const today  = new Date().toISOString().slice(0, 7);
-  const sumUrl = `/treasury/transactions/summary/?month=${month || today}`;
+  // Résumé de la période affichée
+  let sumUrl;
+  if (month) {
+    sumUrl = `/treasury/transactions/summary/?month=${month}`;
+  } else if (year) {
+    sumUrl = `/treasury/transactions/summary/?year=${year}`;
+  } else {
+    // Pas de filtre période : afficher le total cumulatif
+    sumUrl = `/treasury/transactions/summary/?total=1`;
+  }
   const sumRes = await apiFetch(sumUrl);
   if (sumRes && sumRes.ok) {
     const s = await sumRes.json();
@@ -34,6 +48,16 @@ async function loadTreasury() {
     balEl.textContent = `${s.balance.toFixed(2)} €`;
     balEl.style.color = s.balance >= 0 ? '#16a34a' : '#dc2626';
   }
+
+  // Mettre à jour le libellé de la période dans les stats
+  const inLbl  = document.querySelector('#trs-in + .lbl') || document.querySelector('#trs-in ~ .lbl');
+  const outLbl = document.querySelector('#trs-out + .lbl') || document.querySelector('#trs-out ~ .lbl');
+  const label  = month ? `Mois ${month}` : year ? `Année ${year}` : 'Total cumulatif';
+  try {
+    document.querySelector('.stat-card:nth-child(1) .lbl').textContent = `Entrées (${label})`;
+    document.querySelector('.stat-card:nth-child(2) .lbl').textContent = `Sorties (${label})`;
+    document.querySelector('.stat-card:nth-child(3) .lbl').textContent = month || year ? `Solde (${label})` : 'Solde total';
+  } catch (e) { /* ignore */ }
 }
 
 function renderTreasury(txs) {
@@ -224,6 +248,65 @@ async function downloadAnnualReceipt() {
     toast('Récapitulatif PDF téléchargé ✓');
   } catch (e) {
     toast('Erreur : ' + e.message, 'error');
+  } finally {
+    hideProgress();
+  }
+}
+
+// ── Export CSV Trésorerie ─────────────────────────────────────────────────────
+async function exportTreasuryCSV() {
+  const direction = document.getElementById('trs-direction-filter').value;
+  const category  = document.getElementById('trs-category-filter').value;
+  const regime    = document.getElementById('trs-regime-filter').value;
+  const month     = document.getElementById('trs-month-filter').value;
+  const year      = document.getElementById('trs-year-filter').value;
+  const search    = document.getElementById('trs-search').value.trim();
+
+  // Récupère toutes les transactions avec les filtres actifs (sans pagination)
+  let url = '/treasury/transactions/?ordering=-date&page_size=10000';
+  if (direction) url += `&direction=${direction}`;
+  if (category)  url += `&category=${category}`;
+  if (regime)    url += `&regime=${regime}`;
+  if (month)     url += `&month=${month}`;
+  else if (year) url += `&year=${year}`;
+  if (search)    url += `&search=${encodeURIComponent(search)}`;
+
+  showProgress();
+  try {
+    const res = await apiFetch(url);
+    if (!res || !res.ok) { toast('Erreur chargement données', 'error'); return; }
+    const data = await res.json();
+    const txs  = data.results || data;
+
+    if (!txs.length) { toast('Aucune transaction à exporter', 'info'); return; }
+
+    // Générer CSV
+    const headers = ['Date', 'Libellé', 'Catégorie', 'Direction', 'Montant (€)', 'Mode', 'Régime', 'Cagnotte', 'Note'];
+    const rows = txs.map(tx => [
+      tx.date,
+      `"${(tx.label || '').replace(/"/g, '""')}"`,
+      tx.category_display || tx.category,
+      tx.direction === 'IN' ? 'Entrée' : 'Sortie',
+      parseFloat(tx.amount).toFixed(2),
+      tx.method_display || tx.method,
+      tx.regime_fiscal || '',
+      `"${(tx.campaign_name || '').replace(/"/g, '""')}"`,
+      `"${(tx.note || '').replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const BOM = '\uFEFF'; // BOM UTF-8 pour Excel
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const period = month || year || 'tout';
+    a.href     = objUrl;
+    a.download = `tresorerie_${period}.csv`;
+    a.click();
+    URL.revokeObjectURL(objUrl);
+    toast(`Export CSV : ${txs.length} transaction(s) ✓`);
+  } catch (e) {
+    toast('Erreur export : ' + e.message, 'error');
   } finally {
     hideProgress();
   }

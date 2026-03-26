@@ -15,6 +15,11 @@ Couverture :
   Paiements école
     - create   : 201 (avec school_year + date requis)
     - montant négatif → 400
+    - method_display dans la réponse
+
+  Reçu PDF paiement école
+    - 200 + content-type PDF pour un paiement valide
+    - 404 si paiement d'une autre mosquée
 
   Impayés (arrears)
     - famille sans paiement → dans la liste
@@ -203,6 +208,19 @@ class TestSchoolPayment:
         assert res.status_code == 201
         assert float(res.data["amount"]) == 500.00
 
+    def test_payment_has_method_display(self, admin_client, mosque, school_year):
+        """Le serializer expose method_display."""
+        f = make_family(mosque)
+        res = admin_client.post(PAYMENTS_URL, {
+            "school_year": school_year.id,
+            "family": f.id,
+            "date": "2026-01-15",
+            "amount": "300.00",
+            "method": "cheque",
+        }, format="json")
+        assert res.status_code == 201
+        assert res.data["method_display"] == "Cheque"
+
     def test_payment_amount_must_be_positive(self, admin_client, mosque, school_year):
         """Montant négatif → 400 (validé par le serializer)."""
         f = make_family(mosque)
@@ -248,3 +266,25 @@ class TestArrears:
         res = admin_client.get(ARREARS_URL)
         assert res.data["count"] == 2
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Reçu PDF paiement école
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestSchoolPaymentReceipt:
+
+    def test_receipt_returns_pdf(self, admin_client, mosque, school_year):
+        """GET /api/school/payments/{id}/receipt/ → 200 PDF."""
+        f = make_family(mosque, "Famille PDF")
+        p = make_payment(mosque, school_year, f, amount=300.00)
+        res = admin_client.get(f"{PAYMENTS_URL}{p.id}/receipt/")
+        assert res.status_code == 200
+        assert res["Content-Type"] == "application/pdf"
+        assert len(res.content) > 500  # fichier PDF non vide
+
+    def test_receipt_isolation(self, other_client, mosque, school_year):
+        """Un user d'une autre mosquée obtient 404 sur un paiement qui n'est pas le sien."""
+        f = make_family(mosque, "Famille Isolée")
+        p = make_payment(mosque, school_year, f, amount=200.00)
+        res = other_client.get(f"{PAYMENTS_URL}{p.id}/receipt/")
+        assert res.status_code == 404

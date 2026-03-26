@@ -57,6 +57,7 @@ class SchoolPaymentSerializer(serializers.ModelSerializer):
     family_name = serializers.CharField(source="family.primary_contact_name", read_only=True)
     child_name = serializers.CharField(source="child.first_name", read_only=True, default=None)
     school_year_label = serializers.CharField(source="school_year.label", read_only=True)
+    method_display = serializers.CharField(source="get_method_display", read_only=True)
 
     class Meta:
         model = SchoolPayment
@@ -71,6 +72,7 @@ class SchoolPaymentSerializer(serializers.ModelSerializer):
             "date",
             "amount",
             "method",
+            "method_display",
             "note",
             "created_at",
         ]

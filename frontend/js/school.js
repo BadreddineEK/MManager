@@ -253,9 +253,11 @@ async function loadPayments() {
       <td>${p.child_name ? esc(p.child_name) : '<span class="text-muted">—</span>'}</td>
       <td>${esc(p.school_year_label)}</td>
       <td><strong>${parseFloat(p.amount).toFixed(2)} €</strong></td>
-      <td><span class="badge badge-blue">${esc(p.method)}</span></td>
+      <td><span class="badge badge-blue">${esc(p.method_display || p.method)}</span></td>
       <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.note)||''}">${esc(p.note) || '<span class="text-muted">—</span>'}</td>
       <td><div class="td-actions">
+        <button class="btn btn-sm btn-icon" onclick="editPayment(${p.id})" title="Modifier">✏️</button>
+        <button class="btn btn-sm btn-icon" onclick="downloadSchoolReceipt(${p.id}, '${esc(p.family_name).replace(/'/g, "\\'")}')" title="Reçu PDF">🧾</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deletePayment(${p.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>
@@ -271,6 +273,27 @@ async function openPaymentModal() {
   document.getElementById('payment-amount').value   = '';
   document.getElementById('payment-method').value   = 'cash';
   document.getElementById('payment-note').value     = '';
+  document.getElementById('modal-payment-title').textContent = 'Enregistrer un paiement';
+  document.getElementById('modal-payment-error').classList.add('hidden');
+  openModal('modal-payment');
+}
+
+async function editPayment(id) {
+  await loadFamiliesForSelect('payment-family');
+  await loadYearsForSelect('payment-year');
+  const res = await apiFetch(`/school/payments/${id}/`);
+  if (!res || !res.ok) return;
+  const p = await res.json();
+  document.getElementById('payment-id').value     = p.id;
+  document.getElementById('payment-family').value = p.family;
+  document.getElementById('payment-year').value   = p.school_year;
+  await loadChildrenForFamily();
+  document.getElementById('payment-child').value  = p.child || '';
+  document.getElementById('payment-date').value   = p.date;
+  document.getElementById('payment-amount').value = p.amount;
+  document.getElementById('payment-method').value = p.method;
+  document.getElementById('payment-note').value   = p.note || '';
+  document.getElementById('modal-payment-title').textContent = 'Modifier le paiement';
   document.getElementById('modal-payment-error').classList.add('hidden');
   openModal('modal-payment');
 }
@@ -290,6 +313,7 @@ async function loadChildrenForFamily() {
 }
 
 async function savePayment() {
+  const id   = document.getElementById('payment-id').value;
   const body = {
     family:      parseInt(document.getElementById('payment-family').value),
     school_year: parseInt(document.getElementById('payment-year').value),
@@ -307,7 +331,11 @@ async function savePayment() {
     errEl.classList.remove('hidden');
     return;
   }
-  const res = await apiFetch('/school/payments/', 'POST', body);
+  const res = await apiFetch(
+    id ? `/school/payments/${id}/` : '/school/payments/',
+    id ? 'PUT' : 'POST',
+    body
+  );
   if (!res || !res.ok) {
     const err = await res.json().catch(() => ({}));
     errEl.textContent = JSON.stringify(err);
@@ -315,8 +343,34 @@ async function savePayment() {
     return;
   }
   closeModal('modal-payment');
-  toast('Paiement enregistré ✓');
+  toast(id ? 'Paiement mis à jour ✓' : 'Paiement enregistré ✓');
   loadPayments();
+}
+
+async function downloadSchoolReceipt(id, familyName) {
+  showProgress();
+  try {
+    const res = await fetch(`${API}/school/payments/${id}/receipt/`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.detail || 'Erreur génération PDF', 'error');
+      return;
+    }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `recu_ecole_${familyName.replace(/\s+/g, '_')}_${id}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Reçu PDF téléchargé ✓');
+  } catch (e) {
+    toast('Erreur : ' + e.message, 'error');
+  } finally {
+    hideProgress();
+  }
 }
 
 async function deletePayment(id) {

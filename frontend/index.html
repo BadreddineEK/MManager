@@ -496,7 +496,9 @@
             <option value="1905">🟣 Loi 1905</option>
           </select>
           <input type="month" id="trs-month-filter" onchange="loadTreasury()" style="width:auto;margin:0;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;" />
+          <input type="number" id="trs-year-filter" placeholder="Année ex: 2025" min="2020" max="2099" onchange="loadTreasury()" style="width:140px;margin:0;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;" />
           <input type="text" class="search-input" id="trs-search" placeholder="🔍  Rechercher..." oninput="loadTreasury()" />
+          <button class="btn btn-sm" onclick="exportTreasuryCSV()" title="Exporter en CSV">⬇️ Export CSV</button>
         </div>
         <div id="treasury-alert"></div>
         <div class="card table-wrapper">
