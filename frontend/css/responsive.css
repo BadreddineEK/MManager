@@ -65,3 +65,10 @@
   .stat-card .num { font-size: 1.3rem; }
   .page-body { padding: 12px 10px; }
 }
+
+/* ── Filtre trésorerie mobile ─────────────────────────────── */
+@media (max-width: 600px) {
+  .chart-title-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .dash-trs-filter { flex-wrap: wrap; }
+  .dtf-btn { font-size: 0.7rem; padding: 3px 8px; }
+}

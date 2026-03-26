@@ -231,10 +231,20 @@
 
         <!-- ── Graphique trésorerie pleine largeur ── -->
         <div class="chart-card dash-chart-wide">
-          <div class="chart-title">
-            <span class="ct-icon">📈</span>
-            Flux de trésorerie — 6 derniers mois
-            <span class="chart-title-sub" id="dash-trs-period"></span>
+          <div class="chart-title-row">
+            <div class="chart-title">
+              <span class="ct-icon">📈</span>
+              Flux de trésorerie
+              <span class="chart-title-sub" id="dash-trs-period"></span>
+            </div>
+            <div class="dash-trs-filter" id="dash-trs-filter">
+              <button class="dtf-btn dtf-active" data-mode="6m">6 mois</button>
+              <button class="dtf-btn" data-mode="year">Cette année</button>
+              <button class="dtf-btn" data-mode="last-year">An passé</button>
+              <select class="dtf-select" id="dash-trs-year-select" title="Choisir une année">
+                <option value="">Année…</option>
+              </select>
+            </div>
           </div>
           <canvas id="chart-treasury" height="110"></canvas>
         </div>
@@ -242,7 +252,7 @@
         <!-- ── Grille 3 graphiques ── -->
         <div class="dash-charts-3">
           <div class="chart-card">
-            <div class="chart-title"><span class="ct-icon">�️</span> Répartition des recettes</div>
+            <div class="chart-title"><span class="ct-icon">🗂️</span> Recettes <span id="dash-cat-period" class="chart-title-sub"></span></div>
             <canvas id="chart-categories" height="220"></canvas>
           </div>
           <div class="chart-card">

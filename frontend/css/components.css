@@ -128,6 +128,44 @@ tbody tr:hover td { background: #faf8ff; }
 .chart-card .chart-title .ct-icon { color: var(--accent); }
 .chart-card .chart-title .chart-title-sub { margin-left: auto; font-size: 0.72rem; font-weight: 400; color: var(--muted); }
 
+/* titre + filtre sur la même ligne */
+.chart-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.chart-title-row .chart-title { margin-bottom: 0; }
+
+/* ── Filtre trésorerie ──────────────────────────────────────── */
+.dash-trs-filter { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.dtf-btn {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.dtf-btn:hover { border-color: var(--accent); color: var(--accent); }
+.dtf-btn.dtf-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.dtf-select {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s;
+}
+.dtf-select:focus { border-color: var(--accent); }
+
 /* ── DASHBOARD KPI ─────────────────────────────────────────── */
 .dash-kpi-row {
   display: grid;

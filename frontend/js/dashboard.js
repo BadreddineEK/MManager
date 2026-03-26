@@ -42,6 +42,15 @@ function _last6Months() {
   }
   return months;
 }
+
+function _monthsOfYear(year) {
+  const months = [];
+  for (let m = 1; m <= 12; m++) {
+    months.push(`${year}-${String(m).padStart(2, '0')}`);
+  }
+  return months;
+}
+
 function _monthLabel(ym) {
   const [y, m] = ym.split('-');
   return new Date(y, m - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
@@ -56,15 +65,54 @@ function _pct(num, total) {
   return Math.round((num / total) * 100);
 }
 
+// ── État filtre courant ───────────────────────────────────────────────────────
+let _dashFilterMode = '6m';   // '6m' | 'year' | 'last-year' | 'custom'
+let _dashFilterYear = null;   // ex: 2024
+
+// Retourne { months, label } selon le mode actif
+function _getFilterMonths() {
+  const now = new Date();
+  if (_dashFilterMode === '6m') {
+    const months = _last6Months();
+    return { months, label: `${_monthLabel(months[0])} → ${_monthLabel(months[5])}` };
+  }
+  if (_dashFilterMode === 'year') {
+    const months = _monthsOfYear(now.getFullYear());
+    return { months, label: `Année ${now.getFullYear()}` };
+  }
+  if (_dashFilterMode === 'last-year') {
+    const months = _monthsOfYear(now.getFullYear() - 1);
+    return { months, label: `Année ${now.getFullYear() - 1}` };
+  }
+  if (_dashFilterMode === 'custom' && _dashFilterYear) {
+    const months = _monthsOfYear(_dashFilterYear);
+    return { months, label: `Année ${_dashFilterYear}` };
+  }
+  // fallback
+  const months = _last6Months();
+  return { months, label: `${_monthLabel(months[0])} → ${_monthLabel(months[5])}` };
+}
+
 // ── Dashboard principal ───────────────────────────────────────────────────────
 async function loadDashboard() {
-  const months     = _last6Months();
-  const currentYm  = new Date().toISOString().slice(0, 7);
   const now        = new Date();
+  const currentYm  = now.toISOString().slice(0, 7);
   const monthLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
-  // Toutes les requêtes en parallèle
-  const [fRes, cRes, aRes, mRes, tTotalRes, tMonthRes, unpaidRes, catRes] = await Promise.all([
+  // ── Remplir le select d'années disponibles (2022 → cette année) ──────────
+  const yearSelect = document.getElementById('dash-trs-year-select');
+  if (yearSelect && yearSelect.options.length <= 1) {
+    const startYear = 2022;
+    for (let y = now.getFullYear(); y >= startYear; y--) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      yearSelect.appendChild(opt);
+    }
+  }
+
+  // Requêtes statiques (familles, adhérents, solde total) en parallèle
+  const [fRes, cRes, aRes, mRes, tTotalRes, tMonthRes, unpaidRes] = await Promise.all([
     apiFetch('/school/families/'),
     apiFetch('/school/children/'),
     apiFetch('/school/families/arrears/'),
@@ -72,7 +120,6 @@ async function loadDashboard() {
     apiFetch('/treasury/transactions/summary/?total=1'),
     apiFetch(`/treasury/transactions/summary/?month=${currentYm}`),
     apiFetch('/membership/members/unpaid/'),
-    apiFetch(`/treasury/transactions/summary/?month=${currentYm}`),
   ]);
 
   const fData   = fRes?.ok      ? await fRes.json()      : null;
@@ -90,7 +137,7 @@ async function loadDashboard() {
   const unpaidCount    = unpaid?.count ?? 0;
   const paidCount      = Math.max(0, totalMembers - unpaidCount);
 
-  // ── KPI Trésorerie ────────────────────────────────────────────────────────
+  // ── KPI Trésorerie (solde global, toujours) ───────────────────────────────
   if (tTotal) {
     const bal = parseFloat(tTotal.balance);
     const balEl = document.getElementById('stat-balance');
@@ -103,6 +150,7 @@ async function loadDashboard() {
       trend.className   = `dash-kpi-badge ${bal >= 0 ? 'badge-ok' : 'badge-danger'}`;
     }
   }
+  // KPI mois courant (toujours le mois actuel, indépendant du filtre)
   if (tMonth) {
     const mIn  = parseFloat(tMonth.total_in  || 0);
     const mOut = parseFloat(tMonth.total_out || 0);
@@ -142,25 +190,71 @@ async function loadDashboard() {
 
   await loadSchoolYears();
 
-  // ── Graphique 1 : Trésorerie flux 6 mois (ligne) ─────────────────────────
+  // ── Graphique niveaux & adhérents (statiques, pas filtrés) ───────────────
+  _renderLevelsChart(cData);
+  _renderMembershipChart(paidCount, unpaidCount, totalMembers);
+
+  // ── Graphiques trésorerie (filtrés) ──────────────────────────────────────
+  await _renderTreasuryCharts();
+
+  // ── Brancher les boutons filtre ───────────────────────────────────────────
+  _initTrsFilter();
+}
+
+// ── Init boutons filtre (appelé une seule fois) ───────────────────────────────
+function _initTrsFilter() {
+  const container = document.getElementById('dash-trs-filter');
+  if (!container || container.dataset.bound) return;
+  container.dataset.bound = '1';
+
+  container.querySelectorAll('.dtf-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      container.querySelectorAll('.dtf-btn').forEach(b => b.classList.remove('dtf-active'));
+      btn.classList.add('dtf-active');
+      document.getElementById('dash-trs-year-select').value = '';
+      _dashFilterMode = btn.dataset.mode;
+      _dashFilterYear = null;
+      await _renderTreasuryCharts();
+    });
+  });
+
+  document.getElementById('dash-trs-year-select').addEventListener('change', async function () {
+    if (!this.value) return;
+    container.querySelectorAll('.dtf-btn').forEach(b => b.classList.remove('dtf-active'));
+    _dashFilterMode = 'custom';
+    _dashFilterYear = parseInt(this.value);
+    await _renderTreasuryCharts();
+  });
+}
+
+// ── Graphiques trésorerie (flux + catégories) — re-rendus à chaque filtre ────
+async function _renderTreasuryCharts() {
+  const { months, label } = _getFilterMonths();
+
+  // Sous-titre période
+  const periodEl  = document.getElementById('dash-trs-period');
+  if (periodEl) periodEl.textContent = label;
+  const catPeriodEl = document.getElementById('dash-cat-period');
+  if (catPeriodEl) catPeriodEl.textContent = `— ${label}`;
+
+  // Afficher un spinner pendant le chargement
+  _setChartLoading('chart-treasury', true);
+
+  // Charger toutes les données de la période en parallèle
+  const summaries = await Promise.all(
+    months.map(m => apiFetch(`/treasury/transactions/summary/?month=${m}`).then(r => r?.ok ? r.json() : null))
+  );
+
   const trsIn = [], trsOut = [], trsBalance = [];
-  for (const month of months) {
-    const res = await apiFetch(`/treasury/transactions/summary/?month=${month}`);
-    if (res?.ok) {
-      const d = await res.json();
-      const _in  = parseFloat(d.total_in  || 0);
-      const _out = parseFloat(d.total_out || 0);
-      trsIn.push(_in);
-      trsOut.push(_out);
-      trsBalance.push(_in - _out);
-    } else {
-      trsIn.push(0); trsOut.push(0); trsBalance.push(0);
-    }
-  }
+  summaries.forEach(d => {
+    const _in  = parseFloat(d?.total_in  || 0);
+    const _out = parseFloat(d?.total_out || 0);
+    trsIn.push(_in);
+    trsOut.push(_out);
+    trsBalance.push(_in - _out);
+  });
 
-  const periodEl = document.getElementById('dash-trs-period');
-  if (periodEl) periodEl.textContent = `${_monthLabel(months[0])} → ${_monthLabel(months[5])}`;
-
+  _setChartLoading('chart-treasury', false);
   _destroyChart('treasury');
   _charts['treasury'] = new Chart(document.getElementById('chart-treasury'), {
     type: 'bar',
@@ -204,11 +298,38 @@ async function loadDashboard() {
     },
   });
 
-  // ── Graphique 2 : Répartition catégories recettes ─────────────────────────
-  // Chercher les transactions IN du mois courant par catégorie
-  const catRes2 = await apiFetch(`/treasury/transactions/?direction=IN&month=${currentYm}&page_size=1000`);
-  const catTxs  = catRes2?.ok ? ((await catRes2.json()).results || []) : [];
-  const catMap  = {};
+  // ── Graphique catégories pour la période sélectionnée ────────────────────
+  // Construire le filtre API (year ou mois individuels)
+  let catParams = '';
+  if (_dashFilterMode === 'year') {
+    catParams = `year=${new Date().getFullYear()}`;
+  } else if (_dashFilterMode === 'last-year') {
+    catParams = `year=${new Date().getFullYear() - 1}`;
+  } else if (_dashFilterMode === 'custom' && _dashFilterYear) {
+    catParams = `year=${_dashFilterYear}`;
+  } else {
+    // 6 mois : on agrège les résultats des summaries déjà chargés
+    catParams = null;
+  }
+
+  let catTxs = [];
+  if (catParams) {
+    const catRes = await apiFetch(`/treasury/transactions/?direction=IN&${catParams}&page_size=1000`);
+    catTxs = catRes?.ok ? ((await catRes.json()).results || []) : [];
+  } else {
+    // 6 mois glissants : agréger depuis les summaries déjà chargés
+    const catFromSummaries = {};
+    summaries.forEach(d => {
+      if (!d?.categories) return;
+      Object.entries(d.categories).forEach(([cat, vals]) => {
+        catFromSummaries[cat] = (catFromSummaries[cat] || 0) + (vals.in || 0);
+      });
+    });
+    // on reconstruit un tableau synthétique
+    catTxs = Object.entries(catFromSummaries).map(([category, amount]) => ({ category, amount }));
+  }
+
+  const catMap = {};
   const CAT_LABELS = {
     don: 'Dons', ecole: 'École', cotisation: 'Cotisations',
     loyer: 'Loyer', salaire: 'Salaires', facture: 'Factures',
@@ -242,15 +363,32 @@ async function loadDashboard() {
     });
   } else {
     const canvas = document.getElementById('chart-categories');
-    const ctx    = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#9ca3af';
-    ctx.font      = '13px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Aucune recette ce mois', canvas.width / 2, canvas.height / 2);
+    const ctx2   = canvas.getContext('2d');
+    ctx2.clearRect(0, 0, canvas.width, canvas.height);
+    ctx2.fillStyle = '#9ca3af';
+    ctx2.font      = '13px Inter, sans-serif';
+    ctx2.textAlign = 'center';
+    ctx2.fillText('Aucune recette sur cette période', canvas.width / 2, canvas.height / 2);
   }
+}
 
-  // ── Graphique 3 : Élèves par niveau ──────────────────────────────────────
+// ── Loader canvas ─────────────────────────────────────────────────────────────
+function _setChartLoading(canvasId, loading) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (loading) {
+    _destroyChart(canvasId === 'chart-treasury' ? 'treasury' : canvasId);
+    const ctx2 = canvas.getContext('2d');
+    ctx2.clearRect(0, 0, canvas.width, canvas.height);
+    ctx2.fillStyle = '#c4b5fd';
+    ctx2.font      = '13px Inter, sans-serif';
+    ctx2.textAlign = 'center';
+    ctx2.fillText('Chargement…', canvas.width / 2, canvas.height / 2);
+  }
+}
+
+// ── Graphique niveaux ─────────────────────────────────────────────────────────
+function _renderLevelsChart(cData) {
   const children = cData ? (cData.results || cData) : [];
   const byLevel  = {};
   children.forEach(c => { byLevel[c.level] = (byLevel[c.level] || 0) + 1; });
@@ -276,8 +414,10 @@ async function loadDashboard() {
       },
     },
   });
+}
 
-  // ── Graphique 4 : Cotisations (donut + centre) ────────────────────────────
+// ── Graphique adhérents (donut) ───────────────────────────────────────────────
+function _renderMembershipChart(paidCount, unpaidCount, totalMembers) {
   _destroyChart('membership');
   _charts['membership'] = new Chart(document.getElementById('chart-membership'), {
     type: 'doughnut',
@@ -299,7 +439,6 @@ async function loadDashboard() {
       },
     },
   });
-  // Centre du donut
   const centerEl = document.getElementById('chart-membership-center');
   if (centerEl && totalMembers > 0) {
     const pct = _pct(paidCount, totalMembers);
@@ -314,7 +453,6 @@ function _renderAlerts({ arrearsCount, totalFamilies, unpaidCount, totalMembers,
   if (!container) return;
   const alerts = [];
 
-  // Alerte impayés école
   if (arrearsCount > 0) {
     const pct = _pct(arrearsCount, totalFamilies);
     alerts.push(`
@@ -337,7 +475,6 @@ function _renderAlerts({ arrearsCount, totalFamilies, unpaidCount, totalMembers,
       </div>`);
   }
 
-  // Alerte non cotisants
   if (unpaidCount > 0) {
     const pct = _pct(unpaidCount, totalMembers);
     alerts.push(`
@@ -351,7 +488,6 @@ function _renderAlerts({ arrearsCount, totalFamilies, unpaidCount, totalMembers,
       </div>`);
   }
 
-  // Alerte trésorerie mois courant
   if (tMonth) {
     const bal = parseFloat(tMonth.total_in || 0) - parseFloat(tMonth.total_out || 0);
     if (bal < 0) {
@@ -382,7 +518,6 @@ async function loadSchoolYears() {
   const data = await res.json();
   schoolYears = data.results || data;
 
-  // Select dashboard
   const dash = document.getElementById('school-year-select');
   if (dash) {
     dash.innerHTML = '<option value="">Toutes les années</option>';
@@ -391,3 +526,5 @@ async function loadSchoolYears() {
     });
   }
 }
+
+
