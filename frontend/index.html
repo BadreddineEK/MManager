@@ -181,57 +181,94 @@
         </div>
       </div>
       <div class="page-body">
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-icon">👨‍👩‍👧</div>
-            <div class="num" id="stat-families">—</div>
-            <div class="lbl">Familles inscrites</div>
+
+        <!-- ── KPI Row ── -->
+        <div class="dash-kpi-row">
+
+          <div class="dash-kpi-card dash-kpi-treasury">
+            <div class="dash-kpi-top">
+              <div class="dash-kpi-icon">🏦</div>
+              <div class="dash-kpi-badge" id="kpi-balance-trend"></div>
+            </div>
+            <div class="dash-kpi-num" id="stat-balance">—</div>
+            <div class="dash-kpi-label">Solde trésorerie</div>
+            <div class="dash-kpi-sub" id="stat-balance-month"></div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon">🧒</div>
-            <div class="num" id="stat-children">—</div>
-            <div class="lbl">Enfants</div>
+
+          <div class="dash-kpi-card dash-kpi-school">
+            <div class="dash-kpi-top">
+              <div class="dash-kpi-icon">🎓</div>
+              <div class="dash-kpi-badge badge-warning" id="kpi-arrears-badge"></div>
+            </div>
+            <div class="dash-kpi-num" id="stat-families">—</div>
+            <div class="dash-kpi-label">Familles inscrites</div>
+            <div class="dash-kpi-sub"><span id="stat-children">—</span> enfants · <span class="text-red" id="stat-arrears">—</span> impayés</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon">💰</div>
-            <div class="num" id="stat-payments">—</div>
-            <div class="lbl">Paiements école (trésorerie)</div>
+
+          <div class="dash-kpi-card dash-kpi-members">
+            <div class="dash-kpi-top">
+              <div class="dash-kpi-icon">🤝</div>
+              <div class="dash-kpi-badge" id="kpi-members-badge"></div>
+            </div>
+            <div class="dash-kpi-num" id="stat-members">—</div>
+            <div class="dash-kpi-label">Adhérents</div>
+            <div class="dash-kpi-sub"><span id="stat-members-paid">—</span> à jour · <span class="text-red" id="stat-members-unpaid">—</span> non cotisants</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon">⚠️</div>
-            <div class="num text-red" id="stat-arrears">—</div>
-            <div class="lbl">Familles impayées</div>
+
+          <div class="dash-kpi-card dash-kpi-month">
+            <div class="dash-kpi-top">
+              <div class="dash-kpi-icon">📅</div>
+            </div>
+            <div class="dash-kpi-num text-green" id="stat-month-in">—</div>
+            <div class="dash-kpi-label">Entrées ce mois</div>
+            <div class="dash-kpi-sub"><span class="text-red" id="stat-month-out">—</span> en sorties</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon">🤝</div>
-            <div class="num" id="stat-members">—</div>
-            <div class="lbl">Adhérents</div>
+
+        </div>
+
+        <!-- ── Alertes ── -->
+        <div id="dash-alerts-row" class="dash-alerts-row hidden"></div>
+
+        <!-- ── Graphique trésorerie pleine largeur ── -->
+        <div class="chart-card dash-chart-wide">
+          <div class="chart-title">
+            <span class="ct-icon">📈</span>
+            Flux de trésorerie — 6 derniers mois
+            <span class="chart-title-sub" id="dash-trs-period"></span>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon">🏦</div>
-            <div class="num text-green" id="stat-balance">—</div>
-            <div class="lbl">Solde cumulé</div>
-            <div class="stat-sub" id="stat-balance-month" style="font-size:0.72rem;color:var(--muted);margin-top:2px;"></div>
+          <canvas id="chart-treasury" height="110"></canvas>
+        </div>
+
+        <!-- ── Grille 3 graphiques ── -->
+        <div class="dash-charts-3">
+          <div class="chart-card">
+            <div class="chart-title"><span class="ct-icon">�️</span> Répartition des recettes</div>
+            <canvas id="chart-categories" height="220"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title"><span class="ct-icon">🧒</span> Élèves par niveau</div>
+            <canvas id="chart-levels" height="220"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title"><span class="ct-icon">�</span> Cotisations adhérents</div>
+            <div id="chart-membership-donut-wrap" style="position:relative;">
+              <canvas id="chart-membership" height="220"></canvas>
+              <div id="chart-membership-center" class="donut-center"></div>
+            </div>
           </div>
         </div>
-        <div class="charts-grid">
-          <div class="chart-card">
-            <div class="chart-title"><span class="ct-icon">📈</span> Paiements école — 6 mois</div>
-            <canvas id="chart-school-payments" height="200"></canvas>
-          </div>
-          <div class="chart-card">
-            <div class="chart-title"><span class="ct-icon">🎓</span> Répartition par niveau</div>
-            <canvas id="chart-levels" height="200"></canvas>
-          </div>
-          <div class="chart-card">
-            <div class="chart-title"><span class="ct-icon">🏦</span> Trésorerie — Entrées vs Sorties</div>
-            <canvas id="chart-treasury" height="200"></canvas>
-          </div>
-          <div class="chart-card">
-            <div class="chart-title"><span class="ct-icon">🤝</span> Adhérents — État cotisations</div>
-            <canvas id="chart-membership" height="200"></canvas>
-          </div>
+
+        <!-- ── Accès rapides ── -->
+        <div class="dash-quick-actions">
+          <span class="dash-qa-label">Accès rapides</span>
+          <button class="btn btn-sm" onclick="addSchoolPayment()">💳 Paiement école</button>
+          <button class="btn btn-sm" onclick="addMembershipPayment()">🪙 Cotisation</button>
+          <button class="btn btn-sm" onclick="showSection('arrears')">⚠️ Voir impayés</button>
+          <button class="btn btn-sm" onclick="showSection('unpaid-members')">🔴 Non cotisants</button>
+          <button class="btn btn-sm" onclick="openTreasuryModal()">➕ Transaction</button>
+          <button class="btn btn-sm" onclick="showSection('treasury')">🏦 Trésorerie</button>
         </div>
+
       </div>
     </div>
 
