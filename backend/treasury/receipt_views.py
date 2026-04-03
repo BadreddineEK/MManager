@@ -27,6 +27,7 @@ from rest_framework import status
 
 from core.permissions import HasMosquePermission
 from core.utils import get_mosque
+from django.db.models import Sum
 from .models import TreasuryTransaction
 
 
@@ -618,6 +619,242 @@ class MembershipPaymentReceiptView(APIView):
 
         safe_name = member_name.replace(" ", "_")
         filename  = f"cotisation_{safe_name}_{year_label}.pdf"
+        response  = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
+# ── Fiche adhérent ────────────────────────────────────────────────────────────
+
+def _build_pdf_member_sheet(mosque_info, member, years_status, transactions):
+    """
+    Génère la fiche PDF complète d'un adhérent :
+      - Informations personnelles
+      - Statut cotisation par année (à jour / non cotisant / partiel)
+      - Historique de toutes les transactions liées à cet adhérent
+    """
+    from membership.models import MembershipYear
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        rightMargin=20 * mm,
+        leftMargin=20 * mm,
+        topMargin=15 * mm,
+        bottomMargin=20 * mm,
+    )
+
+    styles = getSampleStyleSheet()
+    normal   = styles["Normal"]
+    title_st = ParagraphStyle("mt",  parent=normal, fontSize=16, textColor=COLOR_PRIMARY, fontName="Helvetica-Bold", spaceAfter=3)
+    sub_st   = ParagraphStyle("ms",  parent=normal, fontSize=10, textColor=COLOR_ACCENT,  fontName="Helvetica-Bold", spaceAfter=4, spaceBefore=8)
+    muted_st = ParagraphStyle("mm",  parent=normal, fontSize=8,  textColor=COLOR_MUTED,   leading=12)
+    body_st  = ParagraphStyle("mb",  parent=normal, fontSize=9,  textColor=COLOR_TEXT,    leading=14)
+    legal_st = ParagraphStyle("ml",  parent=normal, fontSize=7,  textColor=COLOR_MUTED,   leading=11, alignment=1)
+
+    story = []
+
+    # ── En-tête ───────────────────────────────────────────────────────────────
+    header_data = [[
+        Paragraph(f"<b>{mosque_info['name']}</b>",
+                  ParagraphStyle("mh", parent=normal, fontSize=13, textColor=COLOR_PRIMARY, fontName="Helvetica-Bold")),
+        Paragraph("<b>FICHE ADHÉRENT</b>",
+                  ParagraphStyle("mfh", parent=normal, fontSize=11, textColor=COLOR_WHITE, fontName="Helvetica-Bold", alignment=2)),
+    ]]
+    header_table = Table(header_data, colWidths=[110 * mm, 60 * mm])
+    header_table.setStyle(TableStyle([
+        ("BACKGROUND", (1, 0), (1, 0), COLOR_ACCENT),
+        ("ALIGN",      (1, 0), (1, 0), "RIGHT"),
+        ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
+        ("PADDING",    (0, 0), (-1, -1), 8),
+    ]))
+    story.append(header_table)
+
+    addr_parts = []
+    if mosque_info["address"]:
+        addr_parts.append(mosque_info["address"].replace("\n", "<br/>"))
+    if mosque_info["phone"]:
+        addr_parts.append(f"📞 {mosque_info['phone']}")
+    if addr_parts:
+        story.append(Spacer(1, 2 * mm))
+        story.append(Paragraph("<br/>".join(addr_parts), muted_st))
+    story.append(Spacer(1, 3 * mm))
+    story.append(HRFlowable(width="100%", thickness=1, color=COLOR_BORDER, spaceAfter=4 * mm))
+
+    # ── Informations adhérent ─────────────────────────────────────────────────
+    story.append(Paragraph("👤 Informations personnelles", sub_st))
+
+    info_rows = [["Nom complet", member.full_name]]
+    if member.phone:
+        info_rows.append(["Téléphone", member.phone])
+    if member.email:
+        info_rows.append(["Email", member.email])
+    if member.address:
+        info_rows.append(["Adresse", member.address])
+    info_rows.append(["Membre depuis", member.created_at.strftime("%d/%m/%Y") if member.created_at else "—"])
+    info_rows.append(["Document émis le", date.today().strftime("%d/%m/%Y")])
+
+    info_table = Table(info_rows, colWidths=[40 * mm, 130 * mm])
+    info_table.setStyle(TableStyle([
+        ("FONTNAME",      (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTSIZE",      (0, 0), (-1, -1), 9),
+        ("TEXTCOLOR",     (0, 0), (0, -1), COLOR_MUTED),
+        ("TEXTCOLOR",     (1, 0), (1, -1), COLOR_TEXT),
+        ("TOPPADDING",    (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("ROWBACKGROUNDS",(0, 0), (-1, -1), [COLOR_LIGHT_BG, COLOR_WHITE]),
+        ("GRID",          (0, 0), (-1, -1), 0.3, COLOR_BORDER),
+    ]))
+    story.append(info_table)
+
+    # ── Statut cotisations par année ──────────────────────────────────────────
+    story.append(Paragraph("📅 Statut des cotisations", sub_st))
+
+    year_data = [["Année", "Montant attendu", "Montant payé", "Statut"]]
+    total_paid_all = 0.0
+    for ys in years_status:
+        expected = float(ys["expected"])
+        paid     = float(ys["paid"])
+        total_paid_all += paid
+        if paid <= 0:
+            statut = "❌ Non cotisant"
+        elif paid >= expected:
+            statut = "✅ À jour"
+        else:
+            statut = f"⚠️ Partiel ({paid:.2f} / {expected:.2f} €)"
+        year_data.append([
+            str(ys["year"]),
+            _fmt_amount(expected),
+            _fmt_amount(paid),
+            statut,
+        ])
+
+    year_table = Table(year_data, colWidths=[25 * mm, 40 * mm, 40 * mm, 70 * mm], repeatRows=1)
+    year_ts = TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, 0), COLOR_PRIMARY),
+        ("TEXTCOLOR",     (0, 0), (-1, 0), COLOR_WHITE),
+        ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE",      (0, 0), (-1, -1), 8),
+        ("ALIGN",         (1, 0), (2, -1), "RIGHT"),
+        ("ROWBACKGROUNDS",(0, 1), (-1, -1), [COLOR_WHITE, COLOR_LIGHT_BG]),
+        ("TOPPADDING",    (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 6),
+        ("GRID",          (0, 0), (-1, -1), 0.3, COLOR_BORDER),
+        ("LINEBELOW",     (0, 0), (-1, 0), 1, COLOR_PRIMARY),
+    ])
+    # Ligne total en bas
+    year_data.append(["", "", "TOTAL VERSÉ", _fmt_amount(total_paid_all)])
+    year_ts.add("FONTNAME",   (0, -1), (-1, -1), "Helvetica-Bold")
+    year_ts.add("BACKGROUND", (0, -1), (-1, -1), COLOR_LIGHT_BG)
+    year_ts.add("TEXTCOLOR",  (2, -1), (3, -1), COLOR_GREEN)
+    year_ts.add("LINEABOVE",  (0, -1), (-1, -1), 1, COLOR_ACCENT)
+    year_table = Table(year_data, colWidths=[25 * mm, 40 * mm, 40 * mm, 70 * mm], repeatRows=1)
+    year_table.setStyle(year_ts)
+    story.append(year_table)
+
+    # ── Historique des transactions ───────────────────────────────────────────
+    if transactions:
+        story.append(Paragraph("💳 Historique des paiements", sub_st))
+
+        tx_data = [["Date", "Libellé", "Catégorie", "Mode", "Montant"]]
+        for tx in sorted(transactions, key=lambda x: x.date):
+            method_labels = {"cash": "Espèces", "cheque": "Chèque", "virement": "Virement", "autre": "Autre"}
+            tx_data.append([
+                tx.date.strftime("%d/%m/%Y"),
+                tx.label[:45] + ("…" if len(tx.label) > 45 else ""),
+                tx.category.capitalize(),
+                method_labels.get(tx.method, tx.method),
+                _fmt_amount(tx.amount),
+            ])
+
+        tx_table = Table(tx_data, colWidths=[22 * mm, 65 * mm, 30 * mm, 22 * mm, 26 * mm], repeatRows=1)
+        tx_table.setStyle(TableStyle([
+            ("BACKGROUND",    (0, 0), (-1, 0), COLOR_PRIMARY),
+            ("TEXTCOLOR",     (0, 0), (-1, 0), COLOR_WHITE),
+            ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE",      (0, 0), (-1, -1), 8),
+            ("ALIGN",         (4, 0), (4, -1), "RIGHT"),
+            ("ROWBACKGROUNDS",(0, 1), (-1, -1), [COLOR_WHITE, COLOR_LIGHT_BG]),
+            ("TOPPADDING",    (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("LEFTPADDING",   (0, 0), (-1, -1), 5),
+            ("RIGHTPADDING",  (0, 0), (-1, -1), 5),
+            ("GRID",          (0, 0), (-1, -1), 0.3, COLOR_BORDER),
+            ("LINEBELOW",     (0, 0), (-1, 0), 1, COLOR_PRIMARY),
+        ]))
+        story.append(tx_table)
+
+    # ── Mention légale ────────────────────────────────────────────────────────
+    if mosque_info["legal_mention"]:
+        story.append(Spacer(1, 6 * mm))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=COLOR_BORDER))
+        story.append(Spacer(1, 2 * mm))
+        story.append(Paragraph(mosque_info["legal_mention"], legal_st))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf.read()
+
+
+class MemberSheetView(APIView):
+    """
+    GET /api/treasury/receipt/member/{id}/
+    Fiche PDF complète d'un adhérent :
+      - Informations personnelles
+      - Statut cotisation par année (attendu / payé / statut)
+      - Historique de toutes les transactions TreasuryTransaction liées
+    """
+    permission_classes = [IsAuthenticated, HasMosquePermission]
+
+    def get(self, request, pk):
+        from membership.models import Member, MembershipYear
+
+        mosque = getattr(request, "mosque", None)
+        if mosque is None:
+            return Response({"detail": "Mosquée non déterminée."}, status=400)
+
+        try:
+            member = Member.objects.get(pk=pk, mosque=mosque)
+        except Member.DoesNotExist:
+            return Response({"detail": "Adhérent introuvable."}, status=404)
+
+        # Statut cotisation par année
+        years = MembershipYear.objects.filter(mosque=mosque).order_by("-year")
+        years_status = []
+        for yr in years:
+            paid = TreasuryTransaction.objects.filter(
+                mosque=mosque,
+                member=member,
+                membership_year=yr,
+                category="cotisation",
+                direction="IN",
+            ).aggregate(total=Sum("amount"))["total"] or 0
+            years_status.append({
+                "year":     yr.year,
+                "expected": yr.amount_expected,
+                "paid":     paid,
+            })
+
+        # Toutes les transactions liées à cet adhérent
+        transactions = list(
+            TreasuryTransaction.objects.filter(
+                mosque=mosque, member=member,
+            ).order_by("date")
+        )
+
+        mosque_info = _get_settings(mosque)
+        pdf_bytes = _build_pdf_member_sheet(
+            mosque_info  = mosque_info,
+            member       = member,
+            years_status = years_status,
+            transactions = transactions,
+        )
+
+        safe_name = member.full_name.replace(" ", "_")
+        filename  = f"fiche_adherent_{safe_name}.pdf"
         response  = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response

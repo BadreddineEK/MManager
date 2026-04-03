@@ -42,6 +42,7 @@ function renderMembers(members) {
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editMember(${m.id})" title="Modifier">✏️</button>
         <button class="btn btn-sm btn-icon" onclick="addMembershipPayment(${m.id}, '${esc(m.full_name).replace(/'/g, "\\'")}')" title="Enregistrer une cotisation">💳</button>
+        <button class="btn btn-sm btn-icon" onclick="downloadMemberSheet(${m.id}, '${esc(m.full_name).replace(/'/g, "\\'")}')" title="Fiche adhérent PDF">📄</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMember(${m.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>`;
@@ -195,4 +196,29 @@ async function loadMembershipYearsForSelect(selectId) {
   membershipYears.forEach(y => {
     sel.innerHTML += `<option value="${y.id}">${y.year}${y.is_active ? ' ✓ active' : ''}</option>`;
   });
+}
+
+// ── Fiche adhérent PDF ────────────────────────────────────────────────────────
+async function downloadMemberSheet(memberId, memberName) {
+  showProgress();
+  try {
+    const res = await apiFetch(`/treasury/receipt/member/${memberId}/`);
+    if (!res || !res.ok) {
+      const err = res ? await res.json().catch(() => ({})) : {};
+      toast(err.detail || 'Erreur lors de la génération de la fiche', 'error', 4000);
+      return;
+    }
+    const blob   = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
+    const a      = document.createElement('a');
+    a.href       = objUrl;
+    a.download   = `fiche_${memberName.replace(/\s+/g, '_')}.pdf`;
+    a.click();
+    URL.revokeObjectURL(objUrl);
+    toast(`Fiche de ${memberName} téléchargée ✓`);
+  } catch (e) {
+    toast('Erreur : ' + e.message, 'error');
+  } finally {
+    hideProgress();
+  }
 }
