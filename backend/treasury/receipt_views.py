@@ -208,10 +208,16 @@ def _build_pdf_receipt(mosque_info, receipt_num, tx_date, label, amount, regime,
     return buf.read()
 
 
-def _build_pdf_annual_summary(mosque_info, donor_name, year, transactions):
+def _build_pdf_annual_summary(mosque_info, year, transactions):
     """
-    Génère le PDF récapitulatif annuel de tous les dons d'un donateur.
+    Génère le bilan financier annuel PDF.
+    Contenu :
+      - Tableau détaillé de toutes les transactions (IN et OUT) triées par date
+      - Synthèse par catégorie (total IN et OUT par catégorie)
+      - Récapitulatif final : total entrées / sorties / solde net
     """
+    from collections import defaultdict
+
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -224,16 +230,15 @@ def _build_pdf_annual_summary(mosque_info, donor_name, year, transactions):
 
     styles = getSampleStyleSheet()
     normal   = styles["Normal"]
-    title_st = ParagraphStyle("t", parent=normal, fontSize=16, textColor=COLOR_PRIMARY,  fontName="Helvetica-Bold", spaceAfter=4)
-    sub_st   = ParagraphStyle("s", parent=normal, fontSize=10, textColor=COLOR_ACCENT,   fontName="Helvetica-Bold", spaceAfter=4)
-    body_st  = ParagraphStyle("b", parent=normal, fontSize=9,  textColor=COLOR_TEXT,     leading=14)
-    muted_st = ParagraphStyle("m", parent=normal, fontSize=8,  textColor=COLOR_MUTED,    leading=12)
-    total_st = ParagraphStyle("tot", parent=normal, fontSize=18, textColor=COLOR_GREEN,  fontName="Helvetica-Bold", alignment=1)
-    legal_st = ParagraphStyle("l", parent=normal, fontSize=7,  textColor=COLOR_MUTED,    leading=11, alignment=1)
+    title_st = ParagraphStyle("t",   parent=normal, fontSize=16, textColor=COLOR_PRIMARY, fontName="Helvetica-Bold", spaceAfter=4)
+    sub_st   = ParagraphStyle("s",   parent=normal, fontSize=10, textColor=COLOR_ACCENT,  fontName="Helvetica-Bold", spaceAfter=4, spaceBefore=8)
+    muted_st = ParagraphStyle("m",   parent=normal, fontSize=8,  textColor=COLOR_MUTED,   leading=12)
+    legal_st = ParagraphStyle("l",   parent=normal, fontSize=7,  textColor=COLOR_MUTED,   leading=11, alignment=1)
+    bal_st   = ParagraphStyle("bal", parent=normal, fontSize=13, textColor=COLOR_GREEN,   fontName="Helvetica-Bold", alignment=1, spaceBefore=6)
 
     story = []
 
-    # En-tête
+    # ── En-tête mosquée ───────────────────────────────────────────────────────
     story.append(Paragraph(mosque_info["name"], title_st))
     addr_parts = []
     if mosque_info["address"]:
@@ -245,63 +250,114 @@ def _build_pdf_annual_summary(mosque_info, donor_name, year, transactions):
     story.append(Spacer(1, 3 * mm))
     story.append(HRFlowable(width="100%", thickness=1, color=COLOR_BORDER, spaceAfter=4 * mm))
 
-    # Titre
-    story.append(Paragraph(f"🧾 RÉCAPITULATIF ANNUEL DES DONS — {year}", sub_st))
-    story.append(Paragraph(f"<b>Donateur / Contribuable :</b> {donor_name}", body_st))
+    story.append(Paragraph(f"📊 BILAN FINANCIER {year}", sub_st))
     story.append(Paragraph(f"<b>Émis le :</b> {date.today().strftime('%d/%m/%Y')}", muted_st))
     story.append(Spacer(1, 5 * mm))
 
-    # Tableau des transactions
-    table_data = [["Date", "Libellé", "Régime", "Montant"]]
-    total = 0.0
+    # ── Totaux globaux ────────────────────────────────────────────────────────
+    total_in  = sum(float(tx.amount) for tx in transactions if tx.direction == "IN")
+    total_out = sum(float(tx.amount) for tx in transactions if tx.direction == "OUT")
+    balance   = total_in - total_out
+
+    bal_color = COLOR_GREEN if balance >= 0 else colors.HexColor("#dc2626")
+    bal_sign  = "+" if balance >= 0 else ""
+
+    kpi_data = [[
+        Paragraph(f"<b>Entrées</b><br/>{_fmt_amount(total_in)}",
+                  ParagraphStyle("ki", parent=normal, fontSize=10, textColor=COLOR_GREEN, fontName="Helvetica-Bold", alignment=1)),
+        Paragraph(f"<b>Sorties</b><br/>{_fmt_amount(total_out)}",
+                  ParagraphStyle("ko", parent=normal, fontSize=10, textColor=colors.HexColor("#dc2626"), fontName="Helvetica-Bold", alignment=1)),
+        Paragraph(f"<b>Solde net</b><br/>{bal_sign}{_fmt_amount(balance)}",
+                  ParagraphStyle("kb", parent=normal, fontSize=10, textColor=bal_color, fontName="Helvetica-Bold", alignment=1)),
+    ]]
+    kpi_table = Table(kpi_data, colWidths=[55 * mm, 55 * mm, 55 * mm])
+    kpi_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (0, 0), colors.HexColor("#dcfce7")),
+        ("BACKGROUND",    (1, 0), (1, 0), colors.HexColor("#fee2e2")),
+        ("BACKGROUND",    (2, 0), (2, 0), COLOR_LIGHT_BG),
+        ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING",    (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("GRID",          (0, 0), (-1, -1), 0.5, COLOR_BORDER),
+        ("ROUNDEDCORNERS", [4]),
+    ]))
+    story.append(kpi_table)
+    story.append(Spacer(1, 6 * mm))
+
+    # ── Synthèse par catégorie ────────────────────────────────────────────────
+    story.append(Paragraph("Synthèse par catégorie", sub_st))
+
+    cat_totals = defaultdict(lambda: {"IN": 0.0, "OUT": 0.0})
     for tx in transactions:
-        regime = _regime_label(tx.regime_fiscal) if tx.regime_fiscal else "—"
-        table_data.append([
-            str(tx.date),
-            tx.label[:55] + ("…" if len(tx.label) > 55 else ""),
-            regime,
-            _fmt_amount(tx.amount),
-        ])
-        total += float(tx.amount)
+        cat_totals[tx.category][tx.direction] += float(tx.amount)
 
-    # Ligne total
-    table_data.append(["", "", "TOTAL", _fmt_amount(total)])
+    cat_data = [["Catégorie", "Entrées", "Sorties", "Solde"]]
+    for cat in sorted(cat_totals.keys()):
+        cin  = cat_totals[cat]["IN"]
+        cout = cat_totals[cat]["OUT"]
+        sol  = cin - cout
+        sign = "+" if sol >= 0 else ""
+        cat_data.append([cat.capitalize(), _fmt_amount(cin), _fmt_amount(cout), f"{sign}{_fmt_amount(sol)}"])
 
-    col_widths = [25 * mm, 85 * mm, 40 * mm, 25 * mm]
-    tx_table = Table(table_data, colWidths=col_widths, repeatRows=1)
-    tx_table.setStyle(TableStyle([
-        # En-tête
+    cat_table = Table(cat_data, colWidths=[55 * mm, 40 * mm, 40 * mm, 40 * mm], repeatRows=1)
+    cat_table.setStyle(TableStyle([
         ("BACKGROUND",    (0, 0), (-1, 0), COLOR_PRIMARY),
         ("TEXTCOLOR",     (0, 0), (-1, 0), COLOR_WHITE),
         ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE",      (0, 0), (-1, 0), 9),
-        ("ALIGN",         (3, 0), (3, -1), "RIGHT"),
-        # Corps
-        ("FONTSIZE",      (0, 1), (-1, -2), 8),
-        ("ROWBACKGROUNDS",(0, 1), (-1, -2), [COLOR_WHITE, COLOR_LIGHT_BG]),
+        ("FONTSIZE",      (0, 0), (-1, -1), 8),
+        ("ALIGN",         (1, 0), (-1, -1), "RIGHT"),
+        ("ROWBACKGROUNDS",(0, 1), (-1, -1), [COLOR_WHITE, COLOR_LIGHT_BG]),
         ("TOPPADDING",    (0, 0), (-1, -1), 5),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
         ("LEFTPADDING",   (0, 0), (-1, -1), 6),
         ("RIGHTPADDING",  (0, 0), (-1, -1), 6),
-        # Ligne total
-        ("BACKGROUND",    (0, -1), (-1, -1), COLOR_LIGHT_BG),
-        ("FONTNAME",      (0, -1), (-1, -1), "Helvetica-Bold"),
-        ("FONTSIZE",      (0, -1), (-1, -1), 9),
-        ("TEXTCOLOR",     (2, -1), (3, -1), COLOR_GREEN),
-        # Bordures
         ("GRID",          (0, 0), (-1, -1), 0.3, COLOR_BORDER),
         ("LINEBELOW",     (0, 0), (-1, 0),  1,   COLOR_PRIMARY),
-        ("LINEABOVE",     (0, -1), (-1, -1), 1,  COLOR_ACCENT),
     ]))
-    story.append(tx_table)
+    story.append(cat_table)
     story.append(Spacer(1, 6 * mm))
 
-    # Total mis en valeur
-    story.append(Paragraph(f"Total des dons {year} : {_fmt_amount(total)}", total_st))
-    story.append(Spacer(1, 3 * mm))
+    # ── Tableau détaillé de toutes les transactions ───────────────────────────
+    story.append(Paragraph("Journal des transactions", sub_st))
 
-    # Mention légale
+    tx_data = [["Date", "Sens", "Catégorie", "Libellé", "Montant"]]
+    for tx in sorted(transactions, key=lambda x: x.date):
+        sens = "▲ Entrée" if tx.direction == "IN" else "▼ Sortie"
+        tx_data.append([
+            tx.date.strftime("%d/%m/%Y"),
+            sens,
+            tx.category.capitalize(),
+            tx.label[:50] + ("…" if len(tx.label) > 50 else ""),
+            _fmt_amount(tx.amount),
+        ])
+
+    tx_table = Table(tx_data, colWidths=[22 * mm, 20 * mm, 25 * mm, 85 * mm, 23 * mm], repeatRows=1)
+    ts = TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, 0), COLOR_PRIMARY),
+        ("TEXTCOLOR",     (0, 0), (-1, 0), COLOR_WHITE),
+        ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE",      (0, 0), (-1, -1), 7.5),
+        ("ALIGN",         (4, 0), (4, -1), "RIGHT"),
+        ("ROWBACKGROUNDS",(0, 1), (-1, -1), [COLOR_WHITE, COLOR_LIGHT_BG]),
+        ("TOPPADDING",    (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 5),
+        ("GRID",          (0, 0), (-1, -1), 0.3, COLOR_BORDER),
+        ("LINEBELOW",     (0, 0), (-1, 0),  1,   COLOR_PRIMARY),
+    ])
+    # Colorer la colonne "Sens" en vert/rouge selon direction
+    for i, tx in enumerate(sorted(transactions, key=lambda x: x.date), start=1):
+        color = colors.HexColor("#16a34a") if tx.direction == "IN" else colors.HexColor("#dc2626")
+        ts.add("TEXTCOLOR", (1, i), (1, i), color)
+        ts.add("FONTNAME",  (1, i), (1, i), "Helvetica-Bold")
+    tx_table.setStyle(ts)
+    story.append(tx_table)
+
+    # ── Mention légale ────────────────────────────────────────────────────────
     if mosque_info["legal_mention"]:
+        story.append(Spacer(1, 6 * mm))
         story.append(HRFlowable(width="100%", thickness=0.5, color=COLOR_BORDER))
         story.append(Spacer(1, 2 * mm))
         story.append(Paragraph(mosque_info["legal_mention"], legal_st))
@@ -359,21 +415,22 @@ class TransactionReceiptView(APIView):
 
 class AnnualSummaryReceiptView(APIView):
     """
-    GET /api/treasury/receipt/annual/
-    ?donor=Nom Prénom&year=2025&category=don
-    Génère le récapitulatif annuel de toutes les transactions IN
-    (filtrables par catégorie, ex: don, cotisation...) pour un donateur.
+    GET /api/treasury/receipt/annual/?year=2025
+    Bilan financier annuel complet :
+      - KPIs : total entrées / sorties / solde
+      - Synthèse par catégorie
+      - Journal détaillé de toutes les transactions de l'année
+    Filtre optionnel : ?category=don  (restreint à une catégorie)
     """
     permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = getattr(request, "mosque", None)
         if mosque is None:
-            return Response({"detail": "Mosquée non déterminée. Utilisez un compte rattaché à une mosquée."}, status=400)
+            return Response({"detail": "Mosquée non déterminée."}, status=400)
 
-        donor_name = request.query_params.get("donor", "").strip()
         year_param = request.query_params.get("year", str(date.today().year))
-        category   = request.query_params.get("category", "")
+        category   = request.query_params.get("category", "").strip()
 
         try:
             year = int(year_param)
@@ -382,7 +439,6 @@ class AnnualSummaryReceiptView(APIView):
 
         qs = TreasuryTransaction.objects.filter(
             mosque=mosque,
-            direction="IN",
             date__year=year,
         ).order_by("date")
 
@@ -392,17 +448,17 @@ class AnnualSummaryReceiptView(APIView):
         transactions = list(qs)
 
         if not transactions:
-            return Response({"detail": f"Aucune transaction IN en {year}."}, status=404)
+            return Response({"detail": f"Aucune transaction en {year}."}, status=404)
 
         mosque_info = _get_settings(mosque)
         pdf_bytes = _build_pdf_annual_summary(
             mosque_info  = mosque_info,
-            donor_name   = donor_name or "—",
             year         = year,
             transactions = transactions,
         )
 
-        filename = f"recap_dons_{year}_{donor_name.replace(' ', '_') or 'tous'}.pdf"
+        suffix   = f"_{category}" if category else ""
+        filename = f"bilan_{year}{suffix}.pdf"
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response

@@ -353,19 +353,17 @@ async function downloadTxReceipt(id, label, category) {
 }
 
 function openAnnualReceiptModal() {
-  document.getElementById('annual-receipt-donor').value = '';
   document.getElementById('annual-receipt-year').value  = new Date().getFullYear();
   document.getElementById('annual-receipt-cat').value   = '';
   openModal('modal-annual-receipt');
 }
 
 async function downloadAnnualReceipt() {
-  const donor = document.getElementById('annual-receipt-donor').value.trim();
-  const year  = document.getElementById('annual-receipt-year').value;
-  const cat   = document.getElementById('annual-receipt-cat').value;
+  const year = document.getElementById('annual-receipt-year').value;
+  const cat  = document.getElementById('annual-receipt-cat').value;
+  if (!year) { toast('Veuillez saisir une année', 'error'); return; }
   let url = `/api/treasury/receipt/annual/?year=${year}`;
-  if (donor) url += `&donor=${encodeURIComponent(donor)}`;
-  if (cat)   url += `&category=${cat}`;
+  if (cat) url += `&category=${cat}`;
   showProgress();
   try {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -378,11 +376,11 @@ async function downloadAnnualReceipt() {
     const objUrl = URL.createObjectURL(blob);
     const a      = document.createElement('a');
     a.href     = objUrl;
-    a.download = `recap_dons_${year}.pdf`;
+    a.download = `bilan_${year}${cat ? '_' + cat : ''}.pdf`;
     a.click();
     URL.revokeObjectURL(objUrl);
     closeModal('modal-annual-receipt');
-    toast('Récapitulatif PDF téléchargé ✓');
+    toast('Bilan PDF téléchargé ✓');
   } catch (e) {
     toast('Erreur : ' + e.message, 'error');
   } finally {

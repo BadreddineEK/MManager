@@ -1181,24 +1181,23 @@
 <div class="modal-overlay" id="modal-annual-receipt">
   <div class="modal" style="max-width:440px;">
     <div class="modal-header">
-      <h3>🧾 Récapitulatif annuel des dons</h3>
+      <h3>📊 Bilan financier annuel</h3>
       <button class="modal-close" onclick="closeModal('modal-annual-receipt')">✕</button>
     </div>
     <div class="modal-body">
       <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-        Génère un PDF récapitulatif de toutes les entrées pour une année donnée.
+        Génère un PDF avec le bilan complet de l'année : KPIs, synthèse par catégorie et journal des transactions.
       </p>
-      <label>Nom du donateur <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
-      <input type="text" id="annual-receipt-donor" placeholder="Ex: Ahmed Benali" />
       <label>Année *</label>
       <input type="number" id="annual-receipt-year" min="2020" max="2099" />
-      <label>Catégorie <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+      <label>Catégorie <span style="color:var(--muted);font-size:0.8rem;">optionnel — toutes si vide</span></label>
       <select id="annual-receipt-cat">
-        <option value="">Toutes les entrées</option>
-        <option value="don">Don / Sadaqa uniquement</option>
+        <option value="">Toutes les catégories</option>
+        <option value="don">Don / Sadaqa</option>
         <option value="cotisation">Cotisation adhérent</option>
         <option value="ecole">École coranique</option>
         <option value="subvention">Subvention</option>
+        <option value="facture">Facture / Dépense</option>
         <option value="autre">Autre</option>
       </select>
     </div>

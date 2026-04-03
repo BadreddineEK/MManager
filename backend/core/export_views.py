@@ -28,6 +28,8 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from rest_framework.permissions import IsAuthenticated
+
+from core.permissions import HasMosquePermission
 from rest_framework.views import APIView
 
 from core.utils import get_mosque
@@ -93,7 +95,7 @@ def _pdf_header(story, title: str, mosque_name: str):
 # ── FAMILLES ─────────────────────────────────────────────────────────────────
 
 class FamiliesExcelView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -119,7 +121,7 @@ class FamiliesExcelView(APIView):
 
 
 class FamiliesPDFView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -145,7 +147,7 @@ class FamiliesPDFView(APIView):
 # ── ENFANTS ──────────────────────────────────────────────────────────────────
 
 class ChildrenExcelView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -177,7 +179,7 @@ class ChildrenExcelView(APIView):
 # ── PAIEMENTS ÉCOLE ──────────────────────────────────────────────────────────
 
 class SchoolPaymentsExcelView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -214,7 +216,7 @@ class SchoolPaymentsExcelView(APIView):
 
 
 class SchoolPaymentsPDFView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -250,7 +252,7 @@ class SchoolPaymentsPDFView(APIView):
 # ── ADHÉRENTS ────────────────────────────────────────────────────────────────
 
 class MembersExcelView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -276,7 +278,7 @@ class MembersExcelView(APIView):
 
 
 class MembersPDFView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -302,7 +304,7 @@ class MembersPDFView(APIView):
 # ── COTISATIONS ADHÉSION ──────────────────────────────────────────────────────
 
 class MembershipPaymentsExcelView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -340,7 +342,7 @@ class MembershipPaymentsExcelView(APIView):
 # ── TRÉSORERIE ────────────────────────────────────────────────────────────────
 
 class TreasuryExcelView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -374,7 +376,7 @@ class TreasuryExcelView(APIView):
 
 
 class TreasuryPDFView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasMosquePermission]
 
     def get(self, request):
         mosque = get_mosque(request)
