@@ -311,3 +311,123 @@ async function deleteDispatchRule(id) {
   if (!res || res.ok) { toast('Règle supprimée', 'info'); loadDispatchRules(); }
   else toast('Erreur suppression', 'error');
 }
+
+// ── Personnel (Staff) ─────────────────────────────────────────────────────────
+
+const STAFF_ROLES = {
+  enseignant: '📚 Enseignant',
+  imam:       '🕌 Imam',
+  entretien:  '🧹 Entretien',
+  comptable:  '📊 Comptable',
+  gardien:    '🔑 Gardien',
+  autre:      '👤 Autre',
+};
+
+async function loadStaff() {
+  const container = document.getElementById('staff-list');
+  if (!container) return;
+  container.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">⏳ Chargement...</p>';
+
+  const res = await apiFetch('/settings/staff/');
+  if (!res || !res.ok) { container.innerHTML = '<p style="color:var(--danger);">Erreur chargement</p>'; return; }
+  const members = await res.json();
+
+  if (!members.length) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">Aucun membre du personnel configuré.</p>';
+    return;
+  }
+
+  container.innerHTML = members.map(m => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--bg);">
+      <div style="flex:1;">
+        <strong>${esc(m.full_name)}</strong>
+        <span class="badge badge-gray" style="margin-left:8px;">${STAFF_ROLES[m.role] || m.role}</span>
+        ${!m.is_active ? '<span class="badge badge-gray" style="margin-left:4px;opacity:.6;">Inactif</span>' : ''}
+        <br>
+        ${m.monthly_salary ? `<span style="font-size:.82rem;color:var(--muted);">Salaire : <strong>${parseFloat(m.monthly_salary).toFixed(2).replace('.', ',')} €/mois</strong></span>` : ''}
+        ${m.name_keyword ? `<span style="font-size:.75rem;color:var(--muted);margin-left:10px;">Mot-clé CSV : <code>${esc(m.name_keyword)}</code></span>` : ''}
+      </div>
+      <button class="btn btn-sm" onclick="openStaffModal(${m.id})">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteStaff(${m.id})">🗑</button>
+    </div>`).join('');
+}
+
+async function openStaffModal(id = null) {
+  document.getElementById('staff-id').value           = id || '';
+  document.getElementById('staff-full-name').value    = '';
+  document.getElementById('staff-role').value         = 'enseignant';
+  document.getElementById('staff-salary').value       = '';
+  document.getElementById('staff-name-keyword').value = '';
+  document.getElementById('staff-iban').value         = '';
+  document.getElementById('staff-phone').value        = '';
+  document.getElementById('staff-email').value        = '';
+  document.getElementById('staff-note').value         = '';
+  document.getElementById('staff-is-active').checked  = true;
+  document.getElementById('staff-start-date').value   = '';
+  document.getElementById('staff-end-date').value     = '';
+  document.getElementById('staff-modal-title').textContent = id ? '✏️ Modifier le personnel' : '👤 Nouveau membre du personnel';
+  document.getElementById('staff-error').textContent  = '';
+
+  if (id) {
+    const res = await apiFetch(`/settings/staff/${id}/`);
+    if (!res || !res.ok) return;
+    const m = await res.json();
+    document.getElementById('staff-full-name').value    = m.full_name    || '';
+    document.getElementById('staff-role').value         = m.role         || 'enseignant';
+    document.getElementById('staff-salary').value       = m.monthly_salary != null ? m.monthly_salary : '';
+    document.getElementById('staff-name-keyword').value = m.name_keyword  || '';
+    document.getElementById('staff-iban').value         = m.iban_fragment || '';
+    document.getElementById('staff-phone').value        = m.phone         || '';
+    document.getElementById('staff-email').value        = m.email         || '';
+    document.getElementById('staff-note').value         = m.note          || '';
+    document.getElementById('staff-is-active').checked  = m.is_active !== false;
+    document.getElementById('staff-start-date').value   = m.start_date   || '';
+    document.getElementById('staff-end-date').value     = m.end_date      || '';
+  }
+
+  openModal('modal-staff');
+}
+
+async function saveStaff() {
+  const errEl = document.getElementById('staff-error');
+  errEl.textContent = '';
+  const id  = document.getElementById('staff-id').value || null;
+  const salary = document.getElementById('staff-salary').value.trim();
+  const body = {
+    full_name:      document.getElementById('staff-full-name').value.trim(),
+    role:           document.getElementById('staff-role').value,
+    monthly_salary: salary ? parseFloat(salary) : null,
+    name_keyword:   document.getElementById('staff-name-keyword').value.trim(),
+    iban_fragment:  document.getElementById('staff-iban').value.trim(),
+    phone:          document.getElementById('staff-phone').value.trim(),
+    email:          document.getElementById('staff-email').value.trim(),
+    note:           document.getElementById('staff-note').value.trim(),
+    is_active:      document.getElementById('staff-is-active').checked,
+    start_date:     document.getElementById('staff-start-date').value || null,
+    end_date:       document.getElementById('staff-end-date').value   || null,
+  };
+
+  if (!body.full_name) { errEl.textContent = 'Le nom complet est obligatoire.'; return; }
+
+  const url    = id ? `/settings/staff/${id}/` : '/settings/staff/';
+  const method = id ? 'PUT' : 'POST';
+  const res    = await apiFetch(url, method, body);
+
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    return;
+  }
+
+  closeModal('modal-staff');
+  toast(id ? 'Personnel mis à jour ✓' : 'Personnel ajouté ✓');
+  loadStaff();
+}
+
+async function deleteStaff(id) {
+  const ok = await confirmDialog({ title: 'Supprimer ce membre ?', msg: 'Cette action est irréversible.', icon: '🗑️' });
+  if (!ok) return;
+  const res = await apiFetch(`/settings/staff/${id}/`, 'DELETE');
+  if (!res || res.ok) { toast('Supprimé', 'info'); loadStaff(); }
+  else toast('Erreur suppression', 'error');
+}

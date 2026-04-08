@@ -880,6 +880,16 @@
           <button class="btn btn-sm btn-primary" onclick="openDispatchRuleModal()">+ Ajouter une règle</button>
         </div>
 
+        <div class="settings-section">
+          <h3>&#128101; Personnel</h3>
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+            Gérez imams, enseignants, agents d'entretien et tout autre personnel.
+            Le <strong>mot-clé CSV</strong> permet de reconnaître automatiquement les virements de salaire lors de l'import bancaire.
+          </p>
+          <div id="staff-list" style="margin-bottom:16px;"></div>
+          <button class="btn btn-sm btn-primary" onclick="openStaffModal()">+ Ajouter un membre</button>
+        </div>
+
       </div>
     </div>
 
@@ -1521,6 +1531,82 @@
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-cash-count')">Annuler</button>
       <button id="cash-count-save-btn" class="btn btn-primary" onclick="saveCashCount()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ====== MODAL STAFF ====================================================== -->
+<div class="modal-overlay" id="modal-staff">
+  <div class="modal" style="max-width:520px;width:96%;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="staff-modal-title">&#128100; Nouveau membre du personnel</h3>
+      <button class="modal-close" onclick="closeModal('modal-staff')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="staff-id">
+      <p id="staff-error" class="form-error"></p>
+      <div class="form-group">
+        <label class="form-label">Nom complet *</label>
+        <input class="form-control" id="staff-full-name" type="text" placeholder="Ex : Abdallah Benali">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rôle *</label>
+        <select class="form-control" id="staff-role">
+          <option value="enseignant">&#128218; Enseignant</option>
+          <option value="imam">&#128332; Imam</option>
+          <option value="entretien">&#129529; Entretien</option>
+          <option value="comptable">&#128202; Comptable</option>
+          <option value="gardien">&#128273; Gardien</option>
+          <option value="autre">&#128100; Autre</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Salaire mensuel (&#8364;)</label>
+          <input class="form-control" id="staff-salary" type="number" step="0.01" min="0" placeholder="Ex : 800.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">IBAN (partiel)</label>
+          <input class="form-control" id="staff-iban" type="text" placeholder="Ex : FR76 1234 …">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mot-clé CSV <span style="font-size:.75rem;color:var(--muted);">(auto-catégoriser les virements salaire)</span></label>
+        <input class="form-control" id="staff-name-keyword" type="text" placeholder="Ex : BENALI ABDALLAH">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Téléphone</label>
+          <input class="form-control" id="staff-phone" type="text" placeholder="06 …">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-control" id="staff-email" type="email" placeholder="adresse@email.fr">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Date début</label>
+          <input class="form-control" id="staff-start-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date fin</label>
+          <input class="form-control" id="staff-end-date" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" id="staff-note" rows="2" placeholder="Informations supplémentaires…"></textarea>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="staff-is-active" checked style="width:18px;height:18px;cursor:pointer;">
+        <label for="staff-is-active" style="cursor:pointer;margin:0;">Actif</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-staff')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveStaff()">&#128190; Enregistrer</button>
     </div>
   </div>
 </div>

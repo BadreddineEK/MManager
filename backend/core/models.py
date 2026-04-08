@@ -437,3 +437,77 @@ class DispatchRule(models.Model):
 
     def __str__(self) -> str:
         return f'"{self.keyword}" → {self.category} ({self.get_direction_display()})'
+
+
+class Staff(models.Model):
+    """
+    Personnel de l'association — toute personne rémunérée.
+
+    Exemples : Enseignant, Imam, Agent d'entretien, Comptable, Gardien...
+    Le champ `name_keyword` sert à faire correspondre automatiquement les
+    virements bancaires importés (matching insensible à la casse dans le libellé).
+    """
+
+    ROLE_CHOICES = [
+        ("enseignant", "Enseignant(e)"),
+        ("imam",       "Imam / Prédicateur"),
+        ("entretien",  "Agent d'entretien"),
+        ("comptable",  "Comptable / Trésorier"),
+        ("gardien",    "Gardien / Accueil"),
+        ("autre",      "Autre"),
+    ]
+
+    mosque = models.ForeignKey(
+        Mosque,
+        on_delete=models.CASCADE,
+        related_name="staff_members",
+        verbose_name="Mosquée",
+    )
+    full_name = models.CharField(
+        max_length=200,
+        verbose_name="Nom complet",
+    )
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default="enseignant",
+        verbose_name="Rôle",
+    )
+    monthly_salary = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Salaire mensuel (€)",
+        help_text="Montant brut mensuel à titre indicatif",
+    )
+    iban_fragment = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        verbose_name="Fragment IBAN / nom banque",
+        help_text="Ex: 'ZABI' ou 'SAMAALI' — utilisé pour reconnaître les virements dans le CSV",
+    )
+    name_keyword = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        verbose_name="Mot-clé de reconnaissance",
+        help_text="Texte recherché dans le libellé du virement (insensible à la casse). Ex: 'SABYA ZABI'",
+    )
+    phone = models.CharField(max_length=20, blank=True, default="", verbose_name="Téléphone")
+    email = models.EmailField(blank=True, default="", verbose_name="Email")
+    note = models.TextField(blank=True, default="", verbose_name="Note")
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    start_date = models.DateField(null=True, blank=True, verbose_name="Date d'embauche")
+    end_date = models.DateField(null=True, blank=True, verbose_name="Date de fin de contrat")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "core_staff"
+        ordering = ["role", "full_name"]
+        verbose_name = "Membre du personnel"
+        verbose_name_plural = "Personnel"
+
+    def __str__(self) -> str:
+        return f"{self.full_name} ({self.get_role_display()}) — {self.mosque.name}"

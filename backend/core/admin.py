@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import AuditLog, BankAccount, DispatchRule, Mosque, MosqueSettings, User
+from .models import AuditLog, BankAccount, DispatchRule, Mosque, MosqueSettings, Staff, User
 
 
 @admin.register(Mosque)
@@ -92,3 +92,12 @@ class DispatchRuleAdmin(admin.ModelAdmin):
     list_filter = ("mosque", "category", "direction", "field", "is_active")
     search_fields = ("keyword",)
     ordering = ("mosque", "priority", "keyword")
+
+
+@admin.register(Staff)
+class StaffAdmin(admin.ModelAdmin):
+    """Administration du personnel (imams, enseignants, entretien…)."""
+    list_display = ("full_name", "role", "monthly_salary", "is_active", "mosque")
+    list_filter = ("mosque", "role", "is_active")
+    search_fields = ("full_name", "name_keyword", "iban_fragment")
+    ordering = ("role", "full_name")

@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import BankAccount, DispatchRule
+from core.models import BankAccount, DispatchRule, Staff
 from core.permissions import HasMosquePermission, IsTresorierRole
 from core.utils import get_mosque
 from treasury.models import TreasuryTransaction
@@ -169,6 +169,11 @@ class BankImportView(APIView):
         dispatch_rules = list(
             DispatchRule.objects.filter(mosque=mosque, is_active=True).order_by("priority", "keyword")
         )
+        staff_keywords = list(
+            Staff.objects.filter(mosque=mosque, is_active=True)
+            .exclude(name_keyword="")
+            .values_list("name_keyword", flat=True)
+        )
 
         existing_ids = set(
             TreasuryTransaction.objects.filter(
@@ -199,7 +204,17 @@ class BankImportView(APIView):
                 skipped_count += 1
                 continue
 
-            category = _apply_dispatch_rules(dispatch_rules, row["label"], row["detail"], direction)
+            # Priorité 1 : matching staff (salaire)
+            label_lower = row["label"].lower()
+            detail_lower = row["detail"].lower()
+            staff_match = any(
+                kw.lower() in label_lower or kw.lower() in detail_lower
+                for kw in staff_keywords
+            )
+            if staff_match and direction == "OUT":
+                category = "salaire"
+            else:
+                category = _apply_dispatch_rules(dispatch_rules, row["label"], row["detail"], direction)
             import_stat = "validated" if category else "pending"
             if not category:
                 pending_count += 1
