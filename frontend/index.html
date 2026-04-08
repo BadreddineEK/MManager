@@ -503,7 +503,11 @@
           </select>
           <input type="month" id="trs-month-filter" onchange="loadTreasury()" style="width:auto;margin:0;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;" />
           <input type="number" id="trs-year-filter" placeholder="Année ex: 2025" min="2020" max="2099" onchange="loadTreasury()" style="width:140px;margin:0;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;" />
+          <select id="trs-bank-filter" onchange="loadTreasury()" style="width:auto;margin:0;" title="Filtrer par compte bancaire">
+            <option value="">🏦 Tous les comptes</option>
+          </select>
           <input type="text" class="search-input" id="trs-search" placeholder="🔍  Rechercher..." oninput="loadTreasury()" />
+          <button class="btn btn-sm" onclick="resetTreasuryFilters()" title="Réinitialiser les filtres" style="white-space:nowrap;">🗑 Reset</button>
           <button class="btn btn-sm" onclick="exportTreasuryCSV()" title="Exporter en CSV">⬇️ Export CSV</button>
         </div>
         <div id="treasury-alert"></div>
@@ -1238,6 +1242,10 @@
         <option value="">— Non précisé —</option>
         <option value="1901">🔵 Loi 1901 — Association</option>
         <option value="1905">🟣 Loi 1905 — Culte</option>
+      </select>
+      <label>Compte bancaire <span style="color:var(--muted);font-size:0.8rem;">optionnel — remplit le régime automatiquement</span></label>
+      <select id="trs-bank-account" onchange="_onTrsBankChange()">
+        <option value="">— Aucun compte —</option>
       </select>
       <label>Cagnotte liée <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
       <select id="trs-campaign"><option value="">— Aucune cagnotte —</option></select>

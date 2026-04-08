@@ -7,6 +7,7 @@ async function loadTreasury() {
   const direction = document.getElementById('trs-direction-filter').value;
   const category  = document.getElementById('trs-category-filter').value;
   const regime    = document.getElementById('trs-regime-filter').value;
+  const bankAcc   = document.getElementById('trs-bank-filter')?.value || '';
   const month     = document.getElementById('trs-month-filter').value;
   const year      = document.getElementById('trs-year-filter').value;
   const search    = document.getElementById('trs-search').value.trim();
@@ -20,6 +21,7 @@ async function loadTreasury() {
   if (direction) url += `&direction=${direction}`;
   if (category)  url += `&category=${category}`;
   if (regime)    url += `&regime=${regime}`;
+  if (bankAcc)   url += `&bank_account=${bankAcc}`;
   if (month)     url += `&month=${month}`;
   else if (year) url += `&year=${year}`;
   if (search)    url += `&search=${encodeURIComponent(search)}`;
@@ -110,6 +112,7 @@ function openTreasuryModal(prefill = {}) {
   document.getElementById('trs-note').value      = '';
   document.getElementById('trs-regime').value    = '';
   document.getElementById('trs-campaign').value  = '';
+  _fillTrsBankSelect();
   _fillCampaignSelect();
   document.getElementById('modal-treasury-title').textContent = 'Ajouter une transaction';
   document.getElementById('modal-trs-error').classList.add('hidden');
@@ -217,6 +220,7 @@ async function editTreasuryTransaction(id) {
   document.getElementById('trs-method').value    = tx.method;
   document.getElementById('trs-note').value      = tx.note || '';
   document.getElementById('trs-regime').value    = tx.regime_fiscal || '';
+  _fillTrsBankSelect(tx.bank_account || null);
   _fillCampaignSelect();
   document.getElementById('trs-campaign').value  = tx.campaign || '';
   document.getElementById('modal-treasury-title').textContent = 'Modifier la transaction';
@@ -257,6 +261,8 @@ async function saveTreasuryTransaction() {
     method:        document.getElementById('trs-method').value,
     note:          document.getElementById('trs-note').value.trim(),
     regime_fiscal: document.getElementById('trs-regime').value || '',
+    bank_account:  document.getElementById('trs-bank-account')?.value
+                     ? parseInt(document.getElementById('trs-bank-account').value) : null,
     campaign:      document.getElementById('trs-campaign').value
                      ? parseInt(document.getElementById('trs-campaign').value)
                      : null,
@@ -393,6 +399,7 @@ async function exportTreasuryCSV() {
   const direction = document.getElementById('trs-direction-filter').value;
   const category  = document.getElementById('trs-category-filter').value;
   const regime    = document.getElementById('trs-regime-filter').value;
+  const bankAcc   = document.getElementById('trs-bank-filter')?.value || '';
   const month     = document.getElementById('trs-month-filter').value;
   const year      = document.getElementById('trs-year-filter').value;
   const search    = document.getElementById('trs-search').value.trim();
@@ -402,6 +409,7 @@ async function exportTreasuryCSV() {
   if (direction) url += `&direction=${direction}`;
   if (category)  url += `&category=${category}`;
   if (regime)    url += `&regime=${regime}`;
+  if (bankAcc)   url += `&bank_account=${bankAcc}`;
   if (month)     url += `&month=${month}`;
   else if (year) url += `&year=${year}`;
   if (search)    url += `&search=${encodeURIComponent(search)}`;

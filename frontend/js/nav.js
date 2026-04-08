@@ -27,7 +27,15 @@ function showSection(name) {
   if (name === 'arrears')        loadArrears();
   if (name === 'members')        loadMembers();
   if (name === 'unpaid-members') loadUnpaidMembers();
-  if (name === 'treasury')       loadTreasury();
+  if (name === 'treasury') {
+    apiFetch('/settings/bank-accounts/').then(async res => {
+      if (res && res.ok) {
+        allBankAccounts = await res.json();
+        fillBankFilterSelect();
+      }
+    });
+    loadTreasury();
+  }
   if (name === 'campaigns')      loadCampaigns();
   if (name === 'users')          loadUsers();
   if (name === 'settings')       loadSettings();

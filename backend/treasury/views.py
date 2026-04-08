@@ -102,6 +102,14 @@ class TreasuryTransactionViewSet(viewsets.ModelViewSet):
         if regime in ("1901", "1905", ""):
             qs = qs.filter(regime_fiscal=regime)
 
+        # Filtrer par compte bancaire
+        bank_account_id = self.request.query_params.get("bank_account")
+        if bank_account_id:
+            try:
+                qs = qs.filter(bank_account_id=int(bank_account_id))
+            except ValueError:
+                pass
+
         # Filtres FK école / cotisation
         family_id = self.request.query_params.get("family_id")
         if family_id:
