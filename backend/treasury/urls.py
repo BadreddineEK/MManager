@@ -8,6 +8,7 @@ from .receipt_views import (
     MemberSheetView,
     TransactionReceiptView,
 )
+from .cash_views import CashCountListView, CashCountDetailView
 from .bank_import_views import (
     BankImportView,
     ImportPendingDetailView,
@@ -31,4 +32,7 @@ urlpatterns = [
     path("import/bank/", BankImportView.as_view(), name="import-bank"),
     path("import/pending/", ImportPendingListView.as_view(), name="import-pending-list"),
     path("import/pending/<int:pk>/", ImportPendingDetailView.as_view(), name="import-pending-detail"),
+    # Stock caisse
+    path("cash-counts/", CashCountListView.as_view(), name="cash-count-list"),
+    path("cash-counts/<int:pk>/", CashCountDetailView.as_view(), name="cash-count-detail"),
 ]

@@ -465,3 +465,28 @@ tbody tr:hover td { background: #faf8ff; }
   font-size: 0.8rem; font-weight: 600; color: var(--muted);
   margin-right: 4px; align-self: center;
 }
+
+
+/* ── STOCK CAISSE — grille de coupures ──────────────────────── */
+.cash-denom-row {
+  display: grid;
+  grid-template-columns: 130px 80px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+.cash-denom-row label {
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.cash-denom-row .denom-sub {
+  font-size: 0.82rem;
+  color: var(--muted, #888);
+}
+
+/* ── FORM ERROR ─────────────────────────────────────────────── */
+.form-error {
+  color: var(--danger, #dc2626);
+  font-size: 0.82rem;
+  margin-top: 6px;
+  min-height: 1em;
+}

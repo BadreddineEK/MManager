@@ -589,22 +589,192 @@ async function validatePendingTx(id) {
 }
 
 function switchTreasuryTab(tab) {
-  const tabTreasury = document.getElementById('treasury-main-tab');
-  const tabPending  = document.getElementById('treasury-pending-tab');
-  const panelMain   = document.getElementById('treasury-main-panel');
+  const tabTreasury  = document.getElementById('treasury-main-tab');
+  const tabPending   = document.getElementById('treasury-pending-tab');
+  const tabCash      = document.getElementById('treasury-cash-tab');
+  const panelMain    = document.getElementById('treasury-main-panel');
   const panelPending = document.getElementById('treasury-pending-panel');
+  const panelCash    = document.getElementById('treasury-cash-panel');
   if (!tabTreasury || !tabPending) return;
 
+  // reset all tabs
+  [tabTreasury, tabPending, tabCash].forEach(t => t && t.classList.remove('btn-primary'));
+  [panelMain, panelPending, panelCash].forEach(p => p && p.classList.add('hidden'));
+
   if (tab === 'pending') {
-    tabTreasury.classList.remove('btn-primary');
     tabPending.classList.add('btn-primary');
-    panelMain.classList.add('hidden');
     panelPending.classList.remove('hidden');
     loadImportPending();
+  } else if (tab === 'cash') {
+    tabCash && tabCash.classList.add('btn-primary');
+    panelCash && panelCash.classList.remove('hidden');
+    loadCashCounts();
   } else {
-    tabPending.classList.remove('btn-primary');
     tabTreasury.classList.add('btn-primary');
-    panelPending.classList.add('hidden');
     panelMain.classList.remove('hidden');
   }
+}
+
+// ── Stock Caisse ───────────────────────────────────────────────────────────────
+
+const DENOMINATIONS = [
+  { value: "500.00", label: "Billet 500 €" },
+  { value: "200.00", label: "Billet 200 €" },
+  { value: "100.00", label: "Billet 100 €" },
+  { value: "50.00",  label: "Billet 50 €" },
+  { value: "20.00",  label: "Billet 20 €" },
+  { value: "10.00",  label: "Billet 10 €" },
+  { value: "5.00",   label: "Billet 5 €" },
+  { value: "2.00",   label: "Pièce 2 €" },
+  { value: "1.00",   label: "Pièce 1 €" },
+  { value: "0.50",   label: "Pièce 50 cts" },
+  { value: "0.20",   label: "Pièce 20 cts" },
+  { value: "0.10",   label: "Pièce 10 cts" },
+  { value: "0.05",   label: "Pièce 5 cts" },
+];
+
+async function loadCashCounts() {
+  const tbody = document.getElementById('cash-counts-table');
+  const kpi   = document.getElementById('cash-latest-total');
+  if (!tbody) return;
+
+  const res = await apiFetch('/treasury/cash-counts/');
+  if (!res || !res.ok) { tbody.innerHTML = '<tr><td colspan="4">Erreur de chargement</td></tr>'; return; }
+  const data = await res.json();
+
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888">Aucun pointage enregistré</td></tr>';
+    if (kpi) kpi.textContent = '—';
+    return;
+  }
+
+  if (kpi) kpi.textContent = formatEur(data[0].total);
+
+  tbody.innerHTML = data.map(c => `
+    <tr>
+      <td>${c.date}</td>
+      <td><strong>${formatEur(c.total)}</strong></td>
+      <td style="color:#888;font-size:.85em">${c.note || '—'}</td>
+      <td>
+        <button class="btn btn-sm" onclick="openCashCountDetail(${c.id})">👁 Détail</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteCashCount(${c.id})">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openCashCountModal() {
+  const grid = document.getElementById('cash-denominations-grid');
+  if (grid) {
+    grid.innerHTML = DENOMINATIONS.map(d => `
+      <div class="cash-denom-row">
+        <label>${d.label}</label>
+        <input type="number" min="0" value="0" id="denom-${d.value.replace('.', '_')}"
+               class="input denom-input" data-denom="${d.value}"
+               oninput="updateCashTotal()" style="width:80px;text-align:center">
+        <span class="denom-sub" id="sub-${d.value.replace('.', '_')}">= 0,00 €</span>
+      </div>
+    `).join('');
+  }
+  document.getElementById('cash-count-total-preview').textContent = '0,00 €';
+  document.getElementById('cash-count-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('cash-count-note').value = '';
+  openModal('modal-cash-count');
+}
+
+function updateCashTotal() {
+  let total = 0;
+  DENOMINATIONS.forEach(d => {
+    const id    = `denom-${d.value.replace('.', '_')}`;
+    const subId = `sub-${d.value.replace('.', '_')}`;
+    const qty   = parseInt(document.getElementById(id)?.value || 0);
+    const sub   = qty * parseFloat(d.value);
+    total += sub;
+    const subEl = document.getElementById(subId);
+    if (subEl) subEl.textContent = `= ${formatEur(sub)}`;
+  });
+  const preview = document.getElementById('cash-count-total-preview');
+  if (preview) preview.textContent = formatEur(total);
+}
+
+async function saveCashCount() {
+  const date  = document.getElementById('cash-count-date')?.value;
+  const note  = document.getElementById('cash-count-note')?.value || '';
+  const errEl = document.getElementById('cash-count-error');
+
+  if (!date) { if (errEl) errEl.textContent = 'La date est obligatoire.'; return; }
+  if (errEl) errEl.textContent = '';
+
+  const lines = [];
+  DENOMINATIONS.forEach(d => {
+    const qty = parseInt(document.getElementById(`denom-${d.value.replace('.', '_')}`)?.value || 0);
+    if (qty > 0) lines.push({ denomination: d.value, quantity: qty });
+  });
+
+  if (lines.length === 0) {
+    if (errEl) errEl.textContent = 'Veuillez saisir au moins une coupure.';
+    return;
+  }
+
+  const res = await apiFetch('/treasury/cash-counts/', 'POST', { date, note, lines });
+  if (!res || !res.ok) {
+    const err = await res?.json().catch(() => ({}));
+    if (errEl) errEl.textContent = JSON.stringify(err);
+    return;
+  }
+  closeModal('modal-cash-count');
+  toast('Pointage de caisse enregistré ✓');
+  loadCashCounts();
+}
+
+async function openCashCountDetail(id) {
+  const res = await apiFetch(`/treasury/cash-counts/${id}/`);
+  if (!res || !res.ok) { toast('Erreur de chargement', 'error'); return; }
+  const data = await res.json();
+
+  const container = document.getElementById('cash-detail-content');
+  if (!container) return;
+
+  container.innerHTML = `
+    <p><strong>Date :</strong> ${data.date}</p>
+    <p><strong>Note :</strong> ${data.note || '—'}</p>
+    <table class="table" style="margin-top:1rem">
+      <thead><tr><th>Coupure</th><th>Quantité</th><th>Sous-total</th></tr></thead>
+      <tbody>
+        ${data.lines.map(l => `
+          <tr>
+            <td>${formatDenom(l.denomination)}</td>
+            <td style="text-align:center">${l.quantity}</td>
+            <td>${formatEur(l.subtotal)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="2"><strong>TOTAL</strong></td><td><strong>${formatEur(data.total)}</strong></td></tr>
+      </tfoot>
+    </table>
+  `;
+  openModal('modal-cash-detail');
+}
+
+async function deleteCashCount(id) {
+  if (!confirm('Supprimer ce pointage de caisse ?')) return;
+  const res = await apiFetch(`/treasury/cash-counts/${id}/`, 'DELETE');
+  if (res && res.ok) {
+    toast('Pointage supprimé');
+    loadCashCounts();
+  } else {
+    toast('Erreur lors de la suppression', 'error');
+  }
+}
+
+function formatEur(v) {
+  return Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+
+function formatDenom(v) {
+  const f = parseFloat(v);
+  if (f >= 5) return `Billet ${f.toFixed(0)} €`;
+  if (f >= 1) return `Pièce ${f.toFixed(0)} €`;
+  return `Pièce ${Math.round(f * 100)} cts`;
 }

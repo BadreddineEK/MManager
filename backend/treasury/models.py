@@ -147,6 +147,80 @@ class TreasuryTransaction(models.Model):
         return f"{self.date} — {self.label} ({self.amount} €)"
 
 
+class CashCount(models.Model):
+    """
+    Pointage de caisse — snapshot des espèces disponibles à un instant T.
+
+    Exemple : le trésorier compte les billets/pièces après la prière du vendredi
+    et enregistre un pointage. Le total est calculé automatiquement depuis les lignes.
+    """
+
+    mosque = models.ForeignKey(
+        Mosque,
+        on_delete=models.CASCADE,
+        related_name="cash_counts",
+        verbose_name="Mosquée",
+    )
+    date = models.DateField(verbose_name="Date du pointage")
+    note = models.TextField(blank=True, default="", verbose_name="Note / Commentaire")
+    created_by = models.CharField(
+        max_length=150, blank=True, default="", verbose_name="Saisi par"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "treasury_cashcount"
+        ordering = ["-date", "-created_at"]
+        verbose_name = "Pointage de caisse"
+        verbose_name_plural = "Pointages de caisse"
+
+    def __str__(self) -> str:
+        return f"Caisse {self.date} — {self.mosque.name}"
+
+    @property
+    def total(self):
+        """Somme de toutes les coupures × quantités."""
+        result = self.lines.aggregate(
+            total=models.Sum(models.F("denomination") * models.F("quantity"))
+        )["total"]
+        return result or 0
+
+
+class CashDenomination(models.Model):
+    """
+    Ligne d'un pointage de caisse : une coupure et sa quantité.
+
+    Exemple : denomination=50, quantity=12 → 12 billets de 50 € = 600 €
+    """
+
+    cash_count = models.ForeignKey(
+        CashCount,
+        on_delete=models.CASCADE,
+        related_name="lines",
+        verbose_name="Pointage",
+    )
+    denomination = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        verbose_name="Coupure (€)",
+    )
+    quantity = models.PositiveIntegerField(verbose_name="Quantité")
+
+    class Meta:
+        db_table = "treasury_cashdenomination"
+        ordering = ["-denomination"]
+        verbose_name = "Ligne de coupure"
+        verbose_name_plural = "Lignes de coupures"
+        unique_together = [("cash_count", "denomination")]
+
+    def __str__(self) -> str:
+        return f"{self.quantity} × {self.denomination} €"
+
+    @property
+    def subtotal(self):
+        return float(self.denomination) * self.quantity
+
+
 class Campaign(models.Model):
     """
     Cagnotte / Collecte liée à un objectif financier.

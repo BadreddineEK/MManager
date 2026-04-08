@@ -1,6 +1,21 @@
 from django.contrib import admin
 
-from .models import Campaign, TreasuryTransaction
+from .models import Campaign, CashCount, CashDenomination, TreasuryTransaction
+
+
+class CashDenominationInline(admin.TabularInline):
+    model = CashDenomination
+    extra = 0
+
+
+@admin.register(CashCount)
+class CashCountAdmin(admin.ModelAdmin):
+    list_display = ("date", "mosque", "created_by", "created_at")
+    list_filter = ("mosque",)
+    search_fields = ("note", "created_by")
+    ordering = ("-date",)
+    inlines = [CashDenominationInline]
+
 
 
 @admin.register(TreasuryTransaction)
