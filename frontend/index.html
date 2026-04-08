@@ -446,10 +446,19 @@
           <button class="btn btn-sm" onclick="openAnnualReceiptModal()" title="Générer un reçu fiscal annuel">🧾 Récap annuel</button>
           <button class="btn btn-sm" onclick="showSection('import');switchImportTab('transactions')" title="Importer plusieurs transactions via CSV">📥 Import CSV</button>
           <button id="btn-bulk-treasury" class="btn btn-sm" onclick="openBulkModal('treasury')" title="Saisir plusieurs transactions d'un coup">✏️ Saisie multiple</button>
+          <button class="btn btn-sm" onclick="openBankImportModal()" title="Importer un relevé bancaire CSV">🏦 Import bancaire</button>
           <button id="btn-add-treasury" class="btn btn-primary" onclick="openTreasuryModal()">+ Transaction</button>
         </div>
       </div>
       <div class="page-body">
+        <!-- Onglets trésorerie -->
+        <div style="display:flex;gap:8px;margin-bottom:20px;align-items:center;">
+          <button id="treasury-main-tab" class="btn btn-primary btn-sm" onclick="switchTreasuryTab('main')">📋 Transactions</button>
+          <button id="treasury-pending-tab" class="btn btn-sm" onclick="switchTreasuryTab('pending')">⚠️ À valider <span id="pending-badge" style="background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:.75rem;margin-left:4px;display:none;"></span></button>
+        </div>
+
+        <!-- Panneau principal -->
+        <div id="treasury-main-panel">
         <div class="stats-row" style="grid-template-columns:repeat(3,1fr);max-width:600px;margin-bottom:20px;">
           <div class="stat-card">
             <div class="stat-icon">📥</div>
@@ -501,9 +510,30 @@
             <thead><tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Direction</th><th>Montant</th><th>Mode</th><th>Régime</th><th>Note</th><th>Actions</th></tr></thead>
             <tbody id="treasury-table"></tbody>
           </table>
-        </div>
-      </div>
-    </div>
+        </div><!-- end .card.table-wrapper -->
+        </div><!-- end #treasury-main-panel -->
+
+        <!-- Panneau transactions en attente de validation -->
+        <div id="treasury-pending-panel" class="hidden">
+          <div class="card table-wrapper" style="margin-top:0;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Libellé</th>
+                  <th>Montant</th>
+                  <th>Catégorie</th>
+                  <th>Note</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="import-pending-table"></tbody>
+            </table>
+          </div>
+        </div><!-- end #treasury-pending-panel -->
+
+      </div><!-- end .page-body -->
+    </div><!-- end #section-treasury -->
 
     <!-- ── Utilisateurs ── -->
     <div id="section-users" class="hidden">
@@ -804,6 +834,25 @@
             </div>
             <div id="backup-import-status" style="margin-top:12px;font-size:0.82rem;"></div>
           </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>🏦 Comptes bancaires</h3>
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+            Configurez vos comptes bancaires (1901 / 1905). Ils seront proposés lors de l'import CSV.
+          </p>
+          <div id="bank-accounts-list" style="margin-bottom:16px;"></div>
+          <button class="btn btn-sm btn-primary" onclick="openBankAccountModal()">+ Ajouter un compte</button>
+        </div>
+
+        <div class="settings-section">
+          <h3>⚙️ Règles de dispatch automatique</h3>
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+            Définissez des mots-clés pour catégoriser automatiquement les transactions lors d'un import bancaire.
+            Les règles sont évaluées par ordre de priorité (1 = en premier).
+          </p>
+          <div id="dispatch-rules-list" style="margin-bottom:16px;"></div>
+          <button class="btn btn-sm btn-primary" onclick="openDispatchRuleModal()">+ Ajouter une règle</button>
         </div>
 
       </div>
@@ -1294,6 +1343,128 @@
 <script src="js/import.js"></script>
 <script src="js/bulk.js"></script>
 <script src="js/auth.js"></script><!-- DOIT être chargé EN DERNIER -->
+
+<!-- ══ MODAL : Import bancaire CSV ══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-bank-import">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3>🏦 Import relevé bancaire</h3>
+      <button class="modal-close" onclick="closeModal('modal-bank-import')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.84rem;color:var(--muted);margin-bottom:18px;line-height:1.6;">
+        Importez un relevé CSV de votre banque (Banque Populaire, CIC, etc.).<br>
+        Le numéro de compte sera détecté automatiquement si possible.
+      </p>
+      <label>Compte bancaire <span style="color:var(--muted);font-size:.8rem;">(optionnel — détecté depuis le CSV)</span></label>
+      <select id="bank-import-account" style="margin-bottom:16px;">
+        <option value="">-- Détection automatique --</option>
+      </select>
+      <label>Fichier CSV <span style="color:var(--danger);">*</span></label>
+      <input type="file" id="bank-import-file" accept=".csv" style="margin-bottom:16px;" />
+      <div id="bank-import-result" style="margin-top:8px;font-size:.84rem;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-bank-import')">Annuler</button>
+      <button class="btn btn-primary" onclick="runBankImport()">📥 Importer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL : Compte bancaire ══════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-bank-account">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="modal-ba-title">Ajouter un compte bancaire</h3>
+      <button class="modal-close" onclick="closeModal('modal-bank-account')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ba-id" />
+      <label>Libellé <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="ba-label" placeholder="Ex: Compte courant 1901" />
+      <label>Nom de la banque</label>
+      <input type="text" id="ba-bank-name" placeholder="Ex: Banque Populaire" />
+      <label>Numéro de compte <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="ba-account-number" placeholder="Ex: 08004714327" />
+      <label>Régime</label>
+      <select id="ba-regime">
+        <option value="1901">Loi 1901</option>
+        <option value="1905">Loi 1905</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;margin-top:8px;">
+        <input type="checkbox" id="ba-is-active" style="width:auto;margin:0;accent-color:var(--accent);" checked />
+        Compte actif
+      </label>
+      <div id="modal-ba-error" class="alert alert-error hidden" style="margin-top:12px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-bank-account')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveBankAccount()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL : Règle de dispatch ════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-dispatch-rule">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h3 id="modal-dr-title">Ajouter une règle de dispatch</h3>
+      <button class="modal-close" onclick="closeModal('modal-dispatch-rule')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dr-id" />
+      <label>Mot-clé <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="dr-keyword" placeholder="Ex: LOYER, SALAIRE, EDF..." />
+      <p style="font-size:.78rem;color:var(--muted);margin-top:-10px;margin-bottom:14px;">
+        La recherche est insensible à la casse. Utilisez un mot partiel pour plus de souplesse.
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label>Chercher dans</label>
+          <select id="dr-field">
+            <option value="both">Libellé ou Détail</option>
+            <option value="label">Libellé uniquement</option>
+            <option value="detail">Détail uniquement</option>
+          </select>
+        </div>
+        <div>
+          <label>Direction</label>
+          <select id="dr-direction">
+            <option value="auto">Auto (débit/crédit)</option>
+            <option value="IN">Entrée uniquement</option>
+            <option value="OUT">Sortie uniquement</option>
+          </select>
+        </div>
+      </div>
+      <label>Catégorie attribuée</label>
+      <select id="dr-category">
+                <option value="">-- Sélectionner --</option>
+                <option value="don">Don / Sadaqa</option>
+                <option value="loyer">Loyer</option>
+                <option value="salaire">Salaire / Honoraires</option>
+                <option value="facture">Facture / Charges</option>
+                <option value="ecole">École coranique</option>
+                <option value="cotisation">Cotisation adhérent</option>
+                <option value="projet">Projet / Travaux</option>
+                <option value="subvention">Subvention</option>
+                <option value="autre">Autre</option>
+      </select>
+      <label style="margin-top:12px;">Priorité <span style="color:var(--muted);font-size:.78rem;">(1 = plus haute)</span></label>
+      <input type="number" id="dr-priority" placeholder="10" min="1" max="999" value="10" />
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;margin-top:8px;">
+        <input type="checkbox" id="dr-is-active" style="width:auto;margin:0;accent-color:var(--accent);" checked />
+        Règle active
+      </label>
+      <div id="modal-dr-error" class="alert alert-error hidden" style="margin-top:12px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-dispatch-rule')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveDispatchRule()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 
 </body>
 </html>

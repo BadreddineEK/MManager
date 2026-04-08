@@ -102,3 +102,212 @@ function openKPIScreen() {
   localStorage.setItem('kpi_slug', slug);
   window.open('/kpi.html', '_blank');
 }
+
+// ── Comptes bancaires ─────────────────────────────────────────────────────────
+
+async function loadBankAccounts() {
+  const container = document.getElementById('bank-accounts-list');
+  if (!container) return;
+  container.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">⏳ Chargement...</p>';
+
+  const res = await apiFetch('/settings/bank-accounts/');
+  if (!res || !res.ok) { container.innerHTML = '<p style="color:var(--danger);">Erreur chargement</p>'; return; }
+  const accounts = await res.json();
+
+  if (!accounts.length) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">Aucun compte configuré. Cliquez sur "+ Ajouter" pour commencer.</p>';
+    return;
+  }
+
+  container.innerHTML = accounts.map(a => `
+    <div class="bank-account-row" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--bg);">
+      <div style="flex:1;">
+        <strong>${esc(a.label)}</strong>
+        <span style="margin-left:10px;font-size:.8rem;color:var(--muted);">${esc(a.bank_name)}</span>
+        <br>
+        <code style="font-size:.8rem;">${esc(a.account_number)}</code>
+        <span class="badge ${a.regime === '1901' ? 'badge-1901' : a.regime === '1905' ? 'badge-1905' : 'badge-gray'}" style="margin-left:8px;">${a.regime}</span>
+        ${!a.is_active ? '<span class="badge badge-gray" style="margin-left:4px;">Inactif</span>' : ''}
+      </div>
+      <button class="btn btn-sm" onclick="openBankAccountModal(${a.id})">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteBankAccount(${a.id})">🗑</button>
+    </div>`).join('');
+}
+
+function openBankAccountModal(id = null) {
+  document.getElementById('ba-id').value         = id || '';
+  document.getElementById('ba-label').value       = '';
+  document.getElementById('ba-bank-name').value   = '';
+  document.getElementById('ba-account-number').value = '';
+  document.getElementById('ba-regime').value      = '1901';
+  document.getElementById('ba-is-active').checked = true;
+  document.getElementById('modal-ba-title').textContent = id ? 'Modifier le compte' : 'Ajouter un compte bancaire';
+  document.getElementById('modal-ba-error').textContent = '';
+
+  if (id) {
+    apiFetch(`/settings/bank-accounts/${id}/`).then(async res => {
+      if (!res || !res.ok) return;
+      const a = await res.json();
+      document.getElementById('ba-label').value       = a.label;
+      document.getElementById('ba-bank-name').value   = a.bank_name;
+      document.getElementById('ba-account-number').value = a.account_number;
+      document.getElementById('ba-regime').value      = a.regime;
+      document.getElementById('ba-is-active').checked = a.is_active;
+    });
+  }
+  openModal('modal-bank-account');
+}
+
+async function saveBankAccount() {
+  const id = document.getElementById('ba-id').value;
+  const errEl = document.getElementById('modal-ba-error');
+  errEl.textContent = '';
+
+  const body = {
+    label:          document.getElementById('ba-label').value.trim(),
+    bank_name:      document.getElementById('ba-bank-name').value.trim(),
+    account_number: document.getElementById('ba-account-number').value.trim(),
+    regime:         document.getElementById('ba-regime').value,
+    is_active:      document.getElementById('ba-is-active').checked,
+  };
+
+  if (!body.label || !body.account_number) {
+    errEl.textContent = 'Le libellé et le numéro de compte sont obligatoires.';
+    return;
+  }
+
+  const url    = id ? `/settings/bank-accounts/${id}/` : '/settings/bank-accounts/';
+  const method = id ? 'PUT' : 'POST';
+  const res    = await apiFetch(url, method, body);
+
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    return;
+  }
+
+  closeModal('modal-bank-account');
+  toast(id ? 'Compte mis à jour ✓' : 'Compte ajouté ✓');
+  loadBankAccounts();
+}
+
+async function deleteBankAccount(id) {
+  const ok = await confirmDialog({ title: 'Supprimer ce compte ?', msg: 'Les transactions associées ne seront pas supprimées.', icon: '🗑️' });
+  if (!ok) return;
+  const res = await apiFetch(`/settings/bank-accounts/${id}/`, 'DELETE');
+  if (!res || res.ok) { toast('Compte supprimé', 'info'); loadBankAccounts(); }
+  else toast('Erreur suppression', 'error');
+}
+
+// ── Règles de dispatch ────────────────────────────────────────────────────────
+
+async function loadDispatchRules() {
+  const container = document.getElementById('dispatch-rules-list');
+  if (!container) return;
+  container.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">⏳ Chargement...</p>';
+
+  const res = await apiFetch('/settings/dispatch-rules/');
+  if (!res || !res.ok) { container.innerHTML = '<p style="color:var(--danger);">Erreur chargement</p>'; return; }
+  const rules = await res.json();
+
+  if (!rules.length) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">Aucune règle configurée. Ajoutez des mots-clés pour que l\'import CSV catégorise automatiquement les transactions.</p>';
+    return;
+  }
+
+  const FIELD_LABELS = { label: 'Libellé', detail: 'Détail', both: 'Lib. ou Détail' };
+  const DIR_LABELS   = { IN: '▲ Entrée', OUT: '▼ Sortie', auto: 'Auto' };
+
+  container.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+      <thead><tr style="color:var(--muted);font-size:.78rem;border-bottom:1.5px solid var(--border);">
+        <th style="padding:6px 8px;text-align:left;">Priorité</th>
+        <th style="padding:6px 8px;text-align:left;">Mot-clé</th>
+        <th style="padding:6px 8px;text-align:left;">Champ</th>
+        <th style="padding:6px 8px;text-align:left;">Catégorie</th>
+        <th style="padding:6px 8px;text-align:left;">Direction</th>
+        <th style="padding:6px 8px;text-align:left;">Actif</th>
+        <th style="padding:6px 8px;"></th>
+      </tr></thead>
+      <tbody>
+        ${rules.map(r => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:6px 8px;">${r.priority}</td>
+          <td style="padding:6px 8px;"><code>${esc(r.keyword)}</code></td>
+          <td style="padding:6px 8px;color:var(--muted);">${FIELD_LABELS[r.field] || r.field}</td>
+          <td style="padding:6px 8px;"><span class="badge badge-gray">${esc(r.category)}</span></td>
+          <td style="padding:6px 8px;">${DIR_LABELS[r.direction] || r.direction}</td>
+          <td style="padding:6px 8px;">${r.is_active ? '✅' : '⛔'}</td>
+          <td style="padding:6px 8px;">
+            <button class="btn btn-sm" onclick="openDispatchRuleModal(${r.id})">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteDispatchRule(${r.id})">🗑</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function openDispatchRuleModal(id = null) {
+  document.getElementById('dr-id').value        = id || '';
+  document.getElementById('dr-keyword').value    = '';
+  document.getElementById('dr-field').value      = 'both';
+  document.getElementById('dr-category').value   = 'don';
+  document.getElementById('dr-direction').value  = 'auto';
+  document.getElementById('dr-priority').value   = '10';
+  document.getElementById('dr-is-active').checked = true;
+  document.getElementById('modal-dr-title').textContent = id ? 'Modifier la règle' : 'Ajouter une règle de dispatch';
+  document.getElementById('modal-dr-error').textContent = '';
+
+  if (id) {
+    apiFetch(`/settings/dispatch-rules/${id}/`).then(async res => {
+      if (!res || !res.ok) return;
+      const r = await res.json();
+      document.getElementById('dr-keyword').value    = r.keyword;
+      document.getElementById('dr-field').value      = r.field;
+      document.getElementById('dr-category').value   = r.category;
+      document.getElementById('dr-direction').value  = r.direction;
+      document.getElementById('dr-priority').value   = r.priority;
+      document.getElementById('dr-is-active').checked = r.is_active;
+    });
+  }
+  openModal('modal-dispatch-rule');
+}
+
+async function saveDispatchRule() {
+  const id = document.getElementById('dr-id').value;
+  const errEl = document.getElementById('modal-dr-error');
+  errEl.textContent = '';
+
+  const body = {
+    keyword:   document.getElementById('dr-keyword').value.trim(),
+    field:     document.getElementById('dr-field').value,
+    category:  document.getElementById('dr-category').value,
+    direction: document.getElementById('dr-direction').value,
+    priority:  parseInt(document.getElementById('dr-priority').value) || 10,
+    is_active: document.getElementById('dr-is-active').checked,
+  };
+
+  if (!body.keyword) { errEl.textContent = 'Le mot-clé est obligatoire.'; return; }
+
+  const url    = id ? `/settings/dispatch-rules/${id}/` : '/settings/dispatch-rules/';
+  const method = id ? 'PUT' : 'POST';
+  const res    = await apiFetch(url, method, body);
+
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    return;
+  }
+
+  closeModal('modal-dispatch-rule');
+  toast(id ? 'Règle mise à jour ✓' : 'Règle ajoutée ✓');
+  loadDispatchRules();
+}
+
+async function deleteDispatchRule(id) {
+  const ok = await confirmDialog({ title: 'Supprimer cette règle ?', msg: 'Elle ne sera plus appliquée aux prochains imports.', icon: '🗑️' });
+  if (!ok) return;
+  const res = await apiFetch(`/settings/dispatch-rules/${id}/`, 'DELETE');
+  if (!res || res.ok) { toast('Règle supprimée', 'info'); loadDispatchRules(); }
+  else toast('Erreur suppression', 'error');
+}

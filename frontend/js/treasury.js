@@ -446,3 +446,165 @@ async function exportTreasuryCSV() {
     hideProgress();
   }
 }
+
+// ── Import bancaire CSV ────────────────────────────────────────────────────────
+
+let allBankAccounts = [];
+
+async function loadBankAccountsForImport() {
+  const res = await apiFetch('/settings/bank-accounts/');
+  if (!res || !res.ok) return;
+  allBankAccounts = await res.json();
+  const sel = document.getElementById('bank-import-account');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Détecter automatiquement —</option>';
+  allBankAccounts.forEach(a => {
+    sel.innerHTML += `<option value="${a.id}">${esc(a.label)} (${a.account_number})</option>`;
+  });
+}
+
+function openBankImportModal() {
+  loadBankAccountsForImport();
+  document.getElementById('bank-import-file').value = '';
+  document.getElementById('bank-import-result').innerHTML = '';
+  openModal('modal-bank-import');
+}
+
+async function runBankImport() {
+  const fileInput = document.getElementById('bank-import-file');
+  const accountId = document.getElementById('bank-import-account').value;
+  const resultEl  = document.getElementById('bank-import-result');
+
+  if (!fileInput.files.length) {
+    resultEl.innerHTML = '<div class="alert alert-error">Veuillez sélectionner un fichier CSV.</div>';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+  if (accountId) formData.append('bank_account', accountId);
+
+  showProgress();
+  resultEl.innerHTML = '<div style="color:var(--muted);font-size:.85rem;">⏳ Import en cours...</div>';
+
+  try {
+    const res = await fetch(`${API}/treasury/import/bank/`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      resultEl.innerHTML = `<div class="alert alert-error">${esc(data.detail || JSON.stringify(data))}</div>`;
+      return;
+    }
+
+    const pendingLink = data.pending_review > 0
+      ? `<br><a href="#" onclick="closeModal('modal-bank-import');loadImportPending();showSection('treasury');switchTreasuryTab('pending')" style="color:var(--accent);">→ Voir les ${data.pending_review} transaction(s) à valider</a>`
+      : '';
+
+    resultEl.innerHTML = `
+      <div class="alert alert-success" style="line-height:1.8;">
+        ✅ <strong>${data.imported}</strong> transaction(s) importée(s)<br>
+        ⏭ <strong>${data.skipped_duplicates}</strong> doublon(s) ignoré(s)<br>
+        ⚠️ <strong>${data.pending_review}</strong> en attente de catégorisation
+        ${pendingLink}
+      </div>`;
+
+    loadTreasury();
+  } catch (e) {
+    resultEl.innerHTML = `<div class="alert alert-error">Erreur : ${esc(e.message)}</div>`;
+  } finally {
+    hideProgress();
+  }
+}
+
+// ── Tableau de révision des transactions importées ─────────────────────────────
+
+async function loadImportPending() {
+  const tbody = document.getElementById('import-pending-table');
+  if (!tbody) return;
+  tbody.innerHTML = skeletonRows(3, 6);
+
+  const res = await apiFetch('/treasury/import/pending/');
+  if (!res || !res.ok) { tbody.innerHTML = '<tr><td colspan="6">Erreur chargement</td></tr>'; return; }
+  const txs = await res.json();
+
+  const badge = document.getElementById('pending-badge');
+  if (badge) badge.textContent = txs.length > 0 ? txs.length : '';
+
+  if (!txs.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted);">✅ Aucune transaction en attente — tout est validé.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = txs.map(tx => {
+    const isIn = tx.direction === 'IN';
+    return `
+    <tr>
+      <td>${tx.date}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(tx.label)}">${esc(tx.label)}</td>
+      <td style="font-weight:700;" class="${isIn ? 'text-green' : 'text-red'}">${isIn ? '▲' : '▼'} ${parseFloat(tx.amount).toFixed(2)} €</td>
+      <td>
+        <select id="pending-cat-${tx.id}" style="width:auto;margin:0;padding:4px 8px;font-size:.83rem;">
+          <option value="">— Catégorie —</option>
+          <option value="don">Don / Sadaqa</option>
+          <option value="loyer">Loyer</option>
+          <option value="salaire">Salaire / Honoraires</option>
+          <option value="facture">Facture / Charges</option>
+          <option value="ecole">École coranique</option>
+          <option value="cotisation">Cotisation adhérent</option>
+          <option value="projet">Projet / Travaux</option>
+          <option value="subvention">Subvention</option>
+          <option value="autre">Autre</option>
+        </select>
+      </td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(tx.note)||''}">${esc(tx.note)||'<span class="text-muted">—</span>'}</td>
+      <td>
+        <button class="btn btn-sm btn-primary" onclick="validatePendingTx(${tx.id})">✔ Valider</button>
+        <button class="btn btn-sm" onclick="editTreasuryTransaction(${tx.id})">✏️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function validatePendingTx(id) {
+  const catSel = document.getElementById(`pending-cat-${id}`);
+  const category = catSel ? catSel.value : '';
+  if (!category) {
+    toast('Veuillez choisir une catégorie avant de valider.', 'error');
+    return;
+  }
+
+  const res = await apiFetch(`/treasury/import/pending/${id}/`, 'PATCH', { category });
+  if (!res || !res.ok) {
+    toast('Erreur lors de la validation.', 'error');
+    return;
+  }
+  toast('Transaction validée ✓');
+  loadImportPending();
+  loadTreasury();
+}
+
+function switchTreasuryTab(tab) {
+  const tabTreasury = document.getElementById('treasury-main-tab');
+  const tabPending  = document.getElementById('treasury-pending-tab');
+  const panelMain   = document.getElementById('treasury-main-panel');
+  const panelPending = document.getElementById('treasury-pending-panel');
+  if (!tabTreasury || !tabPending) return;
+
+  if (tab === 'pending') {
+    tabTreasury.classList.remove('btn-primary');
+    tabPending.classList.add('btn-primary');
+    panelMain.classList.add('hidden');
+    panelPending.classList.remove('hidden');
+    loadImportPending();
+  } else {
+    tabPending.classList.remove('btn-primary');
+    tabTreasury.classList.add('btn-primary');
+    panelPending.classList.add('hidden');
+    panelMain.classList.remove('hidden');
+  }
+}
