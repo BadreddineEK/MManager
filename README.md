@@ -367,16 +367,22 @@ docker compose exec backend python manage.py createsuperuser
 ### Mise à jour
 
 ```bash
-cd /home/mosquee/MManager
-git pull origin main
-docker compose --profile prod build --no-cache backend
-docker compose --profile prod up -d
-docker compose exec backend python manage.py migrate
+cd ~/MManager
+git pull
+
+# ⚠️ backend-prod utilise une IMAGE buildée (code copié au build)
+# Rebuilder l'image à chaque mise à jour du code backend
+docker compose build backend-prod
+docker compose up -d backend-prod
+docker compose exec backend-prod python manage.py migrate
 
 # Vérification
-docker compose exec backend pytest -q
-# → 89 passed ✅
+docker compose exec backend-prod python manage.py showmigrations | grep "\[ \]"
+# → aucune ligne = toutes les migrations appliquées ✅
 ```
+
+> **Note** : `backend` (dev, port 8000 direct) monte le code en volume → restart suffit.
+> `backend-prod` (derrière Nginx, port 80) utilise une image → **rebuild obligatoire**.
 
 > ⚠️ **Règle absolue** : ne jamais modifier les fichiers directement sur le Pi.  
 > Tout changement passe par `git push` depuis le Mac → `git pull` sur le Pi.
