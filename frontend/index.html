@@ -456,6 +456,7 @@
           <button id="treasury-main-tab" class="btn btn-primary btn-sm" onclick="switchTreasuryTab('main')">📋 Transactions</button>
           <button id="treasury-pending-tab" class="btn btn-sm" onclick="switchTreasuryTab('pending')">⚠️ À valider <span id="pending-badge" style="background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:.75rem;margin-left:4px;display:none;"></span></button>
           <button id="treasury-cash-tab" class="btn btn-sm" onclick="switchTreasuryTab('cash')">💵 Stock caisse</button>
+          <button id="treasury-dashboard-tab" class="btn btn-sm" onclick="switchTreasuryTab('dashboard')">📊 Tableau de bord</button>
         </div>
 
         <!-- Panneau principal -->
@@ -556,6 +557,49 @@
             </table>
           </div>
         </div><!-- end #treasury-cash-panel -->
+
+        <!-- Panneau tableau de bord -->
+        <div id="treasury-dashboard-panel" class="hidden">
+          <div class="stats-row" style="margin-bottom:20px;">
+            <div class="stat-card">
+              <div class="stat-icon">📥</div>
+              <div class="num text-green" id="dash-total-in">—</div>
+              <div class="lbl">Total entrées</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">📤</div>
+              <div class="num text-red" id="dash-total-out">—</div>
+              <div class="lbl">Total sorties</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">⚖️</div>
+              <div class="num" id="dash-balance">—</div>
+              <div class="lbl">Solde global</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">💵</div>
+              <div class="num" id="dash-cash-stock">—</div>
+              <div class="lbl">Stock caisse</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="card"><div class="card-body">
+              <h4 style="margin:0 0 12px;font-size:.95rem;">🏦 Solde par compte</h4>
+              <div id="dash-by-account"></div>
+            </div></div>
+            <div class="card"><div class="card-body">
+              <h4 style="margin:0 0 8px;font-size:.95rem;">📂 Top catégories (12 mois)</h4>
+              <p style="font-size:.8rem;color:var(--muted);margin:0 0 8px;">Entrées</p>
+              <div id="dash-top-in"></div>
+              <p style="font-size:.8rem;color:var(--muted);margin:8px 0;">Sorties</p>
+              <div id="dash-top-out"></div>
+            </div></div>
+          </div>
+          <div class="card"><div class="card-body">
+            <h4 style="margin:0 0 12px;font-size:.95rem;">📈 Évolution mensuelle (12 mois)</h4>
+            <div id="dash-monthly-chart" style="overflow-x:auto;"></div>
+          </div></div>
+        </div><!-- end #treasury-dashboard-panel -->
 
       </div><!-- end .page-body -->
     </div><!-- end #section-treasury -->
@@ -1348,7 +1392,7 @@
 </div>
 
 <!-- Modal Résultat Notifications -->
-<div class="modal-overlay hidden" id="modal-notif-result">
+<div class="modal-overlay" id="modal-notif-result">
   <div class="modal" style="max-width:560px;">
     <div class="modal-header">
       <h3 id="notif-result-title">Résultat de l'envoi</h3>

@@ -431,3 +431,51 @@ async function deleteStaff(id) {
   if (!res || res.ok) { toast('Supprimé', 'info'); loadStaff(); }
   else toast('Erreur suppression', 'error');
 }
+
+// ── Historique salaires staff ─────────────────────────────────────────────────
+
+async function openStaffHistory(id) {
+  const data = await apiFetch(`/settings/staff/${id}/history/`);
+  if (!data) return;
+
+  // KPIs
+  const kpi = document.getElementById('staff-history-kpi');
+  if (kpi) {
+    kpi.innerHTML = `
+      <div class="stats-row" style="margin-bottom:16px;">
+        <div class="stat-card">
+          <div class="stat-icon">💶</div>
+          <div class="num text-green">${parseFloat(data.total_paid || 0).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</div>
+          <div class="lbl">Total versé</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🧾</div>
+          <div class="num">${data.transactions ? data.transactions.length : 0}</div>
+          <div class="lbl">Versements</div>
+        </div>
+      </div>`;
+  }
+
+  // Titre modal
+  const title = document.getElementById('staff-history-title');
+  if (title) title.textContent = `📜 Historique des salaires — ${data.full_name || ''}`;
+
+  // Tableau (5 colonnes : Date, Libellé, Montant, Méthode, Note)
+  const tbody = document.getElementById('staff-history-table');
+  if (tbody) {
+    if (!data.transactions || data.transactions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888">Aucun versement trouvé</td></tr>';
+    } else {
+      tbody.innerHTML = data.transactions.map(t => `
+        <tr>
+          <td>${t.date || '—'}</td>
+          <td>${t.label || '—'}</td>
+          <td>${parseFloat(t.amount || 0).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</td>
+          <td>${t.payment_method || '—'}</td>
+          <td>${t.note || ''}</td>
+        </tr>`).join('');
+    }
+  }
+
+  openModal('modal-staff-history');
+}

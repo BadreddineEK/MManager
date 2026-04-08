@@ -589,17 +589,19 @@ async function validatePendingTx(id) {
 }
 
 function switchTreasuryTab(tab) {
-  const tabTreasury  = document.getElementById('treasury-main-tab');
-  const tabPending   = document.getElementById('treasury-pending-tab');
-  const tabCash      = document.getElementById('treasury-cash-tab');
-  const panelMain    = document.getElementById('treasury-main-panel');
-  const panelPending = document.getElementById('treasury-pending-panel');
-  const panelCash    = document.getElementById('treasury-cash-panel');
+  const tabTreasury    = document.getElementById('treasury-main-tab');
+  const tabPending     = document.getElementById('treasury-pending-tab');
+  const tabCash        = document.getElementById('treasury-cash-tab');
+  const tabDashboard   = document.getElementById('treasury-dashboard-tab');
+  const panelMain      = document.getElementById('treasury-main-panel');
+  const panelPending   = document.getElementById('treasury-pending-panel');
+  const panelCash      = document.getElementById('treasury-cash-panel');
+  const panelDashboard = document.getElementById('treasury-dashboard-panel');
   if (!tabTreasury || !tabPending) return;
 
   // reset all tabs
-  [tabTreasury, tabPending, tabCash].forEach(t => t && t.classList.remove('btn-primary'));
-  [panelMain, panelPending, panelCash].forEach(p => p && p.classList.add('hidden'));
+  [tabTreasury, tabPending, tabCash, tabDashboard].forEach(t => t && t.classList.remove('btn-primary'));
+  [panelMain, panelPending, panelCash, panelDashboard].forEach(p => p && p.classList.add('hidden'));
 
   if (tab === 'pending') {
     tabPending.classList.add('btn-primary');
@@ -609,6 +611,10 @@ function switchTreasuryTab(tab) {
     tabCash && tabCash.classList.add('btn-primary');
     panelCash && panelCash.classList.remove('hidden');
     loadCashCounts();
+  } else if (tab === 'dashboard') {
+    tabDashboard && tabDashboard.classList.add('btn-primary');
+    panelDashboard && panelDashboard.classList.remove('hidden');
+    loadTreasuryDashboard();
   } else {
     tabTreasury.classList.add('btn-primary');
     panelMain.classList.remove('hidden');
@@ -875,31 +881,4 @@ async function loadTreasuryDashboard() {
   svg += '</svg>';
   svg += '<div style="display:flex;gap:16px;margin-top:6px;font-size:.78rem;"><span style="color:#16a34a">■ Entrées</span><span style="color:#dc2626">■ Sorties</span></div>';
   chartEl.innerHTML = svg;
-}
-
-// ── Export CSV transactions ────────────────────────────────────────────────────
-
-function exportTreasuryCSV() {
-  const direction = document.getElementById('trs-direction-filter').value;
-  const category  = document.getElementById('trs-category-filter').value;
-  const regime    = document.getElementById('trs-regime-filter').value;
-  const month     = document.getElementById('trs-month-filter').value;
-  const year      = document.getElementById('trs-year-filter').value;
-  const search    = document.getElementById('trs-search').value.trim();
-
-  let url = '/api/treasury/transactions/export/?ordering=-date';
-  if (direction) url += `&direction=${direction}`;
-  if (category)  url += `&category=${category}`;
-  if (regime)    url += `&regime=${regime}`;
-  if (month)     url += `&month=${month}`;
-  else if (year) url += `&year=${year}`;
-  if (search)    url += `&search=${encodeURIComponent(search)}`;
-
-  // Déclencher le téléchargement via un lien temporaire
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'transactions.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
 }
