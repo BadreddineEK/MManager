@@ -655,15 +655,22 @@ async function loadCashCounts() {
       <td>${c.date}</td>
       <td><strong>${formatEur(c.total)}</strong></td>
       <td style="color:#888;font-size:.85em">${c.note || '—'}</td>
-      <td>
-        <button class="btn btn-sm" onclick="openCashCountDetail(${c.id})">👁 Détail</button>
+      <td style="display:flex;gap:4px;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-primary" onclick="openCashCountModal(${c.id})">✏️ Modifier</button>
         <button class="btn btn-sm btn-danger" onclick="deleteCashCount(${c.id})">🗑</button>
       </td>
     </tr>
   `).join('');
 }
 
-function openCashCountModal() {
+// Ouvre le modal en mode création (id=null) ou édition (id=nombre)
+async function openCashCountModal(editId = null) {
+  // Stocker l'id en cours d'édition sur le bouton Save
+  const saveBtn = document.getElementById('cash-count-save-btn');
+  if (saveBtn) saveBtn.dataset.editId = editId || '';
+
+  const titleEl = document.getElementById('cash-count-modal-title');
+
   const grid = document.getElementById('cash-denominations-grid');
   if (grid) {
     grid.innerHTML = DENOMINATIONS.map(d => `
@@ -677,8 +684,34 @@ function openCashCountModal() {
     `).join('');
   }
   document.getElementById('cash-count-total-preview').textContent = '0,00 €';
-  document.getElementById('cash-count-date').value = new Date().toISOString().slice(0, 10);
   document.getElementById('cash-count-note').value = '';
+  if (document.getElementById('cash-count-error')) document.getElementById('cash-count-error').textContent = '';
+
+  if (editId) {
+    // Mode édition : charger le pointage existant et pré-remplir
+    if (titleEl) titleEl.textContent = '✏️ Modifier le pointage';
+    const res = await apiFetch(`/treasury/cash-counts/${editId}/`);
+    if (!res || !res.ok) { toast('Erreur de chargement', 'error'); return; }
+    const data = await res.json();
+
+    document.getElementById('cash-count-date').value = data.date;
+    document.getElementById('cash-count-note').value = data.note || '';
+
+    // Pré-remplir les quantités
+    data.lines.forEach(l => {
+      const key = String(parseFloat(l.denomination).toFixed(2)).replace('.', '_');
+      const input = document.getElementById(`denom-${key}`);
+      if (input) {
+        input.value = l.quantity;
+      }
+    });
+    updateCashTotal();
+  } else {
+    // Mode création
+    if (titleEl) titleEl.textContent = '💵 Nouveau pointage de caisse';
+    document.getElementById('cash-count-date').value = new Date().toISOString().slice(0, 10);
+  }
+
   openModal('modal-cash-count');
 }
 
@@ -701,6 +734,8 @@ async function saveCashCount() {
   const date  = document.getElementById('cash-count-date')?.value;
   const note  = document.getElementById('cash-count-note')?.value || '';
   const errEl = document.getElementById('cash-count-error');
+  const saveBtn = document.getElementById('cash-count-save-btn');
+  const editId = saveBtn?.dataset.editId ? parseInt(saveBtn.dataset.editId) : null;
 
   if (!date) { if (errEl) errEl.textContent = 'La date est obligatoire.'; return; }
   if (errEl) errEl.textContent = '';
@@ -716,45 +751,23 @@ async function saveCashCount() {
     return;
   }
 
-  const res = await apiFetch('/treasury/cash-counts/', 'POST', { date, note, lines });
+  let res;
+  if (editId) {
+    // PATCH — modifier le pointage existant
+    res = await apiFetch(`/treasury/cash-counts/${editId}/`, 'PATCH', { date, note, lines });
+  } else {
+    // POST — nouveau pointage
+    res = await apiFetch('/treasury/cash-counts/', 'POST', { date, note, lines });
+  }
+
   if (!res || !res.ok) {
     const err = await res?.json().catch(() => ({}));
     if (errEl) errEl.textContent = JSON.stringify(err);
     return;
   }
   closeModal('modal-cash-count');
-  toast('Pointage de caisse enregistré ✓');
+  toast(editId ? 'Pointage mis à jour ✓' : 'Pointage enregistré ✓');
   loadCashCounts();
-}
-
-async function openCashCountDetail(id) {
-  const res = await apiFetch(`/treasury/cash-counts/${id}/`);
-  if (!res || !res.ok) { toast('Erreur de chargement', 'error'); return; }
-  const data = await res.json();
-
-  const container = document.getElementById('cash-detail-content');
-  if (!container) return;
-
-  container.innerHTML = `
-    <p><strong>Date :</strong> ${data.date}</p>
-    <p><strong>Note :</strong> ${data.note || '—'}</p>
-    <table class="table" style="margin-top:1rem">
-      <thead><tr><th>Coupure</th><th>Quantité</th><th>Sous-total</th></tr></thead>
-      <tbody>
-        ${data.lines.map(l => `
-          <tr>
-            <td>${formatDenom(l.denomination)}</td>
-            <td style="text-align:center">${l.quantity}</td>
-            <td>${formatEur(l.subtotal)}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-      <tfoot>
-        <tr><td colspan="2"><strong>TOTAL</strong></td><td><strong>${formatEur(data.total)}</strong></td></tr>
-      </tfoot>
-    </table>
-  `;
-  openModal('modal-cash-detail');
 }
 
 async function deleteCashCount(id) {

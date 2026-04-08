@@ -1491,11 +1491,11 @@
 </div>
 
 
-<!-- ── Modal : Nouveau pointage de caisse ── -->
+<!-- ── Modal : Nouveau pointage / Modifier pointage de caisse ── -->
 <div class="modal-overlay" id="modal-cash-count">
   <div class="modal" style="max-width:560px;max-height:90vh;overflow-y:auto;">
     <div class="modal-header">
-      <h3>💵 Nouveau pointage de caisse</h3>
+      <h3 id="cash-count-modal-title">💵 Nouveau pointage de caisse</h3>
       <button class="modal-close" onclick="closeModal('modal-cash-count')">✕</button>
     </div>
     <div class="modal-body">
@@ -1520,26 +1520,11 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-cash-count')">Annuler</button>
-      <button class="btn btn-primary" onclick="saveCashCount()">💾 Enregistrer</button>
+      <button id="cash-count-save-btn" class="btn btn-primary" onclick="saveCashCount()">💾 Enregistrer</button>
     </div>
   </div>
 </div>
 
-<!-- ── Modal : Détail d'un pointage ── -->
-<div class="modal-overlay" id="modal-cash-detail">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-header">
-      <h3>💵 Détail du pointage</h3>
-      <button class="modal-close" onclick="closeModal('modal-cash-detail')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div id="cash-detail-content"><!-- rempli par JS --></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-primary" onclick="closeModal('modal-cash-detail')">Fermer</button>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>

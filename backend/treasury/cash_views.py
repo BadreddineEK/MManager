@@ -1,9 +1,10 @@
 """
 API Stock Caisse — Pointages de billets/pièces
 ================================================
-GET  /api/treasury/cash-counts/          → liste des pointages (20 derniers)
-POST /api/treasury/cash-counts/          → créer un pointage avec ses lignes
-GET  /api/treasury/cash-counts/<pk>/     → détail d'un pointage
+GET    /api/treasury/cash-counts/        → liste des pointages (20 derniers)
+POST   /api/treasury/cash-counts/        → créer un pointage avec ses lignes
+GET    /api/treasury/cash-counts/<pk>/   → détail d'un pointage
+PATCH  /api/treasury/cash-counts/<pk>/   → modifier date/note/lignes (remplace les lignes)
 DELETE /api/treasury/cash-counts/<pk>/   → supprimer un pointage
 
 Permissions : IsAuthenticated + HasMosquePermission + IsTresorierRole
@@ -89,6 +90,39 @@ class CashCountDetailView(APIView):
         obj = self._get_object(pk, request.mosque)
         if obj is None:
             return Response({"detail": "Introuvable."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(CashCountSerializer(obj).data)
+
+    @db_transaction.atomic
+    def patch(self, request, pk):
+        """
+        Modifie un pointage existant.
+        - date / note : mis à jour si présents
+        - lines : si fourni, REMPLACE toutes les lignes existantes
+                  (envoyer seulement les coupures avec quantité > 0)
+        """
+        obj = self._get_object(pk, request.mosque)
+        if obj is None:
+            return Response({"detail": "Introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        if "date" in request.data:
+            obj.date = request.data["date"]
+        if "note" in request.data:
+            obj.note = request.data["note"]
+        obj.save()
+
+        if "lines" in request.data:
+            # Supprimer les anciennes lignes et recréer
+            obj.lines.all().delete()
+            for line in request.data["lines"]:
+                qty = int(line.get("quantity", 0))
+                if qty > 0:
+                    CashDenomination.objects.create(
+                        cash_count=obj,
+                        denomination=line["denomination"],
+                        quantity=qty,
+                    )
+
+        obj.refresh_from_db()
         return Response(CashCountSerializer(obj).data)
 
     def delete(self, request, pk):
