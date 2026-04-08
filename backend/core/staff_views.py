@@ -1,11 +1,14 @@
 """
 Vues API — Personnel (Staff)
 =============================
-GET    /api/settings/staff/        -> liste du personnel
-POST   /api/settings/staff/        -> créer un membre
-PUT    /api/settings/staff/<id>/   -> modifier un membre
-DELETE /api/settings/staff/<id>/   -> supprimer un membre
+GET    /api/settings/staff/              -> liste du personnel
+POST   /api/settings/staff/              -> créer un membre
+GET    /api/settings/staff/<id>/         -> détail
+PUT    /api/settings/staff/<id>/         -> modifier un membre
+DELETE /api/settings/staff/<id>/         -> supprimer un membre
+GET    /api/settings/staff/<id>/history/ -> transactions salaire liées
 """
+from django.db.models import Sum
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -69,3 +72,50 @@ class StaffDetailView(APIView):
             return Response({"detail": "Introuvable."}, status=status.HTTP_404_NOT_FOUND)
         obj.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class StaffHistoryView(APIView):
+    """
+    GET /api/settings/staff/<pk>/history/
+    Retourne les transactions de trésorerie (salaire OUT) liées au name_keyword du membre.
+    """
+    permission_classes = [IsAuthenticated, HasMosquePermission, IsAdminRole]
+
+    def get(self, request, pk):
+        from treasury.models import TreasuryTransaction
+
+        mosque = get_mosque(request)
+        try:
+            member = Staff.objects.get(pk=pk, mosque=mosque)
+        except Staff.DoesNotExist:
+            return Response({"detail": "Introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        txs = TreasuryTransaction.objects.filter(
+            mosque=mosque, category="salaire", direction="OUT",
+        ).order_by("-date")
+
+        if member.name_keyword:
+            txs = txs.filter(label__icontains=member.name_keyword)
+
+        total_paid = float(txs.aggregate(s=Sum("amount"))["s"] or 0)
+
+        data = [
+            {
+                "id": tx.id,
+                "date": str(tx.date),
+                "label": tx.label,
+                "amount": float(tx.amount),
+                "method": tx.get_method_display(),
+                "note": tx.note or "",
+            }
+            for tx in txs[:50]
+        ]
+
+        return Response({
+            "staff_id": member.id,
+            "full_name": member.full_name,
+            "monthly_salary": float(member.monthly_salary) if member.monthly_salary else None,
+            "total_paid": round(total_paid, 2),
+            "count": len(data),
+            "transactions": data,
+        })

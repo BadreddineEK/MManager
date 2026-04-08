@@ -6,7 +6,7 @@ from .bank_views import (
     DispatchRuleDetailView,
     DispatchRuleListView,
 )
-from .staff_views import StaffDetailView, StaffListView
+from .staff_views import StaffDetailView, StaffHistoryView, StaffListView
 
 app_name = "settings"
 
@@ -23,4 +23,5 @@ urlpatterns = [
     # Personnel
     path("staff/", StaffListView.as_view(), name="staff-list"),
     path("staff/<int:pk>/", StaffDetailView.as_view(), name="staff-detail"),
+    path("staff/<int:pk>/history/", StaffHistoryView.as_view(), name="staff-history"),
 ]

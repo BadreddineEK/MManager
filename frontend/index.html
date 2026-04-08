@@ -1611,6 +1611,28 @@
   </div>
 </div>
 
+<!-- ====== MODAL STAFF HISTORY ============================================== -->
+<div class="modal-overlay" id="modal-staff-history">
+  <div class="modal" style="max-width:620px;width:96%;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="staff-history-title">&#128220; Historique des salaires</h3>
+      <button class="modal-close" onclick="closeModal('modal-staff-history')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div id="staff-history-kpi" style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;"></div>
+      <div class="card table-wrapper" style="margin:0;">
+        <table>
+          <thead><tr><th>Date</th><th>Libellé</th><th>Montant</th><th>Méthode</th><th>Note</th></tr></thead>
+          <tbody id="staff-history-table"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-staff-history')">Fermer</button>
+    </div>
+  </div>
+</div>
+
 
 </body>
 </html>

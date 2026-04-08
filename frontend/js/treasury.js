@@ -791,3 +791,115 @@ function formatDenom(v) {
   if (f >= 1) return `Pièce ${f.toFixed(0)} €`;
   return `Pièce ${Math.round(f * 100)} cts`;
 }
+
+// ── Tableau de bord trésorerie ─────────────────────────────────────────────────
+
+const CAT_LABELS = {
+  don: 'Don / Sadaqa', loyer: 'Loyer', salaire: 'Salaire',
+  facture: 'Facture', ecole: 'École', cotisation: 'Cotisation',
+  projet: 'Projet', subvention: 'Subvention', autre: 'Autre',
+};
+
+async function loadTreasuryDashboard() {
+  const res = await apiFetch('/treasury/transactions/dashboard/');
+  if (!res || !res.ok) { toast('Erreur chargement tableau de bord', 'error'); return; }
+  const d = await res.json();
+
+  // KPI globaux
+  const fmt = v => parseFloat(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  document.getElementById('dash-total-in').textContent  = fmt(d.total_in);
+  document.getElementById('dash-total-out').textContent = fmt(d.total_out);
+  const balEl = document.getElementById('dash-balance');
+  balEl.textContent = fmt(d.balance);
+  balEl.style.color = d.balance >= 0 ? '#16a34a' : '#dc2626';
+  const cashEl = document.getElementById('dash-cash-stock');
+  cashEl.textContent = d.cash_stock ? fmt(d.cash_stock.total) : '—';
+  if (d.cash_stock) cashEl.title = `Pointage du ${d.cash_stock.date}`;
+
+  // Solde par compte
+  const accEl = document.getElementById('dash-by-account');
+  if (!d.by_account.length) {
+    accEl.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">Aucun compte configuré</p>';
+  } else {
+    accEl.innerHTML = d.by_account.map(a => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <strong style="font-size:.9rem;">${esc(a.label)}</strong>
+          ${a.regime ? `<span class="badge badge-${a.regime === '1901' ? '1901' : '1905'}" style="margin-left:6px;">${a.regime}</span>` : ''}
+          ${a.bank_name ? `<span style="font-size:.75rem;color:var(--muted);margin-left:6px;">${esc(a.bank_name)}</span>` : ''}
+        </div>
+        <span style="font-weight:700;color:${a.balance >= 0 ? '#16a34a' : '#dc2626'};">${fmt(a.balance)}</span>
+      </div>`).join('');
+  }
+
+  // Top catégories
+  const renderCats = (list, el) => {
+    if (!list.length) { el.innerHTML = '<p style="color:var(--muted);font-size:.82rem;">—</p>'; return; }
+    const max = list[0].total;
+    el.innerHTML = list.map(c => {
+      const pct = max > 0 ? Math.round((c.total / max) * 100) : 0;
+      return `<div style="margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:2px;">
+          <span>${CAT_LABELS[c.category] || c.category}</span>
+          <strong>${fmt(c.total)}</strong>
+        </div>
+        <div style="background:var(--border);border-radius:4px;height:6px;">
+          <div style="background:var(--accent);height:6px;border-radius:4px;width:${pct}%;"></div>
+        </div>
+      </div>`;
+    }).join('');
+  };
+  renderCats(d.top_in, document.getElementById('dash-top-in'));
+  renderCats(d.top_out, document.getElementById('dash-top-out'));
+
+  // Graphique mensuel (barres SVG simples)
+  const chartEl = document.getElementById('dash-monthly-chart');
+  if (!d.monthly.length) { chartEl.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">Pas encore de données</p>'; return; }
+  const maxVal = Math.max(...d.monthly.map(m => Math.max(m.in, m.out)), 1);
+  const barH = 80;
+  const barW = 28;
+  const gap  = 8;
+  const totalW = d.monthly.length * (barW * 2 + gap + 10);
+  let svg = `<svg viewBox="0 0 ${totalW} ${barH + 30}" style="width:100%;min-width:${totalW}px;height:${barH + 30}px;">`;
+  d.monthly.forEach((m, i) => {
+    const x = i * (barW * 2 + gap + 10);
+    const hIn  = Math.max(2, Math.round((m.in  / maxVal) * barH));
+    const hOut = Math.max(2, Math.round((m.out / maxVal) * barH));
+    svg += `<rect x="${x}" y="${barH - hIn}" width="${barW}" height="${hIn}" fill="#16a34a" rx="3" opacity=".85">
+      <title>Entrées ${m.month} : ${fmt(m.in)}</title></rect>`;
+    svg += `<rect x="${x + barW + 2}" y="${barH - hOut}" width="${barW}" height="${hOut}" fill="#dc2626" rx="3" opacity=".85">
+      <title>Sorties ${m.month} : ${fmt(m.out)}</title></rect>`;
+    const label = m.month.slice(2).replace('-', '/');
+    svg += `<text x="${x + barW}" y="${barH + 14}" text-anchor="middle" font-size="9" fill="var(--muted)">${label}</text>`;
+  });
+  svg += '</svg>';
+  svg += '<div style="display:flex;gap:16px;margin-top:6px;font-size:.78rem;"><span style="color:#16a34a">■ Entrées</span><span style="color:#dc2626">■ Sorties</span></div>';
+  chartEl.innerHTML = svg;
+}
+
+// ── Export CSV transactions ────────────────────────────────────────────────────
+
+function exportTreasuryCSV() {
+  const direction = document.getElementById('trs-direction-filter').value;
+  const category  = document.getElementById('trs-category-filter').value;
+  const regime    = document.getElementById('trs-regime-filter').value;
+  const month     = document.getElementById('trs-month-filter').value;
+  const year      = document.getElementById('trs-year-filter').value;
+  const search    = document.getElementById('trs-search').value.trim();
+
+  let url = '/api/treasury/transactions/export/?ordering=-date';
+  if (direction) url += `&direction=${direction}`;
+  if (category)  url += `&category=${category}`;
+  if (regime)    url += `&regime=${regime}`;
+  if (month)     url += `&month=${month}`;
+  else if (year) url += `&year=${year}`;
+  if (search)    url += `&search=${encodeURIComponent(search)}`;
+
+  // Déclencher le téléchargement via un lien temporaire
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'transactions.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
