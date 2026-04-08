@@ -444,6 +444,7 @@
           <button class="btn btn-success btn-sm" onclick="exportFile('treasury','excel')">⬇ Excel</button>
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('treasury','pdf')">⬇ PDF</button>
           <button class="btn btn-sm" onclick="openAnnualReceiptModal()" title="Générer un reçu fiscal annuel">🧾 Récap annuel</button>
+          <button class="btn btn-sm" onclick="openMonthlyRecapModal()" title="Récapitulatif mensuel imprimable">📅 Récap mensuel</button>
           <button class="btn btn-sm" onclick="showSection('import');switchImportTab('transactions')" title="Importer plusieurs transactions via CSV">📥 Import CSV</button>
           <button id="btn-bulk-treasury" class="btn btn-sm" onclick="openBulkModal('treasury')" title="Saisir plusieurs transactions d'un coup">✏️ Saisie multiple</button>
           <button class="btn btn-sm" onclick="openBankImportModal()" title="Importer un relevé bancaire CSV">🏦 Import bancaire</button>
@@ -461,7 +462,7 @@
 
         <!-- Panneau principal -->
         <div id="treasury-main-panel">
-        <div class="stats-row" style="grid-template-columns:repeat(3,1fr);max-width:600px;margin-bottom:20px;">
+        <div class="stats-row" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px;">
           <div class="stat-card">
             <div class="stat-icon">📥</div>
             <div class="num text-green" id="trs-in">—</div>
@@ -476,6 +477,16 @@
             <div class="stat-icon">⚖️</div>
             <div class="num" id="trs-balance">—</div>
             <div class="lbl">Solde</div>
+          </div>
+          <div class="stat-card" title="Solde Loi 1901 (Association)">
+            <div class="stat-icon">🔵</div>
+            <div class="num" id="trs-balance-1901">—</div>
+            <div class="lbl">Solde 1901</div>
+          </div>
+          <div class="stat-card" title="Solde Loi 1905 (Culte)">
+            <div class="stat-icon">🟣</div>
+            <div class="num" id="trs-balance-1905">—</div>
+            <div class="lbl">Solde 1905</div>
           </div>
         </div>
         <div class="toolbar">
@@ -1685,6 +1696,30 @@
   </div>
 </div>
 
+
+<!-- Modal Récap mensuel trésorerie -->
+<div class="modal-overlay" id="modal-monthly-recap">
+  <div class="modal" style="max-width:720px;width:96%;">
+    <div class="modal-header">
+      <h3 id="monthly-recap-title">📅 Récapitulatif mensuel</h3>
+      <button class="modal-close" onclick="closeModal('modal-monthly-recap')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+        <label style="margin:0;font-weight:600;">Mois :</label>
+        <input type="month" id="monthly-recap-month" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;" />
+        <button class="btn btn-primary btn-sm" onclick="loadMonthlyRecap()">Afficher</button>
+        <button class="btn btn-sm" onclick="printMonthlyRecap()" title="Imprimer">🖨️ Imprimer</button>
+      </div>
+      <div id="monthly-recap-content">
+        <p style="color:var(--muted);text-align:center;">Sélectionnez un mois et cliquez sur Afficher.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-monthly-recap')">Fermer</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

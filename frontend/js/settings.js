@@ -239,6 +239,7 @@ async function loadDispatchRules() {
           <td style="padding:6px 8px;">${DIR_LABELS[r.direction] || r.direction}</td>
           <td style="padding:6px 8px;">${r.is_active ? '✅' : '⛔'}</td>
           <td style="padding:6px 8px;">
+            <span style="display:inline-block;background:#e2e8f0;color:#475569;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:600;margin-right:6px;" title="Transactions dont le libellé ou détail contient ce mot-clé">${r.matching_count ?? '—'} tx</span>
             <button class="btn btn-sm" onclick="openDispatchRuleModal(${r.id})">✏️</button>
             <button class="btn btn-danger btn-sm" onclick="deleteDispatchRule(${r.id})">🗑</button>
           </td>

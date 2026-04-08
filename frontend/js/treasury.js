@@ -49,6 +49,22 @@ async function loadTreasury() {
     const balEl = document.getElementById('trs-balance');
     balEl.textContent = `${s.balance.toFixed(2)} €`;
     balEl.style.color = s.balance >= 0 ? '#16a34a' : '#dc2626';
+
+      // S3-5 — Soldes par régime fiscal
+      const r1901 = (s.by_regime && s.by_regime['1901']) || {in: 0, out: 0};
+      const r1905 = (s.by_regime && s.by_regime['1905']) || {in: 0, out: 0};
+      const bal1901 = (r1901.in || 0) - (r1901.out || 0);
+      const bal1905 = (r1905.in || 0) - (r1905.out || 0);
+      const el1901 = document.getElementById('trs-balance-1901');
+      const el1905 = document.getElementById('trs-balance-1905');
+      if (el1901) {
+        el1901.textContent = bal1901.toFixed(2) + ' €';
+        el1901.style.color = bal1901 >= 0 ? '#16a34a' : '#dc2626';
+      }
+      if (el1905) {
+        el1905.textContent = bal1905.toFixed(2) + ' €';
+        el1905.style.color = bal1905 >= 0 ? '#16a34a' : '#dc2626';
+      }
   }
 
   // Mettre à jour le libellé de la période dans les stats
@@ -889,4 +905,158 @@ async function loadTreasuryDashboard() {
   svg += '</svg>';
   svg += '<div style="display:flex;gap:16px;margin-top:6px;font-size:.78rem;"><span style="color:#16a34a">■ Entrées</span><span style="color:#dc2626">■ Sorties</span></div>';
   chartEl.innerHTML = svg;
+}
+
+// ─── S3-1 ─ Modal Récap mensuel ──────────────────────────────────
+function openMonthlyRecapModal() {
+  // Pré-remplir avec le mois courant
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const inp = document.getElementById('monthly-recap-month');
+  if (inp && !inp.value) inp.value = `${yyyy}-${mm}`;
+  openModal('modal-monthly-recap');
+}
+
+async function loadMonthlyRecap() {
+  const inp = document.getElementById('monthly-recap-month');
+  const month = inp ? inp.value : '';
+  if (!month) { showNotif('Veuillez sélectionner un mois.', 'error'); return; }
+
+  const contentEl = document.getElementById('monthly-recap-content');
+  contentEl.innerHTML = '<p style="text-align:center;color:var(--muted)">Chargement…</p>';
+
+  const title = document.getElementById('monthly-recap-title');
+  if (title) title.textContent = `📅 Récapitulatif mensuel — ${month}`;
+
+  try {
+    const res = await apiFetch(`/treasury/transactions/summary/?month=${month}`);
+    if (!res.ok) throw new Error('Erreur serveur');
+    const s = await res.json();
+
+    const esc = v => String(v ?? '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const fmt = v => parseFloat(v || 0).toFixed(2) + ' €';
+    const fmtColor = v => {
+      const n = parseFloat(v || 0);
+      const color = n >= 0 ? '#16a34a' : '#dc2626';
+      return `<span style="color:${color};font-weight:600;">${fmt(n)}</span>`;
+    };
+
+    // Tableau par catégorie
+    const cats = s.categories || {};
+    const catLabels = {
+      'don': 'Dons', 'cotisation': 'Cotisations', 'loyer': 'Loyer',
+      'travaux': 'Travaux', 'charge': 'Charges', 'autre': 'Autre'
+    };
+    const catRows = Object.entries(cats).map(([key, val]) => {
+      const label = catLabels[key] || key;
+      const inV = val.in || 0;
+      const outV = val.out || 0;
+      const solde = inV - outV;
+      if (inV === 0 && outV === 0) return '';
+      return `<tr>
+        <td>${esc(label)}</td>
+        <td style="text-align:right;color:#16a34a;">${fmt(inV)}</td>
+        <td style="text-align:right;color:#dc2626;">${fmt(outV)}</td>
+        <td style="text-align:right;">${fmtColor(solde)}</td>
+      </tr>`;
+    }).filter(Boolean).join('');
+
+    // Tableau par régime
+    const regimes = s.by_regime || {};
+    const regimeLabels = {'1901':'Loi 1901 (Assoc.)','1905':'Loi 1905 (Culte)','non_precise':'Non précisé'};
+    const regimeRows = Object.entries(regimes).map(([key, val]) => {
+      const label = regimeLabels[key] || key;
+      const inV = val.in || 0;
+      const outV = val.out || 0;
+      const solde = inV - outV;
+      if (inV === 0 && outV === 0) return '';
+      return `<tr>
+        <td>${esc(label)}</td>
+        <td style="text-align:right;color:#16a34a;">${fmt(inV)}</td>
+        <td style="text-align:right;color:#dc2626;">${fmt(outV)}</td>
+        <td style="text-align:right;">${fmtColor(solde)}</td>
+      </tr>`;
+    }).filter(Boolean).join('');
+
+    const tableStyle = 'width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;';
+    const thStyle = 'background:var(--surface);padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);font-weight:700;font-size:13px;';
+    const tdStyle = 'padding:7px 12px;border-bottom:1px solid var(--border);';
+
+    contentEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+        <div class="stat-card" style="padding:12px 16px;">
+          <div style="font-size:13px;color:var(--muted);">Total entrées</div>
+          <div style="font-size:20px;font-weight:700;color:#16a34a;">${fmt(s.total_in)}</div>
+        </div>
+        <div class="stat-card" style="padding:12px 16px;">
+          <div style="font-size:13px;color:var(--muted);">Total sorties</div>
+          <div style="font-size:20px;font-weight:700;color:#dc2626;">${fmt(s.total_out)}</div>
+        </div>
+        <div class="stat-card" style="padding:12px 16px;">
+          <div style="font-size:13px;color:var(--muted);">Solde net</div>
+          <div style="font-size:20px;font-weight:700;">${fmtColor(s.balance)}</div>
+        </div>
+      </div>
+
+      <h4 style="margin:0 0 8px;font-size:15px;">Par catégorie</h4>
+      <table style="${tableStyle}">
+        <thead>
+          <tr>
+            <th style="${thStyle}">Catégorie</th>
+            <th style="${thStyle}text-align:right;">Entrées</th>
+            <th style="${thStyle}text-align:right;">Sorties</th>
+            <th style="${thStyle}text-align:right;">Solde</th>
+          </tr>
+        </thead>
+        <tbody id="recap-cat-tbody">
+          ${catRows || '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px;">Aucune donnée</td></tr>'}
+        </tbody>
+      </table>
+
+      <h4 style="margin:0 0 8px;font-size:15px;">Par régime fiscal</h4>
+      <table style="${tableStyle}">
+        <thead>
+          <tr>
+            <th style="${thStyle}">Régime</th>
+            <th style="${thStyle}text-align:right;">Entrées</th>
+            <th style="${thStyle}text-align:right;">Sorties</th>
+            <th style="${thStyle}text-align:right;">Solde</th>
+          </tr>
+        </thead>
+        <tbody id="recap-regime-tbody">
+          ${regimeRows || '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px;">Aucune donnée</td></tr>'}
+        </tbody>
+      </table>`;
+  } catch (e) {
+    contentEl.innerHTML = `<p style="color:#dc2626;text-align:center;">Erreur : ${e.message}</p>`;
+  }
+}
+
+function printMonthlyRecap() {
+  const content = document.getElementById('monthly-recap-content');
+  const title = document.getElementById('monthly-recap-title');
+  if (!content) return;
+  const w = window.open('', '_blank', 'width=800,height=600');
+  w.document.write(`<!DOCTYPE html><html><head>
+    <meta charset="utf-8"><title>${title ? title.textContent : 'Récap mensuel'}</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:24px;color:#1a1a2e;}
+      h1{font-size:18px;margin-bottom:16px;}
+      table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;}
+      th{background:#f1f5f9;padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;}
+      td{padding:6px 8px;border-bottom:1px solid #e2e8f0;}
+      .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+      .kpi{border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;}
+      .kpi .lbl{font-size:12px;color:#64748b;}
+      .kpi .val{font-size:18px;font-weight:700;}
+      @media print{body{padding:10px;}}
+    </style>
+  </head><body>
+    <h1>${title ? title.textContent : 'Récapitulatif mensuel'}</h1>
+    ${content.innerHTML}
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 500);
 }
