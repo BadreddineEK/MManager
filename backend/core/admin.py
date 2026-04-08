@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import AuditLog, Mosque, MosqueSettings, User
+from .models import AuditLog, BankAccount, DispatchRule, Mosque, MosqueSettings, User
 
 
 @admin.register(Mosque)
@@ -76,3 +76,19 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None) -> bool:
         return False
+
+
+@admin.register(BankAccount)
+class BankAccountAdmin(admin.ModelAdmin):
+    list_display = ("mosque", "label", "bank_name", "account_number", "regime", "is_active")
+    list_filter = ("mosque", "regime", "is_active")
+    search_fields = ("label", "account_number", "bank_name")
+    ordering = ("mosque", "regime", "label")
+
+
+@admin.register(DispatchRule)
+class DispatchRuleAdmin(admin.ModelAdmin):
+    list_display = ("mosque", "priority", "keyword", "field", "category", "direction", "is_active")
+    list_filter = ("mosque", "category", "direction", "field", "is_active")
+    search_fields = ("keyword",)
+    ordering = ("mosque", "priority", "keyword")

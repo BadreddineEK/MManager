@@ -302,3 +302,138 @@ class AuditLog(models.Model):
 
     def __str__(self) -> str:
         return f"[{self.created_at:%Y-%m-%d %H:%M}] {self.action} {self.entity}#{self.entity_id}"
+
+
+class BankAccount(models.Model):
+    """
+    Compte bancaire d'une mosquée.
+
+    Chaque mosquée peut avoir plusieurs comptes (1901, 1905, etc.).
+    Le numéro de compte sert de clé d'identification lors de l'import CSV.
+    """
+
+    REGIME_CHOICES = [
+        ("1901", "Loi 1901 — Association"),
+        ("1905", "Loi 1905 — Culte"),
+        ("autre", "Autre"),
+    ]
+
+    mosque = models.ForeignKey(
+        Mosque,
+        on_delete=models.CASCADE,
+        related_name="bank_accounts",
+        verbose_name="Mosquée",
+    )
+    label = models.CharField(
+        max_length=100,
+        verbose_name="Libellé",
+        help_text='Ex : "Compte 1901 — Banque Populaire"',
+    )
+    bank_name = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name="Nom de la banque",
+    )
+    account_number = models.CharField(
+        max_length=50,
+        verbose_name="Numéro de compte",
+        help_text="Numéro tel qu'il apparaît dans les exports CSV de la banque",
+    )
+    regime = models.CharField(
+        max_length=10,
+        choices=REGIME_CHOICES,
+        default="1901",
+        verbose_name="Régime fiscal",
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Compte bancaire"
+        verbose_name_plural = "Comptes bancaires"
+        db_table = "core_bankaccount"
+        ordering = ["regime", "label"]
+
+    def __str__(self) -> str:
+        return f"{self.label} ({self.account_number})"
+
+
+class DispatchRule(models.Model):
+    """
+    Règle de dispatch automatique lors de l'import CSV bancaire.
+
+    Si le Libellé ou le Détail d'une ligne CSV contient `keyword`,
+    la transaction est automatiquement catégorisée avec `category` et `direction`.
+    Les règles sont évaluées dans l'ordre `priority` (plus petit = plus prioritaire).
+    """
+
+    FIELD_CHOICES = [
+        ("label", "Libellé"),
+        ("detail", "Détail"),
+        ("both", "Libellé ou Détail"),
+    ]
+
+    DIRECTION_CHOICES = [
+        ("IN", "Entrée"),
+        ("OUT", "Sortie"),
+        ("auto", "Automatique (selon Débit/Crédit)"),
+    ]
+
+    CATEGORY_CHOICES = [
+        ("don", "Don / Sadaqa"),
+        ("loyer", "Loyer"),
+        ("salaire", "Salaire / Honoraires"),
+        ("facture", "Facture / Charges"),
+        ("ecole", "Ecole coranique"),
+        ("cotisation", "Cotisation adhérent"),
+        ("projet", "Projet / Travaux"),
+        ("subvention", "Subvention"),
+        ("autre", "Autre"),
+    ]
+
+    mosque = models.ForeignKey(
+        Mosque,
+        on_delete=models.CASCADE,
+        related_name="dispatch_rules",
+        verbose_name="Mosquée",
+    )
+    keyword = models.CharField(
+        max_length=200,
+        verbose_name="Mot-clé",
+        help_text="Texte à rechercher (insensible à la casse)",
+    )
+    field = models.CharField(
+        max_length=10,
+        choices=FIELD_CHOICES,
+        default="both",
+        verbose_name="Champ à inspecter",
+    )
+    category = models.CharField(
+        max_length=30,
+        choices=CATEGORY_CHOICES,
+        verbose_name="Catégorie à affecter",
+    )
+    direction = models.CharField(
+        max_length=5,
+        choices=DIRECTION_CHOICES,
+        default="auto",
+        verbose_name="Direction",
+        help_text="'auto' utilise Débit/Crédit du CSV pour déterminer IN ou OUT",
+    )
+    priority = models.PositiveSmallIntegerField(
+        default=10,
+        verbose_name="Priorité",
+        help_text="Plus petit = évalué en premier. En cas d'égalité, ordre alphabétique.",
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Active")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Règle de dispatch"
+        verbose_name_plural = "Règles de dispatch"
+        db_table = "core_dispatchrule"
+        ordering = ["priority", "keyword"]
+
+    def __str__(self) -> str:
+        return f'"{self.keyword}" → {self.category} ({self.get_direction_display()})'

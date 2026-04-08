@@ -11,7 +11,7 @@ TreasuryTransaction : toute entree ou sortie d'argent
 """
 from django.db import models
 
-from core.models import Mosque
+from core.models import BankAccount, Mosque
 
 
 class TreasuryTransaction(models.Model):
@@ -54,7 +54,7 @@ class TreasuryTransaction(models.Model):
         related_name="transactions",
     )
     date = models.DateField()
-    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default="autre")
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default="autre", blank=True)
     label = models.CharField(max_length=255)
     direction = models.CharField(max_length=3, choices=DIRECTION_CHOICES)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -103,6 +103,38 @@ class TreasuryTransaction(models.Model):
         null=True, blank=True,
         related_name="transactions",
         verbose_name="Année de cotisation",
+    )
+    # ── Compte bancaire & import CSV ───────────────────────────────────────
+    bank_account = models.ForeignKey(
+        BankAccount,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="transactions",
+        verbose_name="Compte bancaire",
+        help_text="Null = espèces / non bancaire",
+    )
+    source = models.CharField(
+        max_length=10,
+        choices=[("manual", "Saisie manuelle"), ("import", "Import CSV")],
+        default="manual",
+        verbose_name="Source",
+    )
+    import_operation_id = models.CharField(
+        max_length=250,
+        null=True, blank=True,
+        db_index=True,
+        verbose_name="N° opération (import)",
+        help_text="Identifiant unique de la ligne dans le CSV bancaire — sert à éviter les doublons",
+    )
+    import_status = models.CharField(
+        max_length=15,
+        choices=[
+            ("validated", "Validée"),
+            ("pending", "En attente de validation"),
+        ],
+        null=True, blank=True,
+        verbose_name="Statut import",
+        help_text="Null pour les transactions saisies manuellement",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

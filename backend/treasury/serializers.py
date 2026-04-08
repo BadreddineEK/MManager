@@ -40,6 +40,10 @@ class TreasuryTransactionSerializer(serializers.ModelSerializer):
     member_name = serializers.CharField(source="member.full_name", read_only=True, allow_null=True)
     school_year_label = serializers.CharField(source="school_year.label", read_only=True, allow_null=True)
     membership_year_label = serializers.IntegerField(source="membership_year.year", read_only=True, allow_null=True)
+    # Compte bancaire
+    bank_account_label = serializers.CharField(source="bank_account.label", read_only=True, allow_null=True)
+    bank_account_regime = serializers.CharField(source="bank_account.regime", read_only=True, allow_null=True)
+    import_status_display = serializers.CharField(source="get_import_status_display", read_only=True)
 
     class Meta:
         model = TreasuryTransaction
@@ -67,6 +71,14 @@ class TreasuryTransactionSerializer(serializers.ModelSerializer):
             "member_name",
             "membership_year",
             "membership_year_label",
+            # Import bancaire
+            "bank_account",
+            "bank_account_label",
+            "bank_account_regime",
+            "source",
+            "import_operation_id",
+            "import_status",
+            "import_status_display",
             "created_at",
         ]
         read_only_fields = [
@@ -74,4 +86,5 @@ class TreasuryTransactionSerializer(serializers.ModelSerializer):
             "direction_display", "category_display", "method_display",
             "regime_fiscal_display", "campaign_name",
             "family_name", "member_name", "school_year_label", "membership_year_label",
+            "bank_account_label", "bank_account_regime", "import_status_display",
         ]
