@@ -2,6 +2,27 @@
    treasury.js — Transactions, reçus fiscaux PDF
 ═══════════════════════════════════════════════════════════ */
 
+function toggleTreasuryFilters() {
+  const panel = document.getElementById('trs-advanced-filters');
+  const btn   = document.getElementById('trs-filter-toggle');
+  if (!panel) return;
+  const isOpen = !panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', isOpen);
+  if (btn) btn.classList.toggle('btn-primary', !isOpen);
+}
+
+function resetTreasuryFilters() {
+  const ids = ['trs-direction-filter', 'trs-category-filter', 'trs-regime-filter',
+               'trs-bank-filter', 'trs-month-filter', 'trs-year-filter', 'trs-search'];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const panel = document.getElementById('trs-advanced-filters');
+  if (panel) panel.classList.add('hidden');
+  const btn = document.getElementById('trs-filter-toggle');
+  if (btn) btn.classList.remove('btn-primary');
+  loadTreasury();
+}
+
+
 async function loadTreasury() {
   document.getElementById('treasury-table').innerHTML = skeletonRows(4, 9);
   const direction = document.getElementById('trs-direction-filter').value;

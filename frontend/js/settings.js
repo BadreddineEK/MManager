@@ -1,8 +1,28 @@
 /* ═══════════════════════════════════════════════════════════
    settings.js — Paramètres de la mosquée, KPI screen
 ═══════════════════════════════════════════════════════════ */
+function switchSettingsTab(tab) {
+  const tabs = ['general', 'finance', 'receipts', 'kpi', 'smtp', 'bank', 'backup'];
+  tabs.forEach(t => {
+    const panel = document.getElementById(`spanel-${t}`);
+    const btn   = document.getElementById(`stab-${t}`);
+    if (!panel || !btn) return;
+    if (t === tab) {
+      panel.classList.remove('hidden');
+      btn.classList.add('btn-primary');
+    } else {
+      panel.classList.add('hidden');
+      btn.classList.remove('btn-primary');
+    }
+  });
+}
+
+// Wrapper appelé depuis la navigation (section dédiée Personnel)
+function loadStaffSection() { loadStaff(); }
+
 
 async function loadSettings() {
+  switchSettingsTab('general');
   const alert = document.getElementById('settings-alert');
   alert.textContent = '';
   const res = await apiFetch('/settings/');

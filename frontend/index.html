@@ -151,7 +151,7 @@
     <!-- ── Bottom nav (mobile) ── -->
     <nav class="bottom-nav">
       <div class="bottom-nav-items">
-        <button class="bottom-nav-item active" id="bn-school" onclick="showSection('school');setBottomNav('bn-school')">
+        <button class="bottom-nav-item active" id="bn-dashboard" onclick="showSection('dashboard');setBottomNav('bn-dashboard')">
           <span class="bn-icon">📊</span><span>Tableau</span>
         </button>
         <button class="bottom-nav-item" id="bn-families" onclick="showSection('families');setBottomNav('bn-families')">
@@ -170,7 +170,7 @@
     </nav>
 
     <!-- ── Tableau de bord ── -->
-    <div id="section-school">
+    <div id="section-dashboard">
       <div class="page-header">
         <div class="page-header-left">
           <h2>Tableau de bord</h2>
@@ -763,195 +763,238 @@
       <div class="page-body">
         <div id="settings-alert"></div>
 
-        <div class="settings-section">
-          <h3>🕌 Identité de la mosquée</h3>
-          <label>Nom de la mosquée *</label>
-          <input type="text" id="s-mosque-name" placeholder="Ex: Grande Mosquée de Meximieux" />
-          <label>Fuseau horaire</label>
-          <input type="text" id="s-mosque-timezone" placeholder="Europe/Paris" />
-          <label>Slug (lecture seule)</label>
-          <input type="text" id="s-mosque-slug" disabled style="color:var(--muted);" />
+        <!-- Onglets paramètres -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px;border-bottom:2px solid var(--border);padding-bottom:0;">
+          <button class="btn btn-primary btn-sm" id="stab-general"  onclick="switchSettingsTab('general')"  style="border-radius:8px 8px 0 0;margin-bottom:-2px;">🕌 Général</button>
+          <button class="btn btn-sm"             id="stab-finance"  onclick="switchSettingsTab('finance')"  style="border-radius:8px 8px 0 0;margin-bottom:-2px;">💰 Finances</button>
+          <button class="btn btn-sm"             id="stab-receipts" onclick="switchSettingsTab('receipts')" style="border-radius:8px 8px 0 0;margin-bottom:-2px;">🧾 Reçus PDF</button>
+          <button class="btn btn-sm"             id="stab-kpi"      onclick="switchSettingsTab('kpi')"      style="border-radius:8px 8px 0 0;margin-bottom:-2px;">📺 KPI public</button>
+          <button class="btn btn-sm"             id="stab-smtp"     onclick="switchSettingsTab('smtp')"     style="border-radius:8px 8px 0 0;margin-bottom:-2px;">✉️ Emails</button>
+          <button class="btn btn-sm"             id="stab-bank"     onclick="switchSettingsTab('bank')"     style="border-radius:8px 8px 0 0;margin-bottom:-2px;">🏦 Banque</button>
+          <button class="btn btn-sm"             id="stab-backup"   onclick="switchSettingsTab('backup')"   style="border-radius:8px 8px 0 0;margin-bottom:-2px;">💾 Sauvegarde</button>
         </div>
 
-        <div class="settings-section">
-          <h3>🎓 École coranique</h3>
-          <label>Année scolaire active</label>
-          <input type="text" id="s-school-year" placeholder="2025-2026" />
-          <label>Frais de scolarité par défaut (€)</label>
-          <input type="number" id="s-school-fee" placeholder="0" min="0" step="0.01" />
-          <label>Mode de paiement</label>
-          <select id="s-school-fee-mode">
-            <option value="annual">Annuel</option>
-            <option value="monthly">Mensuel</option>
-          </select>
-          <label>Niveaux scolaires (séparés par des virgules)</label>
-          <input type="text" id="s-school-levels" placeholder="NP,N1,N2,N3,N4,N5,N6" />
-        </div>
-
-        <div class="settings-section">
-          <h3>🤝 Adhésion</h3>
-          <label>Montant de la cotisation (€)</label>
-          <input type="number" id="s-membership-fee" placeholder="0" min="0" step="0.01" />
-          <label>Mode de cotisation</label>
-          <select id="s-membership-mode">
-            <option value="per_person">Par personne</option>
-            <option value="per_family">Par famille</option>
-          </select>
-        </div>
-
-        <div class="settings-section">
-          <h3>🧾 Reçus fiscaux PDF</h3>
-          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-            Ces informations apparaîtront sur tous les reçus générés.
-          </p>
-          <label>URL du logo <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
-          <input type="url" id="s-receipt-logo" placeholder="https://..." />
-          <label>Adresse de la mosquée</label>
-          <textarea id="s-receipt-address" placeholder="12 rue de la Paix&#10;01800 Meximieux" rows="3"></textarea>
-          <label>Téléphone</label>
-          <input type="text" id="s-receipt-phone" placeholder="04 74 00 00 00" />
-          <label>Mention légale</label>
-          <textarea id="s-receipt-legal" rows="3"
-            placeholder="Association loi 1901 — Don déductible à 66% dans la limite de 20% du revenu imposable (art. 200 CGI)."></textarea>
-        </div>
-
-        <div class="settings-section">
-          <h3>📺 Écran KPI public</h3>
-          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-            Configurez l'affichage de l'écran KPI (tableau de bord public pour TV/tablette).
-          </p>
-          <label style="font-weight:600;margin-bottom:10px;display:block;">Widgets visibles</label>
-          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
-              <input type="checkbox" id="s-kpi-school" style="width:auto;margin:0;accent-color:var(--accent);" />
-              🎓 École coranique
-            </label>
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
-              <input type="checkbox" id="s-kpi-membership" style="width:auto;margin:0;accent-color:var(--accent);" />
-              🤝 Adhérents
-            </label>
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
-              <input type="checkbox" id="s-kpi-treasury" style="width:auto;margin:0;accent-color:var(--accent);" />
-              💰 Trésorerie
-            </label>
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
-              <input type="checkbox" id="s-kpi-campaigns" style="width:auto;margin:0;accent-color:var(--accent);" />
-              🎯 Cagnottes &amp; Collectes
-            </label>
+        <!-- ── Onglet Général ── -->
+        <div id="spanel-general">
+          <div class="settings-section">
+            <h3>🕌 Identité de la mosquée</h3>
+            <label>Nom de la mosquée *</label>
+            <input type="text" id="s-mosque-name" placeholder="Ex: Grande Mosquée de Meximieux" />
+            <label>Fuseau horaire</label>
+            <input type="text" id="s-mosque-timezone" placeholder="Europe/Paris" />
+            <label>Slug (lecture seule)</label>
+            <input type="text" id="s-mosque-slug" disabled style="color:var(--muted);" />
           </div>
-          <label>Fréquence de rafraîchissement</label>
-          <select id="s-kpi-refresh">
-            <option value="30">30 secondes</option>
-            <option value="60">1 minute</option>
-            <option value="120">2 minutes</option>
-            <option value="300">5 minutes</option>
-          </select>
-          <div style="margin-top:20px;padding:16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;">
-            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">
-              Ouvre l'écran KPI dans un nouvel onglet avec votre mosquée déjà sélectionnée.
+        </div>
+
+        <!-- ── Onglet Finances ── -->
+        <div id="spanel-finance" class="hidden">
+          <div class="settings-section">
+            <h3>🎓 École coranique</h3>
+            <label>Année scolaire active</label>
+            <input type="text" id="s-school-year" placeholder="2025-2026" />
+            <label>Frais de scolarité par défaut (€)</label>
+            <input type="number" id="s-school-fee" placeholder="0" min="0" step="0.01" />
+            <label>Mode de paiement</label>
+            <select id="s-school-fee-mode">
+              <option value="annual">Annuel</option>
+              <option value="monthly">Mensuel</option>
+            </select>
+            <label>Niveaux scolaires (séparés par des virgules)</label>
+            <input type="text" id="s-school-levels" placeholder="NP,N1,N2,N3,N4,N5,N6" />
+          </div>
+          <div class="settings-section">
+            <h3>🤝 Adhésion</h3>
+            <label>Montant de la cotisation (€)</label>
+            <input type="number" id="s-membership-fee" placeholder="0" min="0" step="0.01" />
+            <label>Mode de cotisation</label>
+            <select id="s-membership-mode">
+              <option value="per_person">Par personne</option>
+              <option value="per_family">Par famille</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ── Onglet Reçus PDF ── -->
+        <div id="spanel-receipts" class="hidden">
+          <div class="settings-section">
+            <h3>🧾 Reçus fiscaux PDF</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Ces informations apparaîtront sur tous les reçus générés.
             </p>
-            <button class="btn btn-primary" onclick="openKPIScreen()">📺 Ouvrir l'écran KPI</button>
+            <label>URL du logo <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+            <input type="url" id="s-receipt-logo" placeholder="https://..." />
+            <label>Adresse de la mosquée</label>
+            <textarea id="s-receipt-address" placeholder="12 rue de la Paix&#10;01800 Meximieux" rows="3"></textarea>
+            <label>Téléphone</label>
+            <input type="text" id="s-receipt-phone" placeholder="04 74 00 00 00" />
+            <label>Mention légale</label>
+            <textarea id="s-receipt-legal" rows="3"
+              placeholder="Association loi 1901 — Don déductible à 66% dans la limite de 20% du revenu imposable (art. 200 CGI)."></textarea>
           </div>
         </div>
 
-        <div class="settings-section">
-          <h3>� Notifications email (SMTP)</h3>
-          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-            Configurez le serveur SMTP pour l'envoi des rappels aux familles et adhérents.
-            Exemple Gmail : host <code>smtp.gmail.com</code>, port <code>587</code>, TLS activé.
-          </p>
-          <div style="display:grid;grid-template-columns:1fr 100px;gap:12px;">
-            <div>
-              <label>Serveur SMTP (host)</label>
-              <input type="text" id="s-smtp-host" placeholder="smtp.gmail.com" />
-            </div>
-            <div>
-              <label>Port</label>
-              <input type="number" id="s-smtp-port" placeholder="587" min="1" max="65535" />
-            </div>
-          </div>
-          <label>Identifiant SMTP (email)</label>
-          <input type="text" id="s-smtp-user" placeholder="votre.compte@gmail.com" autocomplete="off" />
-          <label>Mot de passe SMTP</label>
-          <input type="password" id="s-smtp-password" placeholder="••••••••" autocomplete="new-password" />
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;margin-top:4px;">
-            <input type="checkbox" id="s-smtp-use-tls" style="width:auto;margin:0;accent-color:var(--accent);" />
-            Utiliser STARTTLS (port 587 recommandé)
-          </label>
-          <label style="margin-top:12px;">Email expéditeur (affiché dans « De : »)</label>
-          <input type="email" id="s-email-from" placeholder="noreply@mosquee.fr" />
-          <label>Préfixe objet des emails</label>
-          <input type="text" id="s-email-subject-prefix" placeholder="[Mosquée Manager]" />
-          <div style="margin-top:18px;padding:16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;">
-            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">
-              Enregistrez d'abord les paramètres, puis testez la configuration SMTP.
+        <!-- ── Onglet KPI public ── -->
+        <div id="spanel-kpi" class="hidden">
+          <div class="settings-section">
+            <h3>📺 Écran KPI public</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Configurez l'affichage de l'écran KPI (tableau de bord public pour TV/tablette).
             </p>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <input type="email" id="s-smtp-test-email" placeholder="destinataire@test.com"
-                     style="width:220px;margin:0;font-size:0.85rem;" />
-              <button id="btn-smtp-test" class="btn btn-sm" onclick="testEmail()">✉️ Tester SMTP</button>
+            <label style="font-weight:600;margin-bottom:10px;display:block;">Widgets visibles</label>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+                <input type="checkbox" id="s-kpi-school" style="width:auto;margin:0;accent-color:var(--accent);" />
+                🎓 École coranique
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+                <input type="checkbox" id="s-kpi-membership" style="width:auto;margin:0;accent-color:var(--accent);" />
+                🤝 Adhérents
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+                <input type="checkbox" id="s-kpi-treasury" style="width:auto;margin:0;accent-color:var(--accent);" />
+                💰 Trésorerie
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+                <input type="checkbox" id="s-kpi-campaigns" style="width:auto;margin:0;accent-color:var(--accent);" />
+                🎯 Cagnottes &amp; Collectes
+              </label>
             </div>
-            <div id="smtp-test-status" style="margin-top:10px;font-size:0.82rem;"></div>
+            <label>Fréquence de rafraîchissement</label>
+            <select id="s-kpi-refresh">
+              <option value="30">30 secondes</option>
+              <option value="60">1 minute</option>
+              <option value="120">2 minutes</option>
+              <option value="300">5 minutes</option>
+            </select>
+            <div style="margin-top:20px;padding:16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;">
+              <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">
+                Ouvre l'écran KPI dans un nouvel onglet avec votre mosquée déjà sélectionnée.
+              </p>
+              <button class="btn btn-primary" onclick="openKPIScreen()">📺 Ouvrir l'écran KPI</button>
+            </div>
           </div>
         </div>
 
-        <div class="settings-section">
-          <h3>�💾 Sauvegarde &amp; Restauration</h3>
-          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:18px;line-height:1.6;">
-            Exportez l'intégralité des données en un fichier <strong>ZIP</strong> CSV.
-            Restaurez pour fusionner sans doublons.
-          </p>
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="backupExport()">⬇️ Télécharger la sauvegarde (ZIP)</button>
-            <span id="backup-export-status" style="font-size:0.8rem;color:var(--muted);"></span>
-          </div>
-          <div style="background:var(--bg);border:1.5px dashed var(--border);border-radius:10px;padding:20px;">
-            <p style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:10px;">📤 Restaurer depuis un fichier ZIP</p>
-            <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">
-              Sélectionnez un fichier <code>.zip</code> généré par cette application.
+        <!-- ── Onglet Emails SMTP ── -->
+        <div id="spanel-smtp" class="hidden">
+          <div class="settings-section">
+            <h3>✉️ Notifications email (SMTP)</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Configurez le serveur SMTP pour l'envoi des rappels aux familles et adhérents.
+              Exemple Gmail : host <code>smtp.gmail.com</code>, port <code>587</code>, TLS activé.
             </p>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <input type="file" id="backup-file-input" accept=".zip"
-                     style="width:auto;margin:0;font-size:0.82rem;"
-                     onchange="backupImportPreview()" />
-              <button class="btn btn-success" id="backup-import-btn" onclick="backupImport()" disabled>↑ Importer</button>
+            <div style="display:grid;grid-template-columns:1fr 100px;gap:12px;">
+              <div>
+                <label>Serveur SMTP (host)</label>
+                <input type="text" id="s-smtp-host" placeholder="smtp.gmail.com" />
+              </div>
+              <div>
+                <label>Port</label>
+                <input type="number" id="s-smtp-port" placeholder="587" min="1" max="65535" />
+              </div>
             </div>
-            <div id="backup-import-status" style="margin-top:12px;font-size:0.82rem;"></div>
+            <label>Identifiant SMTP (email)</label>
+            <input type="text" id="s-smtp-user" placeholder="votre.compte@gmail.com" autocomplete="off" />
+            <label>Mot de passe SMTP</label>
+            <input type="password" id="s-smtp-password" placeholder="••••••••" autocomplete="new-password" />
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;margin-top:4px;">
+              <input type="checkbox" id="s-smtp-use-tls" style="width:auto;margin:0;accent-color:var(--accent);" />
+              Utiliser STARTTLS (port 587 recommandé)
+            </label>
+            <label style="margin-top:12px;">Email expéditeur (affiché dans « De : »)</label>
+            <input type="email" id="s-email-from" placeholder="noreply@mosquee.fr" />
+            <label>Préfixe objet des emails</label>
+            <input type="text" id="s-email-subject-prefix" placeholder="[Mosquée Manager]" />
+            <div style="margin-top:18px;padding:16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;">
+              <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">
+                Enregistrez d'abord les paramètres, puis testez la configuration SMTP.
+              </p>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <input type="email" id="s-smtp-test-email" placeholder="destinataire@test.com"
+                       style="width:220px;margin:0;font-size:0.85rem;" />
+                <button id="btn-smtp-test" class="btn btn-sm" onclick="testEmail()">✉️ Tester SMTP</button>
+              </div>
+              <div id="smtp-test-status" style="margin-top:10px;font-size:0.82rem;"></div>
+            </div>
           </div>
         </div>
 
-        <div class="settings-section">
-          <h3>🏦 Comptes bancaires</h3>
-          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-            Configurez vos comptes bancaires (1901 / 1905). Ils seront proposés lors de l'import CSV.
-          </p>
-          <div id="bank-accounts-list" style="margin-bottom:16px;"></div>
-          <button class="btn btn-sm btn-primary" onclick="openBankAccountModal()">+ Ajouter un compte</button>
+        <!-- ── Onglet Banque ── -->
+        <div id="spanel-bank" class="hidden">
+          <div class="settings-section">
+            <h3>🏦 Comptes bancaires</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Configurez vos comptes bancaires (1901 / 1905). Ils seront proposés lors de l'import CSV.
+            </p>
+            <div id="bank-accounts-list" style="margin-bottom:16px;"></div>
+            <button class="btn btn-sm btn-primary" onclick="openBankAccountModal()">+ Ajouter un compte</button>
+          </div>
+          <div class="settings-section">
+            <h3>⚙️ Règles de dispatch automatique</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Définissez des mots-clés pour catégoriser automatiquement les transactions lors d'un import bancaire.
+              Les règles sont évaluées par ordre de priorité (1 = en premier).
+            </p>
+            <div id="dispatch-rules-list" style="margin-bottom:16px;"></div>
+            <button class="btn btn-sm btn-primary" onclick="openDispatchRuleModal()">+ Ajouter une règle</button>
+          </div>
         </div>
 
-        <div class="settings-section">
-          <h3>⚙️ Règles de dispatch automatique</h3>
-          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-            Définissez des mots-clés pour catégoriser automatiquement les transactions lors d'un import bancaire.
-            Les règles sont évaluées par ordre de priorité (1 = en premier).
-          </p>
-          <div id="dispatch-rules-list" style="margin-bottom:16px;"></div>
-          <button class="btn btn-sm btn-primary" onclick="openDispatchRuleModal()">+ Ajouter une règle</button>
-        </div>
-
-        <div class="settings-section">
-          <h3>&#128101; Personnel</h3>
-          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-            Gérez imams, enseignants, agents d'entretien et tout autre personnel.
-            Le <strong>mot-clé CSV</strong> permet de reconnaître automatiquement les virements de salaire lors de l'import bancaire.
-          </p>
-          <div id="staff-list" style="margin-bottom:16px;"></div>
-          <button class="btn btn-sm btn-primary" onclick="openStaffModal()">+ Ajouter un membre</button>
+        <!-- ── Onglet Sauvegarde ── -->
+        <div id="spanel-backup" class="hidden">
+          <div class="settings-section">
+            <h3>💾 Sauvegarde &amp; Restauration</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:18px;line-height:1.6;">
+              Exportez l'intégralité des données en un fichier <strong>ZIP</strong> CSV.
+              Restaurez pour fusionner sans doublons.
+            </p>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="backupExport()">⬇️ Télécharger la sauvegarde (ZIP)</button>
+              <span id="backup-export-status" style="font-size:0.8rem;color:var(--muted);"></span>
+            </div>
+            <div style="background:var(--bg);border:1.5px dashed var(--border);border-radius:10px;padding:20px;">
+              <p style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:10px;">📤 Restaurer depuis un fichier ZIP</p>
+              <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">
+                Sélectionnez un fichier <code>.zip</code> généré par cette application.
+              </p>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <input type="file" id="backup-file-input" accept=".zip"
+                       style="width:auto;margin:0;font-size:0.82rem;"
+                       onchange="backupImportPreview()" />
+                <button class="btn btn-success" id="backup-import-btn" onclick="backupImport()" disabled>↑ Importer</button>
+              </div>
+              <div id="backup-import-status" style="margin-top:12px;font-size:0.82rem;"></div>
+            </div>
+          </div>
         </div>
 
       </div>
     </div>
 
+    <!-- ══ SECTION PERSONNEL ═══════════════════════════════════════════════ -->
+    <div id="section-staff" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>👨‍💼 Personnel</h2>
+          <div class="breadcrumb">Administration · Imams, enseignants &amp; staff</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-primary" onclick="openStaffModal()">+ Ajouter</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="card" style="margin-bottom:16px;border-left:4px solid var(--accent);">
+          <div class="card-body" style="padding:14px 18px;">
+            <p style="margin:0;font-size:.84rem;color:var(--muted);line-height:1.6;">
+              Le <strong>mot-clé CSV</strong> associé à chaque membre permet de reconnaître automatiquement
+              ses virements de salaire lors de l'import bancaire et de les catégoriser en <em>Salaire / Honoraires</em>.
+            </p>
+          </div>
+        </div>
+        <div id="staff-list" style="margin-bottom:16px;"></div>
+      </div>
+    </div>
     <!-- ══ SECTION IMPORT DONNÉES ══════════════════════════════════════════ -->
     <div id="section-import" class="hidden">
       <div class="page-header">

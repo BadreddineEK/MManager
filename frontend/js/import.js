@@ -1,7 +1,7 @@
 /**
- * import.js — Import de données en masse (CSV / Excel)
+ * import.js — Onboarding & import de données en masse (CSV)
  * ======================================================
- * Trois types : transactions, members, school
+ * Trois types : transactions bancaires, adhérents, école coranique
  *
  * Fonctionnement :
  *  1. Sélectionner le type d'import (onglets)
