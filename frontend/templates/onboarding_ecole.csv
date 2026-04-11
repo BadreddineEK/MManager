@@ -1,0 +1,4 @@
+nom_famille,tel_papa,tel_maman,email,enfant1_prenom,enfant1_niveau,enfant2_prenom,enfant2_niveau,enfant3_prenom,enfant3_niveau,montant_verse,sept,oct,nov,dec,jan,fev,mars,avr,mai,juin
+MARTIN Pierre,0612345678,0698765432,famille.martin@email.com,Yasmine,N2,Omar,N1,,,180.00,20,20,20,20,20,20,20,20,20,
+DUPONT Ahmed,0655554444,,dupont@gmail.com,Sara,NP,,,,,80.00,,,20,20,20,20,,,,
+BENALI Fatima,0644443333,0622221111,,Hamza,N3,Nour,N2,Ines,N1,180.00,,,20,20,20,20,20,20,20,20

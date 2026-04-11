@@ -126,7 +126,7 @@
         <span class="nav-icon">⚙️</span><span>Paramètres</span>
       </button>
       <button class="nav-item" id="nav-import" onclick="showSection('import')">
-        <span class="nav-icon">📥</span><span>Import données</span>
+        <span class="nav-icon">🚀</span><span>Onboarding</span>
       </button>
     </div>
 
@@ -292,7 +292,7 @@
         <div class="page-header-actions">
           <button class="btn btn-success btn-sm" onclick="exportFile('families','excel')">⬇ Excel</button>
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('families','pdf')">⬇ PDF</button>
-          <button class="btn btn-sm" onclick="showSection('import');switchImportTab('school')" title="Importer plusieurs familles via CSV">📥 Import CSV</button>
+
           <button id="btn-bulk-school" class="btn btn-sm" onclick="openBulkModal('families')" title="Saisir plusieurs familles d'un coup">✏️ Saisie multiple</button>
           <button class="btn btn-sm" onclick="addSchoolPayment()" title="Enregistrer un paiement école dans la trésorerie">💳 Paiement école</button>
           <button id="btn-add-school" class="btn btn-primary" onclick="openFamilyModal()">+ Famille</button>
@@ -320,7 +320,7 @@
           <div class="breadcrumb">École coranique · Liste des élèves</div>
         </div>
         <div class="page-header-actions">
-          <button class="btn btn-sm" onclick="showSection('import');switchImportTab('school')" title="Importer plusieurs élèves via CSV">📥 Import CSV</button>
+
           <button class="btn btn-sm" onclick="openBulkModal('children')" title="Saisir plusieurs enfants d'un coup">✏️ Saisie multiple</button>
           <button class="btn btn-primary" onclick="openChildModal()">+ Enfant</button>
         </div>
@@ -386,7 +386,7 @@
           </select>
           <button class="btn btn-success btn-sm" onclick="exportFile('members','excel')">⬇ Excel</button>
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('members','pdf')">⬇ PDF</button>
-          <button class="btn btn-sm" onclick="showSection('import');switchImportTab('members')" title="Importer plusieurs adhérents via CSV">📥 Import CSV</button>
+
           <button id="btn-bulk-members" class="btn btn-sm" onclick="openBulkModal('members')" title="Saisir plusieurs adhérents d'un coup">✏️ Saisie multiple</button>
           <button class="btn btn-sm" onclick="addMembershipPayment()" title="Enregistrer une cotisation dans la trésorerie">💳 Cotisation</button>
           <button id="btn-add-member" class="btn btn-primary" onclick="openMemberModal()">+ Adhérent</button>
@@ -445,7 +445,7 @@
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('treasury','pdf')">⬇ PDF</button>
           <button class="btn btn-sm" onclick="openAnnualReceiptModal()" title="Générer un reçu fiscal annuel">🧾 Récap annuel</button>
           <button class="btn btn-sm" onclick="openMonthlyRecapModal()" title="Récapitulatif mensuel imprimable">📅 Récap mensuel</button>
-          <button class="btn btn-sm" onclick="showSection('import');switchImportTab('transactions')" title="Importer plusieurs transactions via CSV">📥 Import CSV</button>
+
           <button id="btn-bulk-treasury" class="btn btn-sm" onclick="openBulkModal('treasury')" title="Saisir plusieurs transactions d'un coup">✏️ Saisie multiple</button>
           <button class="btn btn-sm" onclick="openBankImportModal()" title="Importer un relevé bancaire CSV">🏦 Import bancaire</button>
           <button id="btn-add-treasury" class="btn btn-primary" onclick="openTreasuryModal()">+ Transaction</button>
@@ -956,114 +956,155 @@
     <div id="section-import" class="hidden">
       <div class="page-header">
         <div class="page-header-left">
-          <h2>Import de données</h2>
-          <div class="breadcrumb">Administration — Importer des données en masse (CSV / Excel)</div>
+          <h2>🚀 Onboarding</h2>
+          <div class="breadcrumb">Administration — Import initial des données de votre mosquée</div>
         </div>
       </div>
       <div class="page-body">
 
-        <!-- Sélecteur de type d'import -->
+        <!-- Bandeau d'information -->
+        <div class="card" style="margin-bottom:20px;border-left:4px solid var(--accent);">
+          <div class="card-body" style="padding:16px 20px;">
+            <p style="margin:0 0 8px;font-weight:700;font-size:.95rem;">ℹ️ À quoi sert cette section ?</p>
+            <p style="margin:0;font-size:.85rem;color:var(--muted);line-height:1.6;">
+              Cette section permet d'importer les données <strong>existantes</strong> de votre mosquée lors de la première mise en service.<br>
+              Téléchargez le template CSV correspondant, remplissez-le dans Excel ou Google Sheets, puis importez-le.<br>
+              <strong>Chaque import propose un mode simulation</strong> (dry run) pour vérifier les données avant de les enregistrer définitivement.<br>
+              L'import bancaire mensuel (relevés de compte) se fait depuis la section <strong>Trésorerie → 🏦 Import bancaire</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Sélecteur de type -->
         <div class="card" style="margin-bottom:20px;">
           <div class="card-body tab-selector">
-            <span class="tab-label">Type d'import :</span>
-            <button class="btn btn-primary btn-sm" id="import-tab-transactions" onclick="switchImportTab('transactions')">💰 Transactions</button>
-            <button class="btn btn-sm" id="import-tab-members" onclick="switchImportTab('members')">🤝 Adhérents</button>
-            <button class="btn btn-sm" id="import-tab-school" onclick="switchImportTab('school')">🏫 École</button>
+            <span class="tab-label">Type de données :</span>
+            <button class="btn btn-primary btn-sm" id="import-tab-members" onclick="switchImportTab('members')">🤝 Adhérents</button>
+            <button class="btn btn-sm" id="import-tab-school" onclick="switchImportTab('school')">🏫 Familles &amp; École</button>
+            <button class="btn btn-sm" id="import-tab-transactions" onclick="switchImportTab('transactions')">💰 Historique trésorerie</button>
           </div>
         </div>
 
-        <!-- ── Transactions ─────────────────────────────────── -->
-        <div id="import-panel-transactions">
+        <!-- ══ Adhérents ══════════════════════════════════════════════ -->
+        <div id="import-panel-members">
           <div class="card" style="margin-bottom:16px;">
-            <div class="card-header"><span>💰 Import transactions trésorerie</span></div>
+            <div class="card-header">
+              <span>🤝 Import adhérents</span>
+              <a class="btn btn-sm" href="templates/onboarding_adherents.csv" download style="margin-left:auto;">⬇ Template CSV</a>
+            </div>
             <div class="card-body">
-              <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">
-                Colonnes attendues : <code>date</code>, <code>objet</code>, <code>montant_entree</code>,
-                <code>montant_sortie</code>, <code>categorie</code> — (<code>annee</code>, <code>mois</code> optionnels)
-              </p>
-              <div class="form-row">
-                <div class="form-col">
-                  <label>Fichier CSV ou Excel</label>
-                  <input type="file" id="import-tx-file" accept=".csv,.xlsx" />
-                </div>
+              <div style="background:#f8f7ff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:.84rem;line-height:1.7;">
+                <strong>Colonnes du fichier :</strong><br>
+                <code>nom_prenom</code> — Nom et prénom (ex : <em>MARTIN Pierre</em>)<br>
+                <code>telephone</code> — Numéro de téléphone<br>
+                <code>email</code> — Adresse email (optionnel)<br>
+                <code>adresse</code> — Adresse postale (optionnel)<br>
+                <code>mode_paiement</code> — <em>virement / cheque / especes</em> (optionnel)<br>
+                <code>montant_paye</code> — Total versé sur l'année (optionnel, ex : <em>120.00</em>)<br>
+                <code>jan, fev, mars, avr, mai, juin, juil, aout, sept, oct, nov, dec</code> — Montant par mois si disponible (optionnel)
               </div>
-              <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:0.85rem;cursor:pointer;font-weight:500;">
-                <input type="checkbox" id="import-tx-dryrun" style="width:auto;margin:0;" checked />
-                Simulation (dry run) — prévisualiser sans importer
-              </label>
-            </div>
-            <div class="card-footer">
-              <button class="btn btn-primary" onclick="runImport('transactions')">📥 Lancer l'import</button>
-              <a class="btn btn-sm" href="templates/import_transactions.csv" download>⬇ Template CSV</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Adhérents ──────────────────────────────────────── -->
-        <div id="import-panel-members" class="hidden">
-          <div class="card" style="margin-bottom:16px;">
-            <div class="card-header"><span>🤝 Import adhérents</span></div>
-            <div class="card-body">
-              <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">
-                Colonnes attendues : <code>nom_prenom</code>, <code>telephone</code>, <code>email</code>,
-                <code>adresse</code>, <code>mode_paiement</code>, <code>total_paye</code>,
-                <code>jan</code>…<code>dec</code>
-              </p>
               <div class="form-row">
                 <div class="form-col">
-                  <label>Fichier CSV ou Excel</label>
+                  <label>Fichier CSV ou Excel (.xlsx)</label>
                   <input type="file" id="import-members-file" accept=".csv,.xlsx" />
                 </div>
                 <div class="form-col">
-                  <label>Année de cotisation</label>
+                  <label>Année de cotisation cible</label>
                   <select id="import-members-year"></select>
                 </div>
               </div>
-              <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:0.85rem;cursor:pointer;font-weight:500;">
+              <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:.85rem;cursor:pointer;font-weight:500;">
                 <input type="checkbox" id="import-members-dryrun" style="width:auto;margin:0;" checked />
-                Simulation (dry run) — prévisualiser sans importer
+                🔍 Simulation — prévisualiser sans modifier la base de données
               </label>
             </div>
             <div class="card-footer">
               <button class="btn btn-primary" onclick="runImport('members')">📥 Lancer l'import</button>
-              <a class="btn btn-sm" href="templates/import_adherents.csv" download>⬇ Template CSV</a>
             </div>
           </div>
         </div>
 
-        <!-- ── École ─────────────────────────────────────────── -->
+        <!-- ══ Familles & École ═══════════════════════════════════════ -->
         <div id="import-panel-school" class="hidden">
           <div class="card" style="margin-bottom:16px;">
-            <div class="card-header"><span>🏫 Import inscriptions école</span></div>
+            <div class="card-header">
+              <span>🏫 Import familles &amp; élèves</span>
+              <a class="btn btn-sm" href="templates/onboarding_ecole.csv" download style="margin-left:auto;">⬇ Template CSV</a>
+            </div>
             <div class="card-body">
-              <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">
-                Colonnes attendues : <code>nom_parents</code>, <code>prenom_enfant</code>, <code>niveau</code>,
-                <code>total_du</code>, <code>total_verse</code>, <code>sept</code>…<code>juin</code>,
-                <code>tel_papa</code>, <code>tel_maman</code>, <code>email</code>
-              </p>
+              <div style="background:#f8f7ff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:.84rem;line-height:1.7;">
+                <strong>Colonnes du fichier :</strong><br>
+                <code>nom_famille</code> — Nom du contact principal (ex : <em>MARTIN Pierre</em>)<br>
+                <code>tel_papa</code>, <code>tel_maman</code> — Téléphones (optionnels)<br>
+                <code>email</code> — Email famille (optionnel)<br>
+                <code>enfant1_prenom</code>, <code>enfant1_niveau</code> — 1er enfant (niveau : NP / N1 / N2 / N3 / N4 / N5)<br>
+                <code>enfant2_prenom</code>, <code>enfant2_niveau</code> — 2e enfant (optionnel)<br>
+                <code>enfant3_prenom</code>, <code>enfant3_niveau</code> — 3e enfant (optionnel)<br>
+                <code>montant_verse</code> — Total versé sur l'année scolaire (optionnel)<br>
+                <code>sept, oct, nov, dec, jan, fev, mars, avr, mai, juin</code> — Montant par mois si disponible (optionnel)
+              </div>
               <div class="form-row">
                 <div class="form-col">
-                  <label>Fichier CSV ou Excel</label>
+                  <label>Fichier CSV ou Excel (.xlsx)</label>
                   <input type="file" id="import-school-file" accept=".csv,.xlsx" />
                 </div>
                 <div class="form-col">
-                  <label>Année scolaire</label>
+                  <label>Année scolaire cible</label>
                   <select id="import-school-year"></select>
                 </div>
               </div>
-              <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:0.85rem;cursor:pointer;font-weight:500;">
+              <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:.85rem;cursor:pointer;font-weight:500;">
                 <input type="checkbox" id="import-school-dryrun" style="width:auto;margin:0;" checked />
-                Simulation (dry run) — prévisualiser sans importer
+                🔍 Simulation — prévisualiser sans modifier la base de données
               </label>
             </div>
             <div class="card-footer">
               <button class="btn btn-primary" onclick="runImport('school')">📥 Lancer l'import</button>
-              <a class="btn btn-sm" href="templates/import_ecole.csv" download>⬇ Template CSV</a>
             </div>
           </div>
         </div>
 
-        <!-- ── Résultat ────────────────────────────────────────── -->
+        <!-- ══ Historique trésorerie ══════════════════════════════════ -->
+        <div id="import-panel-transactions" class="hidden">
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <span>💰 Import historique trésorerie</span>
+              <a class="btn btn-sm" href="templates/onboarding_transactions.csv" download style="margin-left:auto;">⬇ Template CSV</a>
+            </div>
+            <div class="card-body">
+              <div style="background:#fff8e1;border:1px solid #fde68a;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:.84rem;line-height:1.7;">
+                <strong>⚠️ Usage unique — historique passé uniquement</strong><br>
+                Cet import sert à renseigner les transactions <strong>passées</strong> (avant la mise en service de l'application).<br>
+                Pour les relevés bancaires mensuels, utilisez <strong>Trésorerie → 🏦 Import bancaire</strong>.
+              </div>
+              <div style="background:#f8f7ff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:.84rem;line-height:1.7;">
+                <strong>Colonnes du fichier :</strong><br>
+                <code>date</code> — Format JJ/MM/AAAA (ex : <em>15/09/2024</em>)<br>
+                <code>libelle</code> — Description de la transaction<br>
+                <code>montant_entree</code> — Montant reçu (laisser vide si sortie)<br>
+                <code>montant_sortie</code> — Montant dépensé (laisser vide si entrée)<br>
+                <code>categorie</code> — <em>don / cotisation / loyer / salaire / facture / ecole / projet / subvention / autre</em><br>
+                <code>mode_paiement</code> — <em>virement / cheque / especes / autre</em> (optionnel)<br>
+                <code>note</code> — Commentaire libre (optionnel)
+              </div>
+              <div class="form-row">
+                <div class="form-col">
+                  <label>Fichier CSV ou Excel (.xlsx)</label>
+                  <input type="file" id="import-tx-file" accept=".csv,.xlsx" />
+                </div>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:.85rem;cursor:pointer;font-weight:500;">
+                <input type="checkbox" id="import-tx-dryrun" style="width:auto;margin:0;" checked />
+                🔍 Simulation — prévisualiser sans modifier la base de données
+              </label>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" onclick="runImport('transactions')">📥 Lancer l'import</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ Résultat ═══════════════════════════════════════════════ -->
         <div id="import-result" class="hidden">
           <div class="card">
             <div class="card-header" id="import-result-header"><span>Résultat</span></div>

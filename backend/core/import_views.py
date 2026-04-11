@@ -547,7 +547,11 @@ class ImportSchoolView(APIView):
         batch_families: set[str] = set()
 
         for i, row in enumerate(rows, start=2):
-            nom_parents = row.get("nom_parents", "").strip()
+            # Accepte "nom_famille" (nouveau format) ou "nom_parents" (legacy)
+            nom_parents = (
+                row.get("nom_famille", "").strip()
+                or row.get("nom_parents", "").strip()
+            )
             prenom_enfant = row.get("prenom_enfant", "").strip()
 
             if not nom_parents:
@@ -557,7 +561,6 @@ class ImportSchoolView(APIView):
             phone1 = (row.get("tel_papa", "").strip() or "")[:50]
             phone2 = (row.get("tel_maman", "").strip() or "")[:50]
             email = row.get("email", "").strip()
-            niveau = (row.get("niveau", "").strip().upper() or "N1")[:50]
 
             is_new = (nom_parents not in existing_families) and (nom_parents not in batch_families)
             if is_new:
@@ -570,12 +573,29 @@ class ImportSchoolView(APIView):
                 ))
                 batch_families.add(nom_parents)
 
-            # Toujours créer l'enfant (même famille, plusieurs enfants possibles)
-            children_to_create.append({
-                "family_name": nom_parents,
-                "first_name": prenom_enfant or "Enfant",
-                "level": niveau,
-            })
+            # ── Enfants : format legacy (1 par ligne) ou nouveau (multi enfants) ──
+            enfants: list[tuple[str, str]] = []
+            if prenom_enfant:
+                # format legacy : prenom_enfant + niveau
+                niveau = (row.get("niveau", "").strip().upper() or "N1")[:50]
+                enfants.append((prenom_enfant, niveau))
+            else:
+                # nouveau format : enfant1_prenom/niveau … enfant4_prenom/niveau
+                for idx in range(1, 5):
+                    p = row.get(f"enfant{idx}_prenom", "").strip()
+                    n = (row.get(f"enfant{idx}_niveau", "").strip().upper() or "N1")[:50]
+                    if p:
+                        enfants.append((p, n))
+
+            for (child_prenom, child_niveau) in enfants:
+                children_to_create.append({
+                    "family_name": nom_parents,
+                    "first_name": child_prenom,
+                    "level": child_niveau,
+                })
+
+            # ── Paiements (référence = 1er enfant de la ligne) ──────────────
+            ref_child = enfants[0][0] if enfants else "Enfant"
 
             # Paiements mensuels scolaires
             monthly_total = Decimal("0")
@@ -586,19 +606,20 @@ class ImportSchoolView(APIView):
                     year_num = s_year.start_date.year if month_num >= 9 else s_year.end_date.year
                     payments_to_create.append({
                         "family_name": nom_parents,
-                        "child_first": prenom_enfant or "Enfant",
+                        "child_first": ref_child,
                         "amount": val,
                         "date": date(year_num, month_num, 1),
                         "method": "cash",
                     })
 
-            # Fallback total_verse
+            # Fallback : montant_verse ou total_verse si aucun mois détaillé
             if monthly_total == 0:
-                total = _parse_decimal(row.get("total_verse", ""), "total_verse", i, errors)
+                total_raw = row.get("montant_verse", "") or row.get("total_verse", "")
+                total = _parse_decimal(total_raw, "montant_verse", i, errors)
                 if total and total > 0:
                     payments_to_create.append({
                         "family_name": nom_parents,
-                        "child_first": prenom_enfant or "Enfant",
+                        "child_first": ref_child,
                         "amount": total,
                         "date": s_year.start_date,
                         "method": "cash",

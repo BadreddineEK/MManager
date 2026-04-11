@@ -1,0 +1,6 @@
+date,libelle,montant_entree,montant_sortie,categorie,mode_paiement,note
+01/09/2024,Dons du vendredi soir,350.00,,don,especes,Collecte vendredi
+05/09/2024,Facture EDF,,98.50,facture,virement,Electricite septembre 2024
+10/09/2024,Virement MARTIN Pierre cotisation,120.00,,cotisation,virement,Cotisation annuelle 2024
+15/09/2024,Loyer local associatif,,500.00,loyer,virement,Loyer septembre 2024
+20/09/2024,Don anonyme collecte,200.00,,don,especes,

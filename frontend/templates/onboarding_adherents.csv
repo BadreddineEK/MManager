@@ -1,0 +1,4 @@
+nom_prenom,telephone,email,adresse,mode_paiement,montant_paye,jan,fev,mars,avr,mai,juin,juil,aout,sept,oct,nov,dec
+MARTIN Pierre,0612345678,pierre.martin@email.com,12 rue des Lilas 75001 Paris,virement,120.00,10,10,10,10,10,10,10,10,10,10,10,10
+DUPONT Ahmed,0698765432,ahmed.dupont@gmail.com,,cheque,80.00,,,,,,,,,,20,20,20,20
+EL AMRANI Youssef,0755556666,,,especes,50.00,,,,,,,,,,,50,

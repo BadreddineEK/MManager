@@ -15,7 +15,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 async function initImportSection() {
-  switchImportTab('transactions');
+  switchImportTab('members');   // Adhérents = onglet par défaut
   await Promise.all([
     loadMembershipYearsForImport(),
     loadSchoolYearsForImport(),
