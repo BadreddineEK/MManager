@@ -16,7 +16,7 @@ django-environ==0.11.2
 psycopg2-binary==2.9.9
 
 # ── Multi-tenant (Schema-per-Tenant) ─────────────────────────────────────────
-django-tenants==3.6.1
+django-tenants==3.10.1
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 django-cors-headers==4.3.1
