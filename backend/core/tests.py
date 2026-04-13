@@ -26,6 +26,7 @@ Couverture :
     - GET /api/users/me/ accessible à tout rôle
 """
 from django.test import TestCase
+from django_tenants.test.cases import TenantTestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -34,13 +35,14 @@ from .models import AuditLog, Mosque, User
 from .permissions import HasMosquePermission
 
 
-class AuthTestCase(TestCase):
+class AuthTestCase(TenantTestCase):
     """Tests du flux d'authentification JWT."""
 
     def setUp(self) -> None:
         self.client = APIClient()
 
         self.mosque = Mosque.objects.create(
+            schema_name="test_mosque",
             name="Mosquee de Test",
             slug="test-mosque",
             timezone="Europe/Paris",
@@ -206,12 +208,13 @@ class AuthTestCase(TestCase):
         self.assertFalse(result)
 
 
-class AuditLogTestCase(TestCase):
+class AuditLogTestCase(TenantTestCase):
     """Tests du journal d'audit."""
 
     def setUp(self):
         self.client = APIClient()
-        self.mosque = Mosque.objects.create(name="Mosquée Audit", slug="audit", timezone="Europe/Paris")
+        self.mosque = Mosque.objects.create(
+            schema_name="audit",name="Mosquée Audit", slug="audit", timezone="Europe/Paris")
         self.admin = User.objects.create_user(
             username="audit_admin", email="audit@test.com",
             password="AuditPass123!", mosque=self.mosque, role="ADMIN",
@@ -280,12 +283,13 @@ class AuditLogTestCase(TestCase):
         self.assertTrue(all(e == "Family" for e in entities))
 
 
-class UserManagementTestCase(TestCase):
+class UserManagementTestCase(TenantTestCase):
     """Tests de la gestion des utilisateurs."""
 
     def setUp(self):
         self.client = APIClient()
-        self.mosque = Mosque.objects.create(name="Mosquée Users", slug="users", timezone="Europe/Paris")
+        self.mosque = Mosque.objects.create(
+            schema_name="users",name="Mosquée Users", slug="users", timezone="Europe/Paris")
         self.admin = User.objects.create_user(
             username="admin_users", email="admin@users.com",
             password="AdminPass123!", mosque=self.mosque, role="ADMIN",
@@ -340,13 +344,14 @@ class UserManagementTestCase(TestCase):
         self.assertEqual(res.status_code, 401)
 
 
-class AuthTestCase(TestCase):
+class AuthTestCase(TenantTestCase):
     """Tests du flux d'authentification JWT."""
 
     def setUp(self) -> None:
         self.client = APIClient()
 
         self.mosque = Mosque.objects.create(
+            schema_name="test_mosque",
             name="Mosquee de Test",
             slug="test-mosque",
             timezone="Europe/Paris",

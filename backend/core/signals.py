@@ -5,30 +5,36 @@ Automatise l'initialisation d'une mosquée dès sa création :
   - MosqueSettings avec valeurs par défaut
   - SchoolYear pour l'année scolaire en cours
   - MembershipYear pour l'année civile en cours
+
+NOTE multi-tenant : on utilise post_schema_sync (django-tenants) au lieu de post_save
+car les tables tenant (school_year, membership_year) n'existent QU'APRÈS que le schéma
+tenant est créé et migré. post_save se déclenche AVANT la migration du schéma.
 """
 import logging
 from datetime import date
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django_tenants.signals import post_schema_sync
 
 logger = logging.getLogger("core")
 
 
-@receiver(post_save, sender="core.Mosque")
-def mosque_post_save(sender, instance, created, **kwargs):
+@receiver(post_schema_sync, sender=None)
+def mosque_post_schema_sync(sender, tenant, **kwargs):
     """
-    À la création d'une mosquée :
+    Après création + migration du schéma tenant :
     1. Crée MosqueSettings avec des valeurs par défaut sensées
     2. Crée un SchoolYear pour l'année scolaire courante (ex: 2025-2026)
     3. Crée un MembershipYear pour l'année civile courante
     """
-    if not created:
-        return
-
+    from django.db import connection
     from core.models import MosqueSettings
     from membership.models import MembershipYear
     from school.models import SchoolYear
+
+    # Activer le schéma tenant
+    connection.set_tenant(tenant)
 
     today = date.today()
     year = today.year
@@ -43,7 +49,7 @@ def mosque_post_save(sender, instance, created, **kwargs):
 
     # 1. MosqueSettings
     MosqueSettings.objects.get_or_create(
-        mosque=instance,
+        mosque=tenant,
         defaults={
             "school_levels": ["NP", "N1", "N2", "N3", "N4", "N5", "N6"],
             "school_fee_default": 0,
@@ -53,7 +59,7 @@ def mosque_post_save(sender, instance, created, **kwargs):
             "active_school_year_label": school_label,
         },
     )
-    logger.info("SIGNAL: MosqueSettings créé pour mosquée '%s'", instance.name)
+    logger.info("SIGNAL: MosqueSettings créé pour mosquée '%s'", tenant.name)
 
     # 2. SchoolYear
     if month >= 9:
@@ -64,7 +70,7 @@ def mosque_post_save(sender, instance, created, **kwargs):
         end_date   = date(year, 8, 31)
 
     SchoolYear.objects.get_or_create(
-        mosque=instance,
+        mosque=tenant,
         label=school_label,
         defaults={
             "is_active":   True,
@@ -72,15 +78,15 @@ def mosque_post_save(sender, instance, created, **kwargs):
             "end_date":    end_date,
         },
     )
-    logger.info("SIGNAL: SchoolYear '%s' créé pour mosquée '%s'", school_label, instance.name)
+    logger.info("SIGNAL: SchoolYear '%s' créé pour mosquée '%s'", school_label, tenant.name)
 
     # 3. MembershipYear
     MembershipYear.objects.get_or_create(
-        mosque=instance,
+        mosque=tenant,
         year=year,
         defaults={
             "amount_expected": 0,
             "is_active": True,
         },
     )
-    logger.info("SIGNAL: MembershipYear %d créé pour mosquée '%s'", year, instance.name)
+    logger.info("SIGNAL: MembershipYear %d créé pour mosquée '%s'", year, tenant.name)
