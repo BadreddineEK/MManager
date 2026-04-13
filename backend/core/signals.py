@@ -91,3 +91,38 @@ def mosque_post_schema_sync(sender, tenant, **kwargs):
         defaults={"amount_expected": 0, "is_active": True},
     )
     logger.info("SIGNAL: MembershipYear %d cree pour '%s'", year, tenant.name)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Signal: notification expiration abonnement
+# ─────────────────────────────────────────────────────────────────────────────
+from django.db.models.signals import post_save
+from django_tenants.utils import schema_context as _schema_context
+
+
+def _connect_subscription_signal():
+    from core.models import Subscription
+    post_save.connect(subscription_status_changed, sender=Subscription)
+
+
+def subscription_status_changed(sender, instance, created, **kwargs):
+    """
+    Logue (et plus tard: envoie un email) quand un abonnement passe en expired.
+    Sender resolu dynamiquement pour eviter les imports circulaires.
+    """
+    if created:
+        return
+    update_fields = kwargs.get("update_fields") or []
+    if "status" not in update_fields:
+        return
+    if instance.status == "expired":
+        logger.warning(
+            "SUBSCRIPTION EXPIRED SIGNAL: mosque=%s plan=%s — TODO: envoyer email",
+            instance.mosque.name,
+            instance.plan.name,
+        )
+        # TODO étape 16: envoyer email via send_mail ou Celery task
+        # send_expiry_email(instance)
+
+
+_connect_subscription_signal()

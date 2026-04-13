@@ -54,5 +54,20 @@ services:
     depends_on:
       - backend_dev
 
+  # ── Cron DEV — expire trials chaque nuit a 01h00 ─────────────────────────────
+  cron_dev:
+    build: ./backend
+    restart: unless-stopped
+    entrypoint: ["/app/entrypoint.dev.sh"]
+    command: >
+      sh -c "echo '0 1 * * * cd /app && python manage.py expire_trials >> /tmp/cron.log 2>&1' | crontab - && crond -f -l 8"
+    env_file:
+      - .env.dev
+    depends_on:
+      db_dev:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
 volumes:
   postgres_dev_data:
