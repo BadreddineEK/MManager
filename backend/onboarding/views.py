@@ -73,6 +73,25 @@ class RegisterMosqueView(APIView):
                 )
                 logger.info('Admin cree: %s dans %s', admin_username, schema_name)
 
+            # 4. Assigner plan free + trial 30 jours
+            import datetime
+            from django_tenants.utils import schema_context as sc
+            with sc('public'):
+                from core.models import Plan, Subscription
+                free_plan = Plan.objects.get(name='free')
+                today = datetime.date.today()
+                trial_end = today + datetime.timedelta(days=30)
+                Subscription.objects.create(
+                    mosque=mosque,
+                    plan=free_plan,
+                    status='trial',
+                    billing_cycle='monthly',
+                    trial_end=trial_end,
+                    current_period_start=today,
+                    current_period_end=trial_end,
+                )
+                logger.info('Subscription free/trial creee pour %s', mosque.name)
+
             return Response(
                 {
                     'success': True,

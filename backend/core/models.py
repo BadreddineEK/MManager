@@ -526,3 +526,95 @@ class Staff(models.Model):
 
     def __str__(self) -> str:
         return f"{self.full_name} ({self.get_role_display()}) — {self.mosque.name}"
+
+
+class Plan(models.Model):
+    """Plan tarifaire Nidham : free / starter / pro / premium / federation."""
+
+    PLAN_CHOICES = [
+        ("free",       "Cloud Free"),
+        ("starter",    "Starter — 19€/mois"),
+        ("pro",        "Pro — 49€/mois"),
+        ("premium",    "Premium — 89€/mois"),
+        ("federation", "Fédération — sur devis"),
+    ]
+
+    name          = models.CharField(max_length=30, unique=True, choices=PLAN_CHOICES)
+    price_monthly = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    price_yearly  = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    max_families  = models.IntegerField(default=75,  help_text="-1 = illimite")
+    max_users     = models.IntegerField(default=1,   help_text="-1 = illimite")
+    max_sms_month = models.IntegerField(default=0,   help_text="-1 = illimite")
+    modules       = models.JSONField(
+        default=list,
+        help_text='Ex: ["core", "school", "communication"]',
+    )
+    is_active  = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name        = "Plan tarifaire"
+        verbose_name_plural = "Plans tarifaires"
+        db_table            = "core_plan"
+        ordering            = ["price_monthly"]
+
+    def __str__(self):
+        return f"{self.get_name_display()} (max {self.max_families} familles)"
+
+    def allows_module(self, module_name: str) -> bool:
+        """Retourne True si le module est inclus dans ce plan."""
+        return module_name in (self.modules or [])
+
+    def check_limit(self, resource: str, current_count: int) -> bool:
+        """Retourne True si la limite resource n'est pas atteinte (-1 = illimite)."""
+        limit = getattr(self, f"max_{resource}", None)
+        if limit is None or limit == -1:
+            return True
+        return current_count < limit
+
+
+class Subscription(models.Model):
+    """Abonnement actif d'une mosquée — lié a un Plan."""
+
+    STATUS_CHOICES = [
+        ("trial",     "Période d'essai"),
+        ("active",    "Actif"),
+        ("expired",   "Expiré"),
+        ("cancelled", "Résilié"),
+    ]
+    BILLING_CHOICES = [
+        ("monthly", "Mensuel"),
+        ("yearly",  "Annuel"),
+    ]
+
+    mosque        = models.OneToOneField(
+        Mosque, on_delete=models.CASCADE,
+        related_name="subscription",
+        verbose_name="Mosquée",
+    )
+    plan          = models.ForeignKey(
+        Plan, on_delete=models.PROTECT,
+        related_name="subscriptions",
+        verbose_name="Plan",
+    )
+    status        = models.CharField(max_length=20, choices=STATUS_CHOICES, default="trial")
+    billing_cycle = models.CharField(max_length=10, choices=BILLING_CHOICES, default="monthly")
+    trial_end     = models.DateField(null=True, blank=True, verbose_name="Fin essai")
+    current_period_start      = models.DateField(null=True, blank=True)
+    current_period_end        = models.DateField(null=True, blank=True)
+    stripe_subscription_id    = models.CharField(max_length=200, blank=True, default="")
+    helloasso_subscription_id = models.CharField(max_length=200, blank=True, default="")
+    created_at    = models.DateTimeField(auto_now_add=True)
+    updated_at    = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name        = "Abonnement"
+        verbose_name_plural = "Abonnements"
+        db_table            = "core_subscription"
+
+    def __str__(self):
+        return f"{self.mosque.name} — {self.plan.get_name_display()} ({self.get_status_display()})"
+
+    @property
+    def is_active(self):
+        return self.status in ("trial", "active")
