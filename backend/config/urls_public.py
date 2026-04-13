@@ -27,4 +27,5 @@ urlpatterns = [
     # Auth JWT globale (accessible depuis tous les sous-domaines)
     path("api/auth/", include("core.urls", namespace="core")),
     path("api/onboarding/", include("onboarding.urls", namespace="onboarding")),
+    path("nidham-admin/", include("nidham_admin.urls", namespace="nidham_admin")),
 ]

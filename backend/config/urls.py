@@ -17,6 +17,7 @@ urlpatterns = [
     # Auth JWT
     path("api/auth/", include("core.urls", namespace="core")),
     path("api/onboarding/", include("onboarding.urls", namespace="onboarding")),
+    path("nidham-admin/", include("nidham_admin.urls", namespace="nidham_admin")),
     # School
     path("api/school/", include("school.urls", namespace="school")),
     # Membership

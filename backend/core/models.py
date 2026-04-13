@@ -539,7 +539,7 @@ class Plan(models.Model):
         ("federation", "Fédération — sur devis"),
     ]
 
-    name          = models.CharField(max_length=30, unique=True, choices=PLAN_CHOICES)
+    name          = models.CharField(max_length=50, unique=True)
     price_monthly = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     price_yearly  = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     max_families  = models.IntegerField(default=75,  help_text="-1 = illimite")
