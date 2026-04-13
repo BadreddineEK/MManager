@@ -1,0 +1,750 @@
+OK
+OCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nidham — Gérez votre mosquée simplement</title>
+  <style>
+    /* ── Reset & Variables ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:       #2d7a4f;
+      --green-light: #3a9660;
+      --green-dark:  #1e5535;
+      --gold:        #c9a227;
+      --gold-light:  #f0c040;
+      --bg:          #f7f9f7;
+      --surface:     #ffffff;
+      --text:        #1a2e1a;
+      --text-muted:  #6b7c6b;
+      --border:      #d4e0d4;
+      --radius:      12px;
+      --shadow:      0 4px 24px rgba(0,0,0,0.10);
+      --shadow-lg:   0 8px 40px rgba(0,0,0,0.15);
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Toasts ──────────────────────────────────────────────────────────── */
+    #toast-container {
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .toast {
+      padding: 12px 18px; border-radius: 8px; font-size: 0.9rem;
+      font-weight: 500; box-shadow: var(--shadow); animation: fadeIn .25s ease;
+      max-width: 340px;
+    }
+    .toast-success { background: var(--green); color: #fff; }
+    .toast-error   { background: #c0392b; color: #fff; }
+    .toast-info    { background: #2980b9; color: #fff; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── Header ──────────────────────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 2px solid var(--border);
+      padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px; position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .header-brand {
+      display: flex; align-items: center; gap: 12px; text-decoration: none;
+    }
+    .header-brand .logo {
+      width: 40px; height: 40px; background: var(--green);
+      border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; font-size: 1.3rem;
+    }
+    .header-brand .brand-text h1 {
+      font-size: 1.2rem; font-weight: 700; color: var(--green);
+    }
+    .header-brand .brand-text p {
+      font-size: 0.72rem; color: var(--text-muted); margin-top: -2px;
+    }
+    header nav { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 8px; font-size: 0.88rem;
+      font-weight: 600; cursor: pointer; border: none; transition: all .2s;
+      text-decoration: none;
+    }
+    .btn-ghost {
+      background: transparent; color: var(--text-muted); border: 1.5px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: var(--green-dark); }
+    .btn-gold { background: var(--gold); color: #fff; }
+    .btn-gold:hover { background: #a8841e; }
+    .btn-lg { padding: 13px 28px; font-size: 1rem; border-radius: 10px; }
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* ── Hero ────────────────────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 60%, var(--green-light) 100%);
+      color: white; padding: 80px 32px 60px;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -60px; right: -60px;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+    }
+    .hero::after {
+      content: ''; position: absolute; bottom: -80px; left: -40px;
+      width: 240px; height: 240px; border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 20px; padding: 5px 14px; font-size: 0.8rem;
+      font-weight: 500; margin-bottom: 20px;
+    }
+    .hero h2 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800; line-height: 1.2; margin-bottom: 16px;
+    }
+    .hero h2 span { color: var(--gold-light); }
+    .hero p {
+      font-size: 1.08rem; opacity: 0.9; line-height: 1.6; margin-bottom: 36px;
+    }
+    .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .hero-stats {
+      display: flex; justify-content: center; gap: 40px; margin-top: 48px;
+      padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.2);
+      flex-wrap: wrap;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat .number {
+      font-size: 1.8rem; font-weight: 800; color: var(--gold-light);
+    }
+    .hero-stat .label { font-size: 0.8rem; opacity: 0.8; margin-top: 2px; }
+
+    /* ── Portail cards (login/register) ─────────────────────────────────── */
+    .portal-section {
+      max-width: 960px; margin: -32px auto 0; padding: 0 24px 64px;
+      position: relative; z-index: 10;
+    }
+    .portal-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    }
+    @media (max-width: 640px) { .portal-grid { grid-template-columns: 1fr; } }
+    .portal-card {
+      background: var(--surface); border-radius: 16px;
+      box-shadow: var(--shadow-lg); padding: 32px; border: 1px solid var(--border);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .portal-card:hover { transform: translateY(-3px); box-shadow: 0 12px 48px rgba(0,0,0,0.18); }
+    .portal-card.featured { border: 2px solid var(--gold); }
+    .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .card-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+    }
+    .card-icon.green { background: #e8f5ee; }
+    .card-icon.gold  { background: #fef9e7; }
+    .card-header h3  { font-size: 1.15rem; font-weight: 700; color: var(--text); }
+    .card-header p   { font-size: 0.82rem; color: var(--text-muted); margin-top: 2px; }
+    .featured-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--gold); color: white; border-radius: 6px;
+      padding: 3px 10px; font-size: 0.74rem; font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    /* ── Forms ───────────────────────────────────────────────────────────── */
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 0.82rem; font-weight: 600;
+      color: var(--text); margin-bottom: 6px;
+    }
+    .form-group input, .form-group select {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 0.9rem; color: var(--text);
+      background: var(--bg); transition: border-color .2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none; border-color: var(--green); background: white;
+    }
+    .form-group input.error { border-color: #e74c3c; }
+    .field-hint  { font-size: 0.76rem; color: var(--text-muted); margin-top: 4px; }
+    .field-ok    { font-size: 0.76rem; color: var(--green); margin-top: 4px; }
+    .field-error { font-size: 0.76rem; color: #e74c3c; margin-top: 4px; }
+    .alert {
+      padding: 12px 14px; border-radius: 8px; font-size: 0.85rem;
+      font-weight: 500; margin-bottom: 16px;
+    }
+    .alert-error   { background: #fdf0ef; color: #c0392b; border: 1px solid #f5c6c2; }
+    .alert-success { background: #edf7f1; color: var(--green-dark); border: 1px solid #a8dfc0; }
+    .hidden { display: none !important; }
+
+    /* ── Slug preview ─────────────────────────────────────────────────────── */
+    .slug-preview {
+      background: #f0f4f0; border: 1px dashed var(--border);
+      border-radius: 8px; padding: 8px 12px; margin-top: 8px;
+      font-size: 0.82rem; color: var(--text-muted);
+    }
+    .slug-preview strong { color: var(--green); font-family: monospace; }
+
+    /* ── Divider ──────────────────────────────────────────────────────────── */
+    .divider {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.8rem; color: var(--text-muted); margin: 16px 0;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── Features section ─────────────────────────────────────────────────── */
+    .features-section {
+      background: white; padding: 64px 32px;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+    .section-title {
+      text-align: center; margin-bottom: 48px;
+    }
+    .section-title h3 {
+      font-size: 1.6rem; font-weight: 800; color: var(--text); margin-bottom: 8px;
+    }
+    .section-title p { font-size: 1rem; color: var(--text-muted); }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px; max-width: 1000px; margin: 0 auto;
+    }
+    .feature-card {
+      background: var(--bg); border-radius: 12px; padding: 24px;
+      border: 1px solid var(--border); text-align: center;
+    }
+    .feature-card .feature-icon {
+      font-size: 2rem; margin-bottom: 12px; display: block;
+    }
+    .feature-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+    .feature-card p  { font-size: 0.83rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* ── Plans section ───────────────────────────────────────────────────── */
+    .plans-section { padding: 64px 32px; max-width: 1000px; margin: 0 auto; }
+    .plans-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .plan-card {
+      background: white; border-radius: 14px; padding: 28px 22px;
+      border: 1.5px solid var(--border); text-align: center;
+      position: relative; transition: transform .2s;
+    }
+    .plan-card:hover { transform: translateY(-4px); }
+    .plan-card.popular { border-color: var(--green); }
+    .popular-badge {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: white; border-radius: 20px;
+      padding: 3px 14px; font-size: 0.72rem; font-weight: 700;
+    }
+    .plan-name { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .plan-price {
+      font-size: 1.8rem; font-weight: 800; color: var(--green); margin-bottom: 4px;
+    }
+    .plan-price span { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); }
+    .plan-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px; }
+    .plan-features { list-style: none; text-align: left; }
+    .plan-features li {
+      font-size: 0.82rem; padding: 4px 0;
+      display: flex; align-items: center; gap: 8px; color: var(--text);
+    }
+    .plan-features li::before { content: '✓'; color: var(--green); font-weight: 700; }
+
+    /* ── Footer ──────────────────────────────────────────────────────────── */
+    footer {
+      background: var(--green-dark); color: rgba(255,255,255,0.7);
+      text-align: center; padding: 24px 32px; font-size: 0.82rem;
+    }
+    footer a { color: var(--gold-light); text-decoration: none; }
+
+    /* ── Success screen ──────────────────────────────────────────────────── */
+    #success-screen {
+      max-width: 520px; margin: 60px auto; padding: 0 24px; text-align: center;
+    }
+    .success-icon {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: #e8f5ee; display: flex; align-items: center;
+      justify-content: center; font-size: 2.5rem; margin: 0 auto 24px;
+    }
+    #success-screen h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 10px; }
+    #success-screen p  { color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; }
+    .success-domain {
+      background: #f0f4f0; border-radius: 10px; padding: 16px;
+      font-family: monospace; font-size: 1rem; color: var(--green);
+      font-weight: 700; margin: 20px 0;
+    }
+
+    /* ── Loading spinner ─────────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: spin 0.7s linear infinite; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ───────────────────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      header { padding: 0 16px; }
+      header nav .btn-ghost { display: none; }
+      .hero { padding: 48px 20px 40px; }
+      .portal-section { padding: 0 16px 48px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════════════════ -->
+<header>
+  <a href="#" class="header-brand">
+    <div class="logo">🕌</div>
+    <div class="brand-text">
+      <h1>Nidham</h1>
+      <p>Gestion de mosquée</p>
+    </div>
+  </a>
+  <nav>
+    <a href="#plans" class="btn btn-ghost">Nos offres</a>
+    <button class="btn btn-primary" onclick="scrollToLogin()">Se connecter</button>
+  </nav>
+</header>
+
+<!-- ══ HERO ════════════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">✨ La solution SaaS pour les mosquées</div>
+    <h2>Gérez votre mosquée<br><span>simplement et efficacement</span></h2>
+    <p>École coranique, adhérents, trésorerie, communication — tout en un.<br>
+       Créez votre espace en 2 minutes, sans installation, sans engagement.</p>
+    <div class="hero-cta">
+      <button class="btn btn-gold btn-lg" onclick="scrollToRegister()">
+        🚀 Créer mon espace gratuitement
+      </button>
+      <button class="btn btn-ghost btn-lg" style="color:white;border-color:rgba(255,255,255,0.4)" onclick="scrollToLogin()">
+        Se connecter à ma mosquée
+      </button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="number" id="stat-mosques">—</div>
+        <div class="label">Mosquées actives</div>
+      </div>
+      <div class="hero-stat">
+        <div class="number">100%</div>
+        <div class="label">Données sécurisées</div>
+      </div>
+      <div class="hero-stat">
+        <div class="number">30j</div>
+        <div class="label">Essai gratuit</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PORTAIL CARDS ════════════════════════════════════════════════════════ -->
+<section class="portal-section" id="portal">
+  <div class="portal-grid">
+
+    <!-- CARTE : SE CONNECTER ──────────────────────────────────────────────── -->
+    <div class="portal-card" id="login-card">
+      <div class="card-header">
+        <div class="card-icon green">🔑</div>
+        <div>
+          <h3>Accéder à ma mosquée</h3>
+          <p>Connectez-vous à votre espace</p>
+        </div>
+      </div>
+      <div id="login-error" class="alert alert-error hidden"></div>
+      <div class="form-group">
+        <label>Sous-domaine de votre mosquée</label>
+        <input type="text" id="login-slug" placeholder="ex: lyonlpa" autocomplete="off"
+               oninput="updateLoginDomain()" />
+        <div class="slug-preview" id="login-domain-preview">
+          🌐 <strong id="login-domain-text">votre-mosquee.nidham.fr</strong>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Identifiant</label>
+        <input type="text" id="login-username" placeholder="imam" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Mot de passe</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter') doLogin()" />
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" id="login-btn" onclick="doLogin()">
+        Se connecter
+      </button>
+    </div>
+
+    <!-- CARTE : INSCRIRE MA MOSQUÉE ──────────────────────────────────────── -->
+    <div class="portal-card featured" id="register-card">
+      <div class="featured-badge">⭐ 30 jours gratuits</div>
+      <div class="card-header">
+        <div class="card-icon gold">🕌</div>
+        <div>
+          <h3>Inscrire ma mosquée</h3>
+          <p>Créez votre espace en 2 minutes</p>
+        </div>
+      </div>
+      <div id="register-error" class="alert alert-error hidden"></div>
+      <div class="form-group">
+        <label>Nom de la mosquée</label>
+        <input type="text" id="reg-mosque-name" placeholder="Mosquée Al-Nour de Lyon"
+               oninput="autoSlug()" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label>Identifiant unique (slug)</label>
+        <input type="text" id="reg-slug" placeholder="al-nour-lyon" autocomplete="off"
+               oninput="onSlugInput()" />
+        <div class="slug-preview">
+          🌐 <strong id="reg-domain-preview">votre-id.nidham.fr</strong>
+        </div>
+        <div id="slug-status" class="field-hint">Choisissez un identifiant unique</div>
+      </div>
+      <div class="form-group">
+        <label>Identifiant administrateur</label>
+        <input type="text" id="reg-username" placeholder="imam" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label>Mot de passe</label>
+        <input type="password" id="reg-password" placeholder="Minimum 8 caractères" autocomplete="new-password" />
+      </div>
+      <button class="btn btn-gold btn-full btn-lg" id="register-btn" onclick="doRegister()">
+        🚀 Créer mon espace gratuitement
+      </button>
+      <p style="text-align:center;font-size:0.76rem;color:var(--text-muted);margin-top:12px">
+        30 jours d'essai gratuit · Aucune carte bancaire requise
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SUCCESS SCREEN ═══════════════════════════════════════════════════════ -->
+<div id="success-screen" class="hidden">
+  <div class="success-icon">🎉</div>
+  <h2>Votre mosquée est prête !</h2>
+  <p>L'espace <strong id="success-mosque-name"></strong> a été créé avec succès.</p>
+  <div class="success-domain" id="success-domain"></div>
+  <p style="font-size:0.85rem">
+    Votre identifiant admin : <strong id="success-username"></strong><br>
+    Utilisez votre mot de passe pour accéder à l'application.
+  </p>
+  <a id="success-link" href="#" class="btn btn-primary btn-lg" style="margin-top:24px;display:inline-flex">
+    Accéder à mon espace →
+  </a>
+</div>
+
+<!-- ══ FEATURES ═════════════════════════════════════════════════════════════ -->
+<section class="features-section">
+  <div class="section-title">
+    <h3>Tout ce dont votre mosquée a besoin</h3>
+    <p>Une plateforme complète, pensée pour les équipes bénévoles</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">🏫</span>
+      <h4>École coranique</h4>
+      <p>Gestion des familles, élèves, présences et paiements de cours</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">👥</span>
+      <h4>Adhérents</h4>
+      <p>Suivi des membres, cotisations annuelles et statistiques</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💰</span>
+      <h4>Trésorerie</h4>
+      <p>Revenus, dépenses, rapports financiers et exports</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📢</span>
+      <h4>Communication</h4>
+      <p>Envoi de SMS groupés et campagnes de notification</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📊</span>
+      <h4>Tableau de bord</h4>
+      <p>KPIs en temps réel, graphiques et exports Excel/PDF</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔒</span>
+      <h4>Multi-utilisateurs</h4>
+      <p>Rôles et permissions : admin, trésorier, responsable école…</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PLANS ════════════════════════════════════════════════════════════════ -->
+<section id="plans" style="background:var(--bg)">
+  <div class="plans-section">
+    <div class="section-title">
+      <h3>Des offres adaptées à chaque mosquée</h3>
+      <p>Commencez gratuitement, évoluez selon vos besoins</p>
+    </div>
+    <div class="plans-grid" id="plans-grid">
+      <!-- Chargé dynamiquement via JS -->
+      <div class="plan-card">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">0€ <span>/mois</span></div>
+        <div class="plan-desc">Découverte</div>
+        <ul class="plan-features">
+          <li>75 familles max</li>
+          <li>1 utilisateur</li>
+          <li>Gestion de base</li>
+        </ul>
+      </div>
+      <div class="plan-card">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">19€ <span>/mois</span></div>
+        <div class="plan-desc">Petite mosquée</div>
+        <ul class="plan-features">
+          <li>Familles illimitées</li>
+          <li>3 utilisateurs</li>
+          <li>École coranique</li>
+        </ul>
+      </div>
+      <div class="plan-card popular">
+        <div class="popular-badge">⭐ Populaire</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">45€ <span>/mois</span></div>
+        <div class="plan-desc">Mosquée active</div>
+        <ul class="plan-features">
+          <li>Tout Starter</li>
+          <li>10 utilisateurs</li>
+          <li>200 SMS/mois</li>
+          <li>Portail adhérents</li>
+        </ul>
+      </div>
+      <div class="plan-card">
+        <div class="plan-name">Premium</div>
+        <div class="plan-price">89€ <span>/mois</span></div>
+        <div class="plan-desc">Grande mosquée</div>
+        <ul class="plan-features">
+          <li>Tout Pro</li>
+          <li>Utilisateurs illimités</li>
+          <li>500 SMS/mois</li>
+          <li>Analytics avancés</li>
+          <li>App mobile</li>
+        </ul>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:24px;font-size:0.85rem;color:var(--text-muted)">
+      Fédération de mosquées ? <a href="mailto:contact@nidham.fr" style="color:var(--green);font-weight:600">Contactez-nous pour un devis</a>
+    </p>
+  </div>
+</section>
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════════════════ -->
+<footer>
+  <p>© 2026 Nidham — Tous droits réservés · 
+     <a href="mailto:contact@nidham.fr">contact@nidham.fr</a> · 
+     <a href="#">Mentions légales</a>
+  </p>
+</footer>
+
+<!-- ══ SCRIPTS ══════════════════════════════════════════════════════════════ -->
+<script>
+/* ── Config ──────────────────────────────────────────────────────────────── */
+// BASE_DOMAIN : en dev utilise nidham.local, en prod nidham.fr
+const BASE_DOMAIN = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
+  ? 'nidham.local'
+  : 'nidham.fr';
+
+// API_BASE : l'API publique (onboarding) est sur le domaine racine
+// En dev on force le port 8100
+const API_BASE = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
+  ? `http://nidham.local:8100/api`
+  : 'https://nidham.fr/api';
+
+/* ── Toasts ──────────────────────────────────────────────────────────────── */
+function toast(msg, type = 'info', duration = 4000) {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), duration);
+}
+
+/* ── Scroll helpers ──────────────────────────────────────────────────────── */
+function scrollToLogin()    { document.getElementById('login-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); document.getElementById('login-slug').focus(); }
+function scrollToRegister() { document.getElementById('register-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); document.getElementById('reg-mosque-name').focus(); }
+
+/* ── Login domain preview ────────────────────────────────────────────────── */
+function updateLoginDomain() {
+  const slug = document.getElementById('login-slug').value.trim().toLowerCase();
+  const preview = slug || 'votre-mosquee';
+  document.getElementById('login-domain-text').textContent = `${preview}.${BASE_DOMAIN}`;
+}
+
+/* ── Auto-slug depuis le nom ──────────────────────────────────────────────── */
+function autoSlug() {
+  const name = document.getElementById('reg-mosque-name').value;
+  const slug = name
+    .toLowerCase()
+    .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .substring(0, 30);
+  document.getElementById('reg-slug').value = slug;
+  onSlugInput();
+}
+
+/* ── Slug input + check dispo ─────────────────────────────────────────────── */
+let _slugTimer = null;
+function onSlugInput() {
+  const slug = document.getElementById('reg-slug').value.trim().toLowerCase();
+  document.getElementById('reg-domain-preview').textContent = `${slug || 'votre-id'}.${BASE_DOMAIN}`;
+  clearTimeout(_slugTimer);
+  const statusEl = document.getElementById('slug-status');
+  if (!slug) { statusEl.className = 'field-hint'; statusEl.textContent = 'Choisissez un identifiant unique'; return; }
+  if (slug.length < 3) { statusEl.className = 'field-error'; statusEl.textContent = 'Minimum 3 caractères'; return; }
+  statusEl.className = 'field-hint'; statusEl.textContent = 'Vérification…';
+  _slugTimer = setTimeout(() => checkSlug(slug), 500);
+}
+
+async function checkSlug(slug) {
+  try {
+    const r = await fetch(`${API_BASE}/onboarding/check-slug/?slug=${encodeURIComponent(slug)}`);
+    const d = await r.json();
+    const el = document.getElementById('slug-status');
+    if (d.available) { el.className = 'field-ok'; el.textContent = '✓ Disponible'; }
+    else             { el.className = 'field-error'; el.textContent = '✗ Déjà pris, essayez un autre'; }
+  } catch (e) { /* réseau indisponible → on ignore */ }
+}
+
+/* ── Login ───────────────────────────────────────────────────────────────── */
+async function doLogin() {
+  const slug     = document.getElementById('login-slug').value.trim().toLowerCase();
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl    = document.getElementById('login-error');
+  const btn      = document.getElementById('login-btn');
+  errEl.classList.add('hidden');
+
+  if (!slug)     { errEl.textContent = 'Entrez le sous-domaine de votre mosquée'; errEl.classList.remove('hidden'); return; }
+  if (!username) { errEl.textContent = 'Entrez votre identifiant'; errEl.classList.remove('hidden'); return; }
+  if (!password) { errEl.textContent = 'Entrez votre mot de passe'; errEl.classList.remove('hidden'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Connexion…';
+
+  try {
+    const mosqueeUrl = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
+      ? `http://${slug}.nidham.local:8100`
+      : `https://${slug}.nidham.fr`;
+
+    const res = await fetch(`${mosqueeUrl}/api/auth/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || 'Identifiants incorrects');
+    }
+    const data = await res.json();
+    // Stocker les tokens + rediriger vers l'app de la mosquée
+    // On passe les tokens via URL hash (sessionStorage côté app)
+    const appUrl = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
+      ? `http://${slug}.nidham.local:8100/app/#access=${data.access}&refresh=${data.refresh}`
+      : `https://${slug}.nidham.fr/app/#access=${data.access}&refresh=${data.refresh}`;
+    toast('Connexion réussie, redirection…', 'success', 2000);
+    setTimeout(() => { location.href = appUrl; }, 800);
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Se connecter';
+  }
+}
+
+/* ── Register ────────────────────────────────────────────────────────────── */
+async function doRegister() {
+  const mosqueName = document.getElementById('reg-mosque-name').value.trim();
+  const slug       = document.getElementById('reg-slug').value.trim().toLowerCase();
+  const username   = document.getElementById('reg-username').value.trim();
+  const password   = document.getElementById('reg-password').value;
+  const errEl      = document.getElementById('register-error');
+  const btn        = document.getElementById('register-btn');
+  errEl.classList.add('hidden');
+
+  // Validation
+  const errors = [];
+  if (!mosqueName)   errors.push('Entrez le nom de votre mosquée');
+  if (!slug || slug.length < 3) errors.push('L\'identifiant doit faire au moins 3 caractères');
+  if (!username)     errors.push('Entrez un identifiant administrateur');
+  if (!password || password.length < 8) errors.push('Le mot de passe doit faire au moins 8 caractères');
+  if (errors.length) { errEl.innerHTML = errors.join('<br>'); errEl.classList.remove('hidden'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Création en cours…';
+
+  try {
+    const res = await fetch(`${API_BASE}/onboarding/register/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mosque_name:    mosqueName,
+        slug:           slug,
+        admin_username: username,
+        admin_password: password,
+        timezone:       Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris',
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = Object.values(data).flat().join(' · ') || 'Erreur lors de la création';
+      throw new Error(msg);
+    }
+
+    // Afficher l'écran de succès
+    document.getElementById('portal').style.display = 'none';
+    document.getElementById('success-screen').classList.remove('hidden');
+    document.getElementById('success-mosque-name').textContent = mosqueName;
+    document.getElementById('success-domain').textContent = data.domain;
+    document.getElementById('success-username').textContent = username;
+    const appUrl = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
+      ? `http://${data.domain}:8100/`
+      : `https://${data.domain}/`;
+    document.getElementById('success-link').href = appUrl;
+    document.getElementById('success-screen').scrollIntoView({ behavior: 'smooth' });
+    toast('🎉 Mosquée créée avec succès !', 'success', 6000);
+
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.innerHTML = '�� Créer mon espace gratuitement';
+  }
+}
+
+/* ── Stats dynamiques (nombre de mosquées) ───────────────────────────────── */
+async function loadStats() {
+  try {
+    const r = await fetch(`${API_BASE}/onboarding/check-slug/?slug=__stats__`);
+    // On n'a pas d'endpoint stats public — on met une valeur fixe pour l'instant
+  } catch (e) {}
+  // Valeur statique en attendant un endpoint public
+  document.getElementById('stat-mosques').textContent = '4+';
+}
+
+loadStats();
+</script>
+</body>
+</html>

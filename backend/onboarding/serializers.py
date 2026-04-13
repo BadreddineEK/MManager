@@ -7,7 +7,7 @@ class RegisterMosqueSerializer(serializers.Serializer):
     slug           = serializers.SlugField(max_length=63)
     timezone       = serializers.CharField(max_length=50, default='Europe/Paris')
     admin_username = serializers.CharField(max_length=150)
-    admin_email    = serializers.EmailField()
+    admin_email    = serializers.EmailField(required=False, allow_blank=True, default="")
     admin_password = serializers.CharField(min_length=8, write_only=True)
     base_domain    = serializers.CharField(max_length=200, default='nidham.local')
 

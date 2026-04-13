@@ -3,11 +3,12 @@
 # Usage : docker compose -f docker-compose.dev.yml up -d
 # Port 8100 (dev) — séparé de la prod (port 80)
 # BDD séparée : nidham_dev sur port 5433
+# Nginx dev port 8080 — sert portal.html + proxy API
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
 
-  # ── PostgreSQL 16 DEV ──────────────────────────────────────────────────────
+  # ── PostgreSQL 16 DEV ──────────────────────────────────────────────────────────
   db_dev:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -25,7 +26,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # ── Backend Django DEV (runserver + hot-reload) ────────────────────────────
+  # ── Backend Django DEV (runserver + hot-reload) ───────────────────────────────────
   backend_dev:
     build: ./backend
     restart: unless-stopped
@@ -40,6 +41,18 @@ services:
       - "8100:8100"
     volumes:
       - ./backend:/app
+
+  # ── Nginx DEV — sert portal.html + proxy API ─────────────────────────────
+  nginx_dev:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx_dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend_dev
 
 volumes:
   postgres_dev_data:
