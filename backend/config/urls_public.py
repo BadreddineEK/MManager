@@ -26,4 +26,5 @@ urlpatterns = [
     path("health/", health_check, name="health_check_public"),
     # Auth JWT globale (accessible depuis tous les sous-domaines)
     path("api/auth/", include("core.urls", namespace="core")),
+    path("api/onboarding/", include("onboarding.urls", namespace="onboarding")),
 ]
