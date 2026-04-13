@@ -661,7 +661,7 @@ async function doLogin() {
     // Stocker les tokens + rediriger vers l'app de la mosquée
     // On passe les tokens via URL hash (sessionStorage côté app)
     const appUrl = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
-      ? `http://${slug}.nidham.local:8100/app/#access=${data.access}&refresh=${data.refresh}`
+      ? `http://${slug}.nidham.local:8080/app/#access=${data.access}&refresh=${data.refresh}`
       : `https://${slug}.nidham.fr/app/#access=${data.access}&refresh=${data.refresh}`;
     toast('Connexion réussie, redirection…', 'success', 2000);
     setTimeout(() => { location.href = appUrl; }, 800);
@@ -720,7 +720,7 @@ async function doRegister() {
     document.getElementById('success-domain').textContent = data.domain;
     document.getElementById('success-username').textContent = username;
     const appUrl = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
-      ? `http://${data.domain}:8100/`
+      ? `http://${data.domain}:8080/`
       : `https://${data.domain}/`;
     document.getElementById('success-link').href = appUrl;
     document.getElementById('success-screen').scrollIntoView({ behavior: 'smooth' });
