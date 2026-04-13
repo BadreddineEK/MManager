@@ -69,3 +69,4 @@ ehthumbs.db
 htmlcov/
 .pytest_cache/
 .tox/
+.env.dev

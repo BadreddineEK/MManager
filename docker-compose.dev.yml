@@ -1,0 +1,44 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Nidham DEV — docker-compose.dev.yml
+# Usage : docker compose -f docker-compose.dev.yml up -d
+# Port 8100 (dev) — séparé de la prod (port 80)
+# BDD séparée : nidham_dev sur port 5433
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── PostgreSQL 16 DEV ──────────────────────────────────────────────────────
+  db_dev:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nidham_dev
+      POSTGRES_USER: nidham
+      POSTGRES_PASSWORD: devpassword
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nidham -d nidham_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Backend Django DEV (runserver + hot-reload) ────────────────────────────
+  backend_dev:
+    build: ./backend
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8100
+    env_file:
+      - .env.dev
+    depends_on:
+      db_dev:
+        condition: service_healthy
+    ports:
+      - "8100:8100"
+    volumes:
+      - ./backend:/app
+
+volumes:
+  postgres_dev_data:
