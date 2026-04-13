@@ -8,10 +8,18 @@ Modèles core — Étape 2 : modèles complets.
 """
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django_tenants.models import DomainMixin, TenantMixin
 
 
-class Mosque(models.Model):
-    """Entité racine multi-tenant — une ligne par mosquée."""
+class Mosque(TenantMixin):
+    """Entité racine multi-tenant — une ligne par mosquée (hérite TenantMixin).
+    
+    TenantMixin ajoute automatiquement : schema_name (SlugField unique, requis)
+    Le champ slug est conservé pour la compatibilité avec les URLs existantes.
+    auto_create_schema = True : le schéma PostgreSQL est créé automatiquement au save().
+    """
+
+    auto_create_schema = True
 
     name = models.CharField(max_length=200, verbose_name="Nom")
     slug = models.SlugField(unique=True, verbose_name="Identifiant URL")
@@ -25,10 +33,17 @@ class Mosque(models.Model):
     class Meta:
         verbose_name = "Mosquée"
         verbose_name_plural = "Mosquées"
-        db_table = "core_mosque"
 
     def __str__(self) -> str:
         return self.name
+
+
+class Domain(DomainMixin):
+    """Domaine associé à un tenant (sous-domaine nidham.fr ou nidham.local).
+    
+    DomainMixin ajoute : domain (CharField), tenant (FK→Mosque), is_primary (bool).
+    """
+    pass
 
 
 class MosqueSettings(models.Model):

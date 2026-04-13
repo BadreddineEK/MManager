@@ -42,8 +42,10 @@ ALLOWED_HOSTS: list[str] = env("ALLOWED_HOSTS")
 _csrf_raw = os.environ.get("CSRF_TRUSTED_ORIGINS", "http://localhost,http://127.0.0.1")
 CSRF_TRUSTED_ORIGINS: list[str] = [s.strip() for s in _csrf_raw.split(",") if s.strip()]
 
-# ── Applications installées ───────────────────────────────────────────────────
-INSTALLED_APPS = [
+# ── Applications installées (multi-tenant) ───────────────────────────────────
+# SHARED_APPS : schéma public (partagé entre tous les tenants)
+SHARED_APPS = [
+    "django_tenants",                             # EN PREMIER obligatoire
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -55,16 +57,29 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
-    # Applications locales (autres apps ajoutées au fil des étapes)
+    # Core : Mosque (tenant model), Domain, User, Settings, AuditLog...
     "core.apps.CoreConfig",
+]
+
+# TENANT_APPS : schéma isolé par mosquée
+TENANT_APPS = [
     "school.apps.SchoolConfig",
     "membership.apps.MembershipConfig",
     "treasury.apps.TreasuryConfig",
     "kpi.apps.KpiConfig",
 ]
 
+INSTALLED_APPS = list(SHARED_APPS) + TENANT_APPS
+
+# ── Multi-tenant ───────────────────────────────────────────────────────────────
+TENANT_MODEL = "core.Mosque"
+TENANT_DOMAIN_MODEL = "core.Domain"
+DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
+PUBLIC_SCHEMA_URLCONF = "config.urls_public"
+
 # ── Middleware ─────────────────────────────────────────────────────────────────
 MIDDLEWARE = [
+    "django_tenants.middleware.main.TenantMainMiddleware",  # EN PREMIER
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -100,7 +115,14 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ── Base de données ────────────────────────────────────────────────────────────
 # Lue depuis DATABASE_URL : postgres://user:pass@host:port/dbname
 DATABASES = {
-    "default": env.db("DATABASE_URL")
+    "default": {
+        "ENGINE": "django_tenants.postgresql_backend",
+        "NAME": env("POSTGRES_DB"),
+        "USER": env("POSTGRES_USER"),
+        "PASSWORD": env("POSTGRES_PASSWORD"),
+        "HOST": env("POSTGRES_HOST", default="db"),
+        "PORT": env("POSTGRES_PORT", default="5432"),
+    }
 }
 
 # ── Authentification ───────────────────────────────────────────────────────────
