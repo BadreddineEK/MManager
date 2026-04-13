@@ -30,23 +30,39 @@ from django_tenants.test.cases import TenantTestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from django_tenants.test.client import TenantClient
 
 from .models import AuditLog, Mosque, User
 from .permissions import HasMosquePermission
 
 
 class AuthTestCase(TenantTestCase):
+    @classmethod
+    def get_test_schema_name(cls): return "authtest1"
+    @classmethod
+    def setup_tenant(cls, tenant):
+        tenant.name = "Auth Test 1"
+        tenant.slug = "authtest1"
+    @classmethod
+    def tearDownClass(cls):
+        from django.db import connection
+        schema = cls.tenant.schema_name
+        mosque_id = cls.tenant.pk
+        connection.set_schema_to_public()
+        # Drop du schema tenant (tables school_year, etc.)
+        with connection.cursor() as c:
+            c.execute(f"DROP SCHEMA IF EXISTS {schema} CASCADE")
+        # Supprimer domaine et FK dependants (ordre important)
+        with connection.cursor() as c:
+            c.execute("DELETE FROM core_domain WHERE tenant_id = %s", [mosque_id])
+            c.execute("DELETE FROM core_mosquesettings WHERE mosque_id = %s", [mosque_id])
+            c.execute("DELETE FROM core_mosque WHERE id = %s", [mosque_id])
+        cls.remove_allowed_test_domain()
     """Tests du flux d'authentification JWT."""
 
     def setUp(self) -> None:
-        self.client = APIClient()
-
-        self.mosque = Mosque.objects.create(
-            schema_name="test_mosque",
-            name="Mosquee de Test",
-            slug="test-mosque",
-            timezone="Europe/Paris",
-        )
+        self.mosque = self.tenant  # TenantTestCase
+        self.client = TenantClient(self.tenant)  # TenantTestCase fournit self.tenant
 
         self.user = User.objects.create_user(
             username="admin_test",
@@ -120,7 +136,7 @@ class AuthTestCase(TenantTestCase):
         access_token = tokens["access"]
         refresh_token = tokens["refresh"]
 
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        self.client.defaults.__setitem__("HTTP_AUTHORIZATION",f"Bearer {access_token}")
         response = self.client.post(
             self.logout_url,
             {"refresh": refresh_token},
@@ -137,7 +153,7 @@ class AuthTestCase(TenantTestCase):
         )
         access_token = login_response.json()["access"]
 
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        self.client.defaults.__setitem__("HTTP_AUTHORIZATION",f"Bearer {access_token}")
         response = self.client.post(self.logout_url, {}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -209,12 +225,32 @@ class AuthTestCase(TenantTestCase):
 
 
 class AuditLogTestCase(TenantTestCase):
+    @classmethod
+    def get_test_schema_name(cls): return "auditlog"
+    @classmethod
+    def setup_tenant(cls, tenant):
+        tenant.name = "Audit Log Test"
+        tenant.slug = "auditlog"
+    @classmethod
+    def tearDownClass(cls):
+        from django.db import connection
+        schema = cls.tenant.schema_name
+        mosque_id = cls.tenant.pk
+        connection.set_schema_to_public()
+        # Drop du schema tenant (tables school_year, etc.)
+        with connection.cursor() as c:
+            c.execute(f"DROP SCHEMA IF EXISTS {schema} CASCADE")
+        # Supprimer domaine et FK dependants (ordre important)
+        with connection.cursor() as c:
+            c.execute("DELETE FROM core_domain WHERE tenant_id = %s", [mosque_id])
+            c.execute("DELETE FROM core_mosquesettings WHERE mosque_id = %s", [mosque_id])
+            c.execute("DELETE FROM core_mosque WHERE id = %s", [mosque_id])
+        cls.remove_allowed_test_domain()
     """Tests du journal d'audit."""
 
     def setUp(self):
-        self.client = APIClient()
-        self.mosque = Mosque.objects.create(
-            schema_name="audit",name="Mosquée Audit", slug="audit", timezone="Europe/Paris")
+        self.client = TenantClient(self.tenant)
+        self.mosque = self.tenant  # TenantTestCase fournit self.tenant
         self.admin = User.objects.create_user(
             username="audit_admin", email="audit@test.com",
             password="AuditPass123!", mosque=self.mosque, role="ADMIN",
@@ -228,7 +264,7 @@ class AuditLogTestCase(TenantTestCase):
 
     def _login(self, username, password):
         res = self.client.post(self.login_url, {"username": username, "password": password}, format="json")
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+        self.client.defaults.__setitem__("HTTP_AUTHORIZATION",f"Bearer {res.data['access']}")
 
     def test_admin_can_access_audit_log(self):
         self._login("audit_admin", "AuditPass123!")
@@ -243,7 +279,7 @@ class AuditLogTestCase(TenantTestCase):
         self.assertEqual(res.status_code, 403)
 
     def test_unauthenticated_cannot_access_audit_log(self):
-        self.client.credentials()
+        self.client.defaults.pop("HTTP_AUTHORIZATION", None)
         res = self.client.get(self.audit_url)
         self.assertEqual(res.status_code, 401)
 
@@ -284,12 +320,32 @@ class AuditLogTestCase(TenantTestCase):
 
 
 class UserManagementTestCase(TenantTestCase):
+    @classmethod
+    def get_test_schema_name(cls): return "usermgmt"
+    @classmethod
+    def setup_tenant(cls, tenant):
+        tenant.name = "User Mgmt Test"
+        tenant.slug = "usermgmt"
+    @classmethod
+    def tearDownClass(cls):
+        from django.db import connection
+        schema = cls.tenant.schema_name
+        mosque_id = cls.tenant.pk
+        connection.set_schema_to_public()
+        # Drop du schema tenant (tables school_year, etc.)
+        with connection.cursor() as c:
+            c.execute(f"DROP SCHEMA IF EXISTS {schema} CASCADE")
+        # Supprimer domaine et FK dependants (ordre important)
+        with connection.cursor() as c:
+            c.execute("DELETE FROM core_domain WHERE tenant_id = %s", [mosque_id])
+            c.execute("DELETE FROM core_mosquesettings WHERE mosque_id = %s", [mosque_id])
+            c.execute("DELETE FROM core_mosque WHERE id = %s", [mosque_id])
+        cls.remove_allowed_test_domain()
     """Tests de la gestion des utilisateurs."""
 
     def setUp(self):
-        self.client = APIClient()
-        self.mosque = Mosque.objects.create(
-            schema_name="users",name="Mosquée Users", slug="users", timezone="Europe/Paris")
+        self.client = TenantClient(self.tenant)
+        self.mosque = self.tenant  # TenantTestCase fournit self.tenant
         self.admin = User.objects.create_user(
             username="admin_users", email="admin@users.com",
             password="AdminPass123!", mosque=self.mosque, role="ADMIN",
@@ -304,7 +360,7 @@ class UserManagementTestCase(TenantTestCase):
 
     def _login(self, username, password):
         res = self.client.post(self.login_url, {"username": username, "password": password}, format="json")
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+        self.client.defaults.__setitem__("HTTP_AUTHORIZATION",f"Bearer {res.data['access']}")
 
     def test_admin_can_list_users(self):
         self._login("admin_users", "AdminPass123!")
@@ -339,23 +395,38 @@ class UserManagementTestCase(TenantTestCase):
         self.assertEqual(res.data["username"], "ecole_users")
 
     def test_me_endpoint_unauthenticated(self):
-        self.client.credentials()
+        self.client.defaults.pop("HTTP_AUTHORIZATION", None)
         res = self.client.get(self.me_url)
         self.assertEqual(res.status_code, 401)
 
 
 class AuthTestCase(TenantTestCase):
+    @classmethod
+    def get_test_schema_name(cls): return "authtest2"
+    @classmethod
+    def setup_tenant(cls, tenant):
+        tenant.name = "Auth Test 2"
+        tenant.slug = "authtest2"
+    @classmethod
+    def tearDownClass(cls):
+        from django.db import connection
+        schema = cls.tenant.schema_name
+        mosque_id = cls.tenant.pk
+        connection.set_schema_to_public()
+        # Drop du schema tenant (tables school_year, etc.)
+        with connection.cursor() as c:
+            c.execute(f"DROP SCHEMA IF EXISTS {schema} CASCADE")
+        # Supprimer domaine et FK dependants (ordre important)
+        with connection.cursor() as c:
+            c.execute("DELETE FROM core_domain WHERE tenant_id = %s", [mosque_id])
+            c.execute("DELETE FROM core_mosquesettings WHERE mosque_id = %s", [mosque_id])
+            c.execute("DELETE FROM core_mosque WHERE id = %s", [mosque_id])
+        cls.remove_allowed_test_domain()
     """Tests du flux d'authentification JWT."""
 
     def setUp(self) -> None:
-        self.client = APIClient()
-
-        self.mosque = Mosque.objects.create(
-            schema_name="test_mosque",
-            name="Mosquee de Test",
-            slug="test-mosque",
-            timezone="Europe/Paris",
-        )
+        self.mosque = self.tenant  # TenantTestCase
+        self.client = TenantClient(self.tenant)  # TenantTestCase fournit self.tenant
 
         self.user = User.objects.create_user(
             username="admin_test",
@@ -429,7 +500,7 @@ class AuthTestCase(TenantTestCase):
         access_token = tokens["access"]
         refresh_token = tokens["refresh"]
 
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        self.client.defaults.__setitem__("HTTP_AUTHORIZATION",f"Bearer {access_token}")
         response = self.client.post(
             self.logout_url,
             {"refresh": refresh_token},
@@ -446,7 +517,7 @@ class AuthTestCase(TenantTestCase):
         )
         access_token = login_response.json()["access"]
 
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        self.client.defaults.__setitem__("HTTP_AUTHORIZATION",f"Bearer {access_token}")
         response = self.client.post(self.logout_url, {}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
