@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mosquée Manager</title>
+  <title>Nidham</title>
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/responsive.css" />
@@ -65,8 +65,13 @@
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div class="brand-icon">🕌</div>
-      <div class="brand-name">Mosquée Manager</div>
-      <div class="brand-sub">Administration</div>
+      <div class="brand-name" id="sidebar-mosque-name">Ma Mosquée</div>
+      <div class="brand-sub">Administration · <span id="plan-badge" class="plan-badge">Free</span></div>
+    </div>
+
+    <div id="plan-banner" class="plan-banner hidden">
+      <span id="plan-trial-info"></span>
+      <button class="btn-upgrade" onclick="showSection('settings')">Upgrader →</button>
     </div>
 
     <!-- Dashboard -->
@@ -1524,6 +1529,7 @@
 <script src="js/notifications.js"></script>
 <script src="js/import.js"></script>
 <script src="js/bulk.js"></script>
+<script src="js/plan.js"></script>
 <script src="js/auth.js"></script><!-- DOIT être chargé EN DERNIER -->
 
 <!-- ══ MODAL : Import bancaire CSV ══════════════════════════════════════════ -->
