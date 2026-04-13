@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.permissions import HasMosquePermission
+from core.plan_enforcement import PlanLimitMixin, plan_module_permission
 from core.utils import get_mosque, log_action
 
 from .models import Child, Family, SchoolYear
@@ -44,7 +45,9 @@ class SchoolYearViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
-class FamilyViewSet(viewsets.ModelViewSet):
+class FamilyViewSet(PlanLimitMixin, viewsets.ModelViewSet):
+    plan_limit_resource = "families"
+    plan_limit_model = Family
     """CRUD familles."""
 
     serializer_class = FamilySerializer
