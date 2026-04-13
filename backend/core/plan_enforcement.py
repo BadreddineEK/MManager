@@ -123,12 +123,34 @@ class CurrentPlanView(APIView):
             return Response({"error": "Aucune mosquee."}, status=400)
         sub = _get_subscription(mosque)
         if sub is None:
-            return Response({"plan": None, "status": "no_subscription"})
+            return Response({
+                "plan_name": "free", "status": "no_subscription",
+                "modules": [], "days_remaining": None, "mosque_name": mosque.name,
+            })
         plan = sub.plan
+        # Calcul des jours restants (essai ou période)
+        from django.utils import timezone
+        days_remaining = None
+        if sub.status == "trial" and sub.trial_end:
+            delta = sub.trial_end - timezone.now()
+            days_remaining = max(0, delta.days)
+        elif sub.current_period_end:
+            from datetime import datetime, timezone as tz
+            end_dt = datetime.combine(sub.current_period_end, datetime.min.time()).replace(tzinfo=tz.utc)
+            delta = end_dt - timezone.now()
+            days_remaining = max(0, delta.days)
         return Response({
+            # Champs plats pour le frontend
+            "plan_name":      plan.name,
+            "plan_display":   getattr(plan, "get_name_display", lambda: plan.name)(),
+            "status":         sub.status,
+            "is_active":      sub.is_active,
+            "days_remaining": days_remaining,
+            "modules":        plan.modules or [],
+            "mosque_name":    mosque.name,
+            # Détails plan
             "plan": {
                 "name":          plan.name,
-                "display_name":  plan.get_name_display(),
                 "price_monthly": str(plan.price_monthly),
                 "price_yearly":  str(plan.price_yearly),
                 "max_families":  plan.max_families,
@@ -137,10 +159,10 @@ class CurrentPlanView(APIView):
                 "modules":       plan.modules,
             },
             "subscription": {
-                "status":     sub.status,
+                "status":        sub.status,
                 "billing_cycle": sub.billing_cycle,
-                "trial_end":  sub.trial_end.isoformat() if sub.trial_end else None,
-                "period_end": sub.current_period_end.isoformat() if sub.current_period_end else None,
-                "is_active":  sub.is_active,
+                "trial_end":     sub.trial_end.isoformat() if sub.trial_end else None,
+                "period_end":    sub.current_period_end.isoformat() if sub.current_period_end else None,
+                "is_active":     sub.is_active,
             },
         })

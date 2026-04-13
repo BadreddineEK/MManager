@@ -22,10 +22,10 @@ async function login() {
     localStorage.setItem('access',  accessToken);
     localStorage.setItem('refresh', refreshToken);
     _applyJwtToUI(accessToken);
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('app-screen').classList.remove('hidden');
+    _showApp();
     loadDashboard();
-    loadCurrentUser(); // RBAC
+    loadCurrentUser();  // RBAC
+    loadCurrentPlan();  // Plan enforcement
   } catch (e) {
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
@@ -35,16 +35,25 @@ async function login() {
 async function logout() {
   await apiFetch('/auth/logout/', 'POST', { refresh: refreshToken }).catch(() => {});
   localStorage.clear();
-  location.reload();
+  const hn = location.hostname;
+  if (hn.endsWith('.nidham.local'))     location.href = 'http://nidham.local:8080/';
+  else if (hn.endsWith('.nidham.fr'))   location.href = 'https://nidham.fr/';
+  else                                  location.reload();
+}
+
+// ── Afficher app, masquer login ───────────────────────────────────────────────
+function _showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
 }
 
 // ── Helpers internes ──────────────────────────────────────────────────────────
 function _applyJwtToUI(token) {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const payload  = JSON.parse(atob(token.split('.')[1]));
     const initials = (payload.email || 'U')[0].toUpperCase();
-    document.getElementById('user-avatar').textContent        = initials;
-    document.getElementById('user-name-display').textContent  = payload.email || '—';
+    document.getElementById('user-avatar').textContent       = initials;
+    document.getElementById('user-name-display').textContent = payload.email || '—';
     const roleLabels = {
       ADMIN: 'Admin', TRESORIER: 'Trésorier',
       ECOLE_MANAGER: 'École Manager', VIEWER: 'Lecture seule',
@@ -52,23 +61,39 @@ function _applyJwtToUI(token) {
     document.getElementById('user-role-display').textContent =
       roleLabels[payload.role] || payload.role || '—';
     if (payload.mosque_slug) {
-      document.getElementById('dashboard-mosque-name').textContent = payload.mosque_slug;
+      const el = document.getElementById('dashboard-mosque-name');
+      if (el) el.textContent = payload.mosque_slug;
     }
   } catch (e) { /* token malformé */ }
 }
 
-// ── Auto-login si token présent ───────────────────────────────────────────────
+// ── Auto-login : hash URL ou localStorage ────────────────────────────────────
 (function restoreSession() {
+  // 1. Lire tokens depuis #access=...&refresh=... (injecté par portal.html)
+  if (location.hash && location.hash.length > 1) {
+    const hp = new URLSearchParams(location.hash.slice(1));
+    const ha = hp.get('access');
+    const hr = hp.get('refresh');
+    if (ha) {
+      accessToken  = ha;
+      refreshToken = hr || '';
+      localStorage.setItem('access',  accessToken);
+      localStorage.setItem('refresh', refreshToken);
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+  }
+
+  // 2. Valider le token
   if (!accessToken) return;
   try {
-    const payload  = JSON.parse(atob(accessToken.split('.')[1]));
+    const payload   = JSON.parse(atob(accessToken.split('.')[1]));
     const isExpired = payload.exp * 1000 < Date.now();
     if (!isExpired) {
       _applyJwtToUI(accessToken);
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('app-screen').classList.remove('hidden');
+      _showApp();
       loadDashboard();
-      loadCurrentUser(); // RBAC
+      loadCurrentUser();  // RBAC
+      loadCurrentPlan();  // Plan enforcement
     } else {
       localStorage.clear();
     }
