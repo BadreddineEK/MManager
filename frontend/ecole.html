@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nidham — École coranique</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    /* ── ÉCOLE SPÉCIFIQUE ─────────────────────────────────── */
+    .ecole-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:24px; }
+    .ecole-tab {
+      padding:8px 18px; border-radius:8px; border:1.5px solid var(--border);
+      background:var(--surface); color:var(--muted); font-size:.84rem;
+      font-weight:600; cursor:pointer; transition:.15s;
+    }
+    .ecole-tab:hover  { border-color:var(--accent); color:var(--accent); }
+    .ecole-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .ecole-pane { display:none; }
+    .ecole-pane.active { display:block; }
+
+    /* ── CLASSE CARD ──────────────────────────────────────── */
+    .class-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; margin-bottom:24px; }
+    .class-card {
+      background:var(--surface); border-radius:var(--radius); padding:20px;
+      border:1.5px solid var(--border); cursor:pointer; transition:.18s;
+    }
+    .class-card:hover { border-color:var(--accent); box-shadow:var(--shadow-md); transform:translateY(-2px); }
+    .class-card.selected { border-color:var(--accent); background:var(--accent-soft); }
+    .class-card-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+    .class-badge {
+      width:44px; height:44px; border-radius:10px; display:flex;
+      align-items:center; justify-content:center; font-size:1.25rem;
+      background:var(--accent-soft); flex-shrink:0;
+    }
+    .class-card-name { font-weight:700; font-size:1rem; color:var(--text); }
+    .class-card-meta { font-size:.78rem; color:var(--muted); margin-top:2px; }
+    .class-card-stats { display:flex; gap:12px; flex-wrap:wrap; }
+    .class-stat { display:flex; flex-direction:column; align-items:center; background:var(--bg); border-radius:8px; padding:8px 14px; }
+    .class-stat-val { font-size:1.2rem; font-weight:700; color:var(--accent); }
+    .class-stat-lbl { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+
+    /* ── APPEL ────────────────────────────────────────────── */
+    .appel-header { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
+    .appel-student-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px; background:var(--surface); border-radius:var(--radius);
+      border:1.5px solid var(--border); margin-bottom:8px; transition:.15s;
+    }
+    .appel-student-row:hover { border-color:var(--accent-soft); }
+    .appel-student-name { font-weight:600; font-size:.9rem; }
+    .appel-student-meta { font-size:.76rem; color:var(--muted); margin-top:2px; }
+    .appel-btns { display:flex; gap:8px; }
+    .appel-btn {
+      padding:6px 14px; border-radius:8px; border:1.5px solid var(--border);
+      background:var(--surface); font-size:.8rem; font-weight:600; cursor:pointer; transition:.15s;
+    }
+    .appel-btn.present  { border-color:var(--green); color:var(--green); }
+    .appel-btn.absent   { border-color:var(--red); color:var(--red); }
+    .appel-btn.late     { border-color:#d97706; color:#d97706; }
+    .appel-btn.active.present  { background:var(--green); color:#fff; }
+    .appel-btn.active.absent   { background:var(--red); color:#fff; }
+    .appel-btn.active.late     { background:#f59e0b; color:#fff; }
+
+    /* ── CORAN ────────────────────────────────────────────── */
+    .coran-header { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+    .coran-progress-bar { height:8px; border-radius:4px; background:var(--border); overflow:hidden; margin-bottom:16px; }
+    .coran-progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),#a78bfa); border-radius:4px; transition:.4s; }
+    .coran-stats { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+    .coran-stat { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 18px; text-align:center; flex:1; min-width:100px; }
+    .coran-stat-val { font-size:1.4rem; font-weight:700; }
+    .coran-stat-lbl { font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+    .coran-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; }
+    .surah-chip {
+      display:flex; align-items:center; gap:8px; padding:8px 12px;
+      background:var(--surface); border:1.5px solid var(--border);
+      border-radius:var(--radius); cursor:pointer; transition:.15s; font-size:.82rem;
+    }
+    .surah-chip:hover { border-color:var(--accent); }
+    .surah-chip.memorized  { border-color:var(--green); background:var(--green-soft); }
+    .surah-chip.in_progress { border-color:#f59e0b; background:#fef9c3; }
+    .surah-chip.not_started { opacity:.7; }
+    .surah-chip .surah-num { font-size:.7rem; color:var(--muted); width:24px; flex-shrink:0; }
+    .surah-chip .surah-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .surah-chip.memorized  .surah-dot { background:var(--green); }
+    .surah-chip.in_progress .surah-dot { background:#f59e0b; }
+    .surah-chip.not_started .surah-dot { background:var(--border); }
+
+    /* ── ABSENCES ─────────────────────────────────────────── */
+    .absence-bar { height:10px; border-radius:5px; background:var(--border); overflow:hidden; }
+    .absence-fill { height:100%; border-radius:5px; background:var(--green); }
+    .absence-fill.warning { background:#f59e0b; }
+    .absence-fill.danger  { background:var(--red); }
+
+    /* ── RESPONSIVE ───────────────────────────────────────── */
+    @media(max-width:640px){
+      .class-cards { grid-template-columns:1fr; }
+      .coran-grid  { grid-template-columns:repeat(2,1fr); }
+      .appel-btns  { gap:5px; }
+      .appel-btn   { padding:5px 10px; font-size:.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── LOGIN ─────────────────────────────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="icon">🕌</span>
+      <h1>Nidham — École</h1>
+      <p>Espace École coranique</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Identifiant</label>
+      <input id="login-user" class="form-control" type="text" placeholder="ex: imam" autocomplete="username">
+    </div>
+    <div class="form-group" style="margin-top:14px">
+      <label class="form-label">Mot de passe</label>
+      <input id="login-pass" class="form-control" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div id="login-error" class="alert alert-danger hidden" style="margin-top:12px"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:20px" onclick="doLogin()">Se connecter</button>
+  </div>
+</div>
+
+<!-- ── APP ───────────────────────────────────────────────────────────────────── -->
+<div id="app" class="app hidden">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🕌</div>
+      <div class="brand-name">Nidham</div>
+      <div class="brand-sub">École coranique</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">École</div>
+      <button class="nav-item active" id="nav-classes" onclick="showTab('classes')">
+        <span class="nav-icon">🏫</span> Classes
+      </button>
+      <button class="nav-item" id="nav-appel" onclick="showTab('appel')">
+        <span class="nav-icon">📋</span> Faire l'appel
+      </button>
+      <button class="nav-item" id="nav-coran" onclick="showTab('coran')">
+        <span class="nav-icon">📖</span> Suivi Coran
+      </button>
+      <button class="nav-item" id="nav-absences" onclick="showTab('absences')">
+        <span class="nav-icon">📊</span> Absences
+      </button>
+      <button class="nav-item" id="nav-sessions-hist" onclick="showTab('sessions-hist')">
+        <span class="nav-icon">🗓️</span> Historique
+      </button>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar">—</div>
+        <div class="user-details">
+          <div class="u-name" id="user-name">—</div>
+          <div class="u-role" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">🚪 Déconnexion</button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+    <div id="top-progress" class="top-progress hidden"></div>
+
+    <!-- ── CLASSES ──────────────────────────────────────────────────────── -->
+    <div id="pane-classes" class="ecole-pane active content-area">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">🏫 Classes</h1>
+          <div class="breadcrumb">École coranique · Gestion des classes</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" id="btn-add-class" onclick="openClassModal()">+ Nouvelle classe</button>
+        </div>
+      </div>
+      <div class="content-body">
+        <div id="class-cards-container" class="class-cards">
+          <!-- Skeleton -->
+          <div class="class-card"><div class="skel skel-xl" style="height:120px"></div></div>
+          <div class="class-card"><div class="skel skel-xl" style="height:120px"></div></div>
+          <div class="class-card"><div class="skel skel-xl" style="height:120px"></div></div>
+        </div>
+
+        <!-- Élèves de la classe sélectionnée -->
+        <div id="class-students-panel" class="hidden">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <button class="btn btn-sm" onclick="document.getElementById('class-students-panel').classList.add('hidden')">← Retour</button>
+            <h2 class="section-title" id="class-students-title" style="margin:0"></h2>
+            <button class="btn btn-primary btn-sm" onclick="openEnrollModal()">+ Inscrire élève</button>
+          </div>
+          <div class="card table-wrapper">
+            <table>
+              <thead><tr>
+                <th>Élève</th><th>Famille</th><th>Âge</th>
+                <th>Sourates mémorisées</th><th>Absences</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="class-students-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── APPEL ────────────────────────────────────────────────────────── -->
+    <div id="pane-appel" class="ecole-pane content-area">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">📋 Faire l'appel</h1>
+          <div class="breadcrumb">École coranique · Gestion des présences</div>
+        </div>
+      </div>
+      <div class="content-body">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-body appel-header">
+            <div class="form-group" style="flex:1;min-width:160px;margin:0">
+              <label class="form-label">Classe</label>
+              <select id="appel-class-select" class="form-control" onchange="onAppelClassChange()">
+                <option value="">— Choisir —</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;min-width:140px;margin:0">
+              <label class="form-label">Date</label>
+              <input id="appel-date" type="date" class="form-control">
+            </div>
+            <div class="form-group" style="flex:1;min-width:140px;margin:0">
+              <label class="form-label">Type de séance</label>
+              <select id="appel-type" class="form-control">
+                <option value="arabic">Arabe</option>
+                <option value="quran">Coran</option>
+                <option value="both">Arabe + Coran</option>
+                <option value="other">Autre</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" style="align-self:flex-end" onclick="loadOrCreateSession()">📋 Charger / créer</button>
+          </div>
+        </div>
+
+        <div id="appel-session-info" class="hidden" style="margin-bottom:16px">
+          <div class="alert" id="appel-session-alert" style="margin-bottom:12px"></div>
+          <div id="appel-students-list"></div>
+          <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="submitAppel()">✅ Valider l'appel</button>
+            <button class="btn" onclick="markAll('present')">✅ Tous présents</button>
+            <button class="btn" onclick="markAll('absent')">❌ Tous absents</button>
+          </div>
+          <div id="appel-summary" class="hidden" style="margin-top:16px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SUIVI CORAN ──────────────────────────────────────────────────── -->
+    <div id="pane-coran" class="ecole-pane content-area">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">📖 Suivi Coran</h1>
+          <div class="breadcrumb">École coranique · Mémorisation des sourates</div>
+        </div>
+      </div>
+      <div class="content-body">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-body coran-header">
+            <div class="form-group" style="flex:1;min-width:160px;margin:0">
+              <label class="form-label">Classe</label>
+              <select id="coran-class-select" class="form-control" onchange="loadCoranStudents()">
+                <option value="">— Choisir —</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;min-width:160px;margin:0">
+              <label class="form-label">Élève</label>
+              <select id="coran-child-select" class="form-control" onchange="loadChildQuran()">
+                <option value="">— Choisir —</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="coran-panel" class="hidden">
+          <div class="coran-stats">
+            <div class="coran-stat">
+              <div class="coran-stat-val" id="coran-memorized" style="color:var(--green)">0</div>
+              <div class="coran-stat-lbl">Mémorisées</div>
+            </div>
+            <div class="coran-stat">
+              <div class="coran-stat-val" id="coran-in-progress" style="color:#f59e0b">0</div>
+              <div class="coran-stat-lbl">En cours</div>
+            </div>
+            <div class="coran-stat">
+              <div class="coran-stat-val" id="coran-not-started" style="color:var(--muted)">0</div>
+              <div class="coran-stat-lbl">Non commencées</div>
+            </div>
+            <div class="coran-stat">
+              <div class="coran-stat-val" id="coran-pct" style="color:var(--accent)">0%</div>
+              <div class="coran-stat-lbl">Progression</div>
+            </div>
+          </div>
+          <div class="coran-progress-bar">
+            <div class="coran-progress-fill" id="coran-progress-fill" style="width:0%"></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+            <span style="font-size:.8rem;color:var(--muted)">Légende :</span>
+            <span style="display:flex;align-items:center;gap:5px;font-size:.8rem"><span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block"></span>Mémorisée</span>
+            <span style="display:flex;align-items:center;gap:5px;font-size:.8rem"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>En cours</span>
+            <span style="display:flex;align-items:center;gap:5px;font-size:.8rem"><span style="width:10px;height:10px;border-radius:50%;background:var(--border);display:inline-block"></span>Non commencée</span>
+          </div>
+          <div class="coran-grid" id="coran-surahs-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ABSENCES ─────────────────────────────────────────────────────── -->
+    <div id="pane-absences" class="ecole-pane content-area">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">📊 Absences</h1>
+          <div class="breadcrumb">École coranique · Taux de présence</div>
+        </div>
+      </div>
+      <div class="content-body">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-body" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="flex:1;min-width:160px;margin:0">
+              <label class="form-label">Classe</label>
+              <select id="abs-class-select" class="form-control" onchange="loadAbsenceStats()">
+                <option value="">— Toutes les classes —</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="abs-list"></div>
+      </div>
+    </div>
+
+    <!-- ── HISTORIQUE ───────────────────────────────────────────────────── -->
+    <div id="pane-sessions-hist" class="ecole-pane content-area">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">🗓️ Historique des séances</h1>
+          <div class="breadcrumb">École coranique · Toutes les séances</div>
+        </div>
+      </div>
+      <div class="content-body">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div class="form-group" style="flex:1;min-width:160px;margin:0">
+              <label class="form-label">Classe</label>
+              <select id="hist-class-select" class="form-control" onchange="loadSessionsHistory()">
+                <option value="">— Toutes —</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Classe</th><th>Type</th><th>Présents</th><th>Absents</th><th>Détail</th></tr></thead>
+            <tbody id="hist-sessions-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── TOAST ──────────────────────────────────────────────────────────────────── -->
+<div id="toast-container" style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;width:320px"></div>
+
+<!-- ── CONFIRM ────────────────────────────────────────────────────────────────── -->
+<div id="confirm-overlay" class="modal-overlay">
+  <div class="modal" style="max-width:380px">
+    <div style="text-align:center;padding:8px 0 16px">
+      <div style="font-size:2rem" id="confirm-icon">🗑️</div>
+      <h3 id="confirm-title" style="margin:8px 0 4px">Confirmation</h3>
+      <p id="confirm-msg" style="color:var(--muted);font-size:.88rem"></p>
+    </div>
+    <div class="modal-footer">
+      <button id="confirm-cancel-btn" class="btn">Annuler</button>
+      <button id="confirm-ok-btn" class="btn btn-danger">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL CLASSE ───────────────────────────────────────────────────────────── -->
+<div id="modal-class" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-class-title">Nouvelle classe</h3>
+      <button class="btn-close" onclick="closeModal('modal-class')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="class-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nom de la classe *</label>
+          <input id="class-name" class="form-control" placeholder="ex: Débutants NP">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Niveau</label>
+          <select id="class-level" class="form-control">
+            <option value="NP">NP — Non placé</option>
+            <option value="1">Niveau 1</option>
+            <option value="2">Niveau 2</option>
+            <option value="3">Niveau 3</option>
+            <option value="4">Niveau 4</option>
+            <option value="5">Niveau 5</option>
+            <option value="6">Niveau 6</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Salle</label>
+          <input id="class-room" class="form-control" placeholder="ex: Salle A">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Professeur</label>
+          <select id="class-teacher" class="form-control">
+            <option value="">— Aucun —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes horaires</label>
+        <input id="class-notes" class="form-control" placeholder="ex: Samedi 9h–11h">
+      </div>
+      <div id="modal-class-error" class="alert alert-danger hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-class')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveClass()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL INSCRIPTION ──────────────────────────────────────────────────────── -->
+<div id="modal-enroll" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Inscrire un élève</h3>
+      <button class="btn-close" onclick="closeModal('modal-enroll')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Élève *</label>
+        <select id="enroll-child" class="form-control"></select>
+      </div>
+      <div id="modal-enroll-error" class="alert alert-danger hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-enroll')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEnrollment()">✅ Inscrire</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL SOURATE ──────────────────────────────────────────────────────────── -->
+<div id="modal-surah" class="modal-overlay">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3 id="modal-surah-title">Sourate</h3>
+      <button class="btn-close" onclick="closeModal('modal-surah')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="surah-child-id">
+      <input type="hidden" id="surah-number">
+      <div class="form-group">
+        <label class="form-label">Statut</label>
+        <select id="surah-status" class="form-control">
+          <option value="not_started">Non commencée</option>
+          <option value="in_progress">En cours</option>
+          <option value="memorized">Mémorisée ✅</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input id="surah-notes" class="form-control" placeholder="ex: Bonne progression sur les premiers versets">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-surah')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveSurah()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL DÉTAIL SÉANCE ────────────────────────────────────────────────────── -->
+<div id="modal-session-detail" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-session-title">Détail séance</h3>
+      <button class="btn-close" onclick="closeModal('modal-session-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-session-body" style="max-height:60vh;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-session-detail')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCRIPTS ────────────────────────────────────────────────────────────────── -->
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/ecole.js"></script>
+</body>
+</html>
