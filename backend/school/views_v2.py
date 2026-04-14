@@ -93,6 +93,16 @@ class ClassViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(school_year=active)
         return qs
 
+    def get_permissions(self):
+        """TEACHER peut lire les classes mais pas les creer/modifier/supprimer."""
+        write_actions = ("create", "update", "partial_update", "destroy")
+        if self.action in write_actions:
+            role = getattr(self.request.user, "role", "")
+            if role == "TEACHER":
+                from rest_framework.exceptions import PermissionDenied
+                self.permission_denied(self.request, message="Les professeurs ne peuvent pas modifier les classes.")
+        return super().get_permissions()
+
     def perform_create(self, serializer):
         mosque = _mosque(self.request)
         obj = serializer.save(mosque=mosque)

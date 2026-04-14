@@ -121,8 +121,55 @@ def subscription_status_changed(sender, instance, created, **kwargs):
             instance.mosque.name,
             instance.plan.name,
         )
-        # TODO étape 16: envoyer email via send_mail ou Celery task
-        # send_expiry_email(instance)
+        # Envoyer email expiration au premier admin de la mosquée
+        try:
+            _send_expiry_email(instance)
+        except Exception as exc:
+            logger.error("EXPIRY EMAIL ERROR: %s", exc)
+
+
+def _send_expiry_email(subscription):
+    """Envoie un email à l'admin de la mosquée quand son abonnement expire."""
+    from core.notification_views import _get_smtp_settings, _send_email
+    from django_tenants.utils import schema_context
+    from core.models import User, MosqueSettings
+
+    mosque = subscription.mosque
+    with schema_context(mosque.schema_name):
+        smtp_cfg = _get_smtp_settings(mosque)
+        if not smtp_cfg or not smtp_cfg.get("host"):
+            logger.warning("EXPIRY EMAIL: SMTP non configuré pour %s", mosque.name)
+            return
+
+        # Trouver l'email admin
+        admin = User.objects.filter(mosque=mosque, role="ADMIN").order_by("id").first()
+        to_email = (admin.email if admin and admin.email else None)
+        if not to_email:
+            logger.warning("EXPIRY EMAIL: Aucun admin avec email pour %s", mosque.name)
+            return
+
+        plan_name = subscription.plan.display_name
+        subject = f"[Nidham] Votre abonnement {plan_name} a expiré"
+        html_body = f"""
+        <div style="font-family:sans-serif;max-width:600px;margin:auto;padding:24px">
+          <h2 style="color:#dc2626">⚠️ Abonnement expiré</h2>
+          <p>Bonjour,</p>
+          <p>Votre abonnement <strong>{plan_name}</strong> pour la mosquée
+             <strong>{mosque.name}</strong> a expiré.</p>
+          <p>Pour continuer à utiliser Nidham, veuillez renouveler votre abonnement
+             en contactant votre administrateur Nidham.</p>
+          <hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb">
+          <p style="font-size:.82rem;color:#6b7280">
+            Cet email est envoyé automatiquement par Nidham SaaS.
+          </p>
+        </div>
+        """
+
+        ok, err = _send_email(smtp_cfg, to_email, subject, html_body)
+        if ok:
+            logger.info("EXPIRY EMAIL: Envoyé à %s pour %s", to_email, mosque.name)
+        else:
+            logger.error("EXPIRY EMAIL: Échec pour %s — %s", mosque.name, err)
 
 
 _connect_subscription_signal()

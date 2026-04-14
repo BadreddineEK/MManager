@@ -37,6 +37,22 @@ class ClassSerializer(serializers.ModelSerializer):
     def get_student_count(self, obj):
         return obj.enrollments.filter(is_active=True).count()
 
+    def validate(self, data):
+        # Verifier unicite (mosque, school_year, level_code) a la creation
+        request = self.context.get("request")
+        mosque = getattr(request, "mosque", None) if request else None
+        school_year = data.get("school_year")
+        level_code = data.get("level_code")
+        if mosque and school_year and level_code:
+            qs = Class.objects.filter(mosque=mosque, school_year=school_year, level_code=level_code)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError({
+                    "level_code": "Une classe avec ce code niveau existe deja pour cette annee scolaire."
+                })
+        return data
+
 
 class ClassEnrollmentSerializer(serializers.ModelSerializer):
     child_name = serializers.CharField(source="child.first_name", read_only=True)

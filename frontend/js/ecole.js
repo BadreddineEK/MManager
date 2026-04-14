@@ -251,7 +251,7 @@ async function openClassStudents(classId, className) {
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="openCoranForChild(${classId}, ${s.child_id})" title="Suivi Coran">📖</button>
         <button class="btn btn-sm btn-icon" onclick="openAbsencesForChild(${s.child_id})" title="Absences">📊</button>
-        <button class="btn btn-danger btn-sm btn-icon" onclick="unenrollChild(${s.enrollment_id})" title="Désinscrire">🗑</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="unenrollChild(${selectedClassId}, ${s.child_id})" title="Désinscrire">🗑</button>
       </div></td>
     </tr>`;
   }).join('');
@@ -278,20 +278,20 @@ async function openEnrollModal() {
 async function saveEnrollment() {
   const childId = document.getElementById('enroll-child').value;
   if (!childId) { showModalError('modal-enroll-error', 'Choisissez un élève.'); return; }
-  const res = await apiFetch('/school/enrollments/', 'POST', { school_class: selectedClassId, child: childId });
+  const res = await apiFetch(`/school/classes/${selectedClassId}/enroll/`, 'POST', { child: childId });
   if (!res || !res.ok) { const err = await res.json().catch(() => ({})); showModalError('modal-enroll-error', err.detail || 'Erreur'); return; }
   closeModal('modal-enroll');
   toast('Élève inscrit ✅');
   openClassStudents(selectedClassId, document.getElementById('class-students-title').textContent.replace('👩‍🎓 Élèves — ',''));
 }
 
-async function unenrollChild(enrollmentId) {
+async function unenrollChild(classId, childId) {
   const ok = await confirmDialog({ title: 'Désinscrire ?', msg: 'L\'élève sera retiré de la classe.', icon: '🗑️', okLabel: 'Désinscrire' });
   if (!ok) return;
-  const res = await apiFetch(`/school/enrollments/${enrollmentId}/`, 'DELETE');
+  const res = await apiFetch(`/school/classes/${classId}/enroll/${childId}/`, 'DELETE');
   if (!res || (res.status !== 204 && res.status !== 200)) { toast('Erreur', 'error'); return; }
   toast('Désinscrit.');
-  openClassStudents(selectedClassId, '');
+  openClassStudents(selectedClassId, document.getElementById('class-students-title').textContent.replace('👩‍🎓 Élèves — ', ''));
 }
 
 /* ═══════════════════════════════════════════════════════════

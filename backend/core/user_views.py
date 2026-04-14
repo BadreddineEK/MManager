@@ -52,6 +52,10 @@ class UserListCreateView(APIView):
             users = User.objects.select_related("mosque").order_by("username")
         else:
             users = User.objects.filter(mosque=mosque).select_related("mosque").order_by("username")
+        # Filtre optionnel par role : ?role=TEACHER, ?role=ADMIN, etc.
+        role = request.query_params.get("role")
+        if role:
+            users = users.filter(role=role.upper())
         serializer = UserListSerializer(users, many=True)
         return Response(serializer.data)
 

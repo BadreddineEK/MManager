@@ -4,48 +4,63 @@ conftest.py — Fixtures pytest partagées (multi-tenant)
 Adapte django-tenants : chaque fixture mosque cree un vrai schema PostgreSQL.
 """
 import pytest
+from django.db import connection
 from django.urls import reverse
 from django_tenants.test.client import TenantClient
 from django_tenants.utils import schema_context
 
-from core.models import Mosque, MosqueSettings, User
+from core.models import Domain, Mosque, MosqueSettings, User
 from school.models import SchoolYear
 from membership.models import MembershipYear
 
 
-@pytest.fixture(scope="function")
-def mosque(db):
-    m = Mosque(schema_name="testmosque", name="Mosquee Test", slug="test", timezone="Europe/Paris")
+def _create_mosque(schema_name, name, slug, settings_defaults):
+    """Cree un tenant Mosque + Domain dans le schema public."""
+    connection.set_schema_to_public()
+    m = Mosque(schema_name=schema_name, name=name, slug=slug, timezone="Europe/Paris")
     m.save()
-    with schema_context("testmosque"):
+    Domain.objects.get_or_create(
+        tenant=m,
+        domain=f"{schema_name}.test.nidham.local",
+        defaults={"is_primary": True},
+    )
+    with schema_context(schema_name):
         MosqueSettings.objects.update_or_create(
             mosque=m,
-            defaults={
-                "active_school_year_label": "2025-2026",
-                "school_fee_default": 500,
-                "school_fee_mode": "annual",
-                "school_levels": ["NP", "N1", "N2", "N3"],
-                "membership_fee_amount": 50,
-                "membership_fee_mode": "per_person",
-            },
+            defaults=settings_defaults,
         )
     return m
+
+
+@pytest.fixture(scope="function")
+def mosque(db):
+    return _create_mosque(
+        schema_name="testmosque",
+        name="Mosquee Test",
+        slug="test",
+        settings_defaults={
+            "active_school_year_label": "2025-2026",
+            "school_fee_default": 500,
+            "school_fee_mode": "annual",
+            "school_levels": ["NP", "N1", "N2", "N3"],
+            "membership_fee_amount": 50,
+            "membership_fee_mode": "per_person",
+        },
+    )
 
 
 @pytest.fixture(scope="function")
 def mosque_b(db):
-    m = Mosque(schema_name="testmosque2", name="Autre Mosquee", slug="autre", timezone="Europe/Paris")
-    m.save()
-    with schema_context("testmosque2"):
-        MosqueSettings.objects.update_or_create(
-            mosque=m,
-            defaults={
-                "active_school_year_label": "2025-2026",
-                "school_fee_default": 500,
-                "membership_fee_amount": 50,
-            },
-        )
-    return m
+    return _create_mosque(
+        schema_name="testmosque2",
+        name="Autre Mosquee",
+        slug="autre",
+        settings_defaults={
+            "active_school_year_label": "2025-2026",
+            "school_fee_default": 500,
+            "membership_fee_amount": 50,
+        },
+    )
 
 
 @pytest.fixture
@@ -90,6 +105,7 @@ def api_client(mosque):
 
 
 def _authenticated_client(mosque, user, password):
+    connection.set_schema_to_public()
     client = TenantClient(mosque)
     response = client.post(
         reverse("core:login"),
