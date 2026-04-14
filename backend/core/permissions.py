@@ -105,3 +105,57 @@ class IsEcoleManagerRole(BasePermission):
                 or getattr(user, "role", "") in ("ADMIN", "ECOLE_MANAGER")
             )
         )
+
+
+class IsTeacherRole(BasePermission):
+    """
+    Professeur : acces lecture/ecriture uniquement sur SA classe.
+    La restriction par classe est faite dans les vues (teacher_views.py).
+    """
+    message = "Action reservee aux professeurs."
+
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and (
+                user.is_superuser
+                or getattr(user, "role", "") in ("ADMIN", "ECOLE_MANAGER", "TEACHER")
+            )
+        )
+
+
+class IsSecretaryRole(BasePermission):
+    """Secretaire : familles + inscriptions, pas de tresorerie."""
+    message = "Action reservee aux secretaires."
+
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and (
+                user.is_superuser
+                or getattr(user, "role", "") in ("ADMIN", "SECRETARY")
+            )
+        )
+
+
+class IsTeacherOrAdmin(BasePermission):
+    """
+    Permission composee : TEACHER (limite a sa classe) OU ADMIN/ECOLE_MANAGER.
+    Utilisee dans les vues teacher pour autoriser les 2 roles.
+    """
+    message = "Acces reserve aux professeurs et administrateurs."
+
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and (
+                user.is_superuser
+                or getattr(user, "role", "") in ("ADMIN", "ECOLE_MANAGER", "TEACHER")
+            )
+        )

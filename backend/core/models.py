@@ -213,6 +213,8 @@ class User(AbstractUser):
         ("ADMIN", "Admin"),
         ("TRESORIER", "Trésorier"),
         ("ECOLE_MANAGER", "École Manager"),
+        ("TEACHER", "Professeur"),
+        ("SECRETARY", "Secrétaire"),
         ("VIEWER", "Lecture seule"),
     ]
 

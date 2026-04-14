@@ -14,6 +14,9 @@ from .views_v2 import (
     QuranProgressView,
 )
 
+# Vues v3 — Espace Professeur
+from .teacher_urls import teacher_urlpatterns
+
 app_name = "school"
 
 router = DefaultRouter()
@@ -44,4 +47,4 @@ urlpatterns = router.urls + [
         ChildAbsencesView.as_view(),
         name="child-absences",
     ),
-]
+] + teacher_urlpatterns
