@@ -167,6 +167,12 @@ class MosqueSettings(models.Model):
         max_length=100, blank=True, default="[Mosquée Manager]",
         verbose_name="Préfixe sujet email",
     )
+    # École — alertes absences
+    absence_alert_threshold = models.PositiveSmallIntegerField(
+        default=3,
+        verbose_name="Seuil alertes absences",
+        help_text="Nombre d'absences consécutives avant envoi d'un email à la famille (défaut : 3)",
+    )
 
     class Meta:
         verbose_name = "Paramètres mosquée"

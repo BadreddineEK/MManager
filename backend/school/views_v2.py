@@ -58,6 +58,56 @@ def _mosque(request):
     return get_mosque(request)
 
 
+def _send_absence_alert(child, threshold, school_class, mosque):
+    """
+    Envoie un email d'alerte a la famille quand un enfant atteint
+    le seuil d'absences consecutives configure dans MosqueSettings.
+    """
+    from core.notification_views import _get_smtp_settings, _send_email
+
+    smtp_cfg = _get_smtp_settings(mosque)
+    if not smtp_cfg or not smtp_cfg.get("host"):
+        logger.info(
+            "ABSENCE ALERT: SMTP non configure pour %s — email non envoye",
+            mosque.name,
+        )
+        return
+
+    family = child.family
+    to_email = family.email if family and family.email else None
+    if not to_email:
+        logger.info(
+            "ABSENCE ALERT: pas d'email pour famille de %s — alerte non envoyee",
+            child.first_name,
+        )
+        return
+
+    subject = "[{}] Alerte absence — {}".format(mosque.name, child.first_name)
+    html_body = """
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #e74c3c;">&#9888;&#65039; Alerte absence</h2>
+      <p>Bonjour,</p>
+      <p>Nous vous informons que <strong>{}</strong> a accumulé
+      <strong>{} absences consécutives</strong> dans la classe
+      <strong>{}</strong>.</p>
+      <p>Merci de prendre contact avec nous si vous souhaitez nous informer d'une
+      situation particulière.</p>
+      <p style="margin-top: 30px;">Cordialement,<br>
+      <strong>{}</strong></p>
+    </div>
+    """.format(child.first_name, threshold, school_class.name, mosque.name)
+
+    ok, err = _send_email(smtp_cfg, to_email, subject, html_body)
+    if ok:
+        logger.info(
+            "ABSENCE ALERT EMAIL: envoye a %s pour %s (%d absences)",
+            to_email, child.first_name, threshold,
+        )
+    else:
+        logger.error(
+            "ABSENCE ALERT EMAIL ERREUR: %s — %s", to_email, err,
+        )
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Classes
 # ─────────────────────────────────────────────────────────────────────────────
@@ -299,8 +349,10 @@ class AttendanceSessionViewSet(viewsets.ModelViewSet):
                     "ABSENCE ALERT: %s a %d absences consecutives (classe %s)",
                     child.first_name, threshold, session.school_class.name,
                 )
-                # TODO etape 18: envoyer email famille ici
-                # send_absence_alert(child, threshold, session.school_class)
+                try:
+                    _send_absence_alert(child, threshold, session.school_class, session.mosque)
+                except Exception as exc:
+                    logger.error("ABSENCE EMAIL ERROR: %s", exc)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 
 from core.models import Mosque
 from membership.models import Member, MembershipYear
-from school.models import Child, Family, SchoolYear
+from school.models import Attendance, AttendanceSession, Child, Class, ClassEnrollment, Family, SchoolYear
 from treasury.models import Campaign, TreasuryTransaction
 
 
@@ -100,6 +100,33 @@ class KPISummaryView(APIView):
             )
 
         families_unpaid = max(total_families - len(families_paid_ids), 0)
+
+        # KPI École v2 — Classes, inscrits, taux de présence
+        classes_count = 0
+        total_enrolled = 0
+        attendance_rate = None
+
+        if active_year:
+            classes_qs = Class.objects.filter(mosque=mosque, school_year=active_year)
+            classes_count = classes_qs.count()
+            total_enrolled = ClassEnrollment.objects.filter(
+                school_class__mosque=mosque,
+                school_class__school_year=active_year,
+                is_active=True,
+            ).count()
+            # Taux de présence : dernières 30 séances de l'année active
+            recent_sessions = AttendanceSession.objects.filter(
+                mosque=mosque,
+                school_class__school_year=active_year,
+            ).order_by("-date")[:30]
+            session_ids = list(recent_sessions.values_list("id", flat=True))
+            if session_ids:
+                total_att = Attendance.objects.filter(session_id__in=session_ids).count()
+                present_att = Attendance.objects.filter(
+                    session_id__in=session_ids,
+                    status__in=["present", "late"],
+                ).count()
+                attendance_rate = round(present_att / total_att * 100, 1) if total_att else None
 
         # ══ KPI MEMBERSHIP ═══════════════════════════════════════════════════
         active_mbr_year = MembershipYear.objects.filter(
@@ -213,6 +240,9 @@ class KPISummaryView(APIView):
                 "amount_paid": amount_paid_school,
                 "families_paid": len(families_paid_ids),
                 "families_unpaid": families_unpaid,
+                "classes_count": classes_count,
+                "total_enrolled": total_enrolled,
+                "attendance_rate": attendance_rate,
             },
             "membership": {
                 "active_year": mbr_year_label,
