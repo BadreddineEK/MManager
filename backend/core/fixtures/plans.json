@@ -1,0 +1,74 @@
+[
+  {
+    "model": "core.plan",
+    "pk": 10,
+    "fields": {
+      "name": "free_cloud",
+      "display_name": "Nidham Free",
+      "description": "Trésorerie basique et portail public. Gratuit à vie.",
+      "price_monthly": "0.00",
+      "price_yearly": "0.00",
+      "max_families": 30,
+      "max_users": 1,
+      "max_sms_month": 0,
+      "modules": ["core", "public_portal"],
+      "is_active": true,
+      "is_public": true,
+      "sort_order": 0
+    }
+  },
+  {
+    "model": "core.plan",
+    "pk": 11,
+    "fields": {
+      "name": "standard",
+      "display_name": "Nidham Standard",
+      "description": "Trésorerie complète, école basique, portail public. Idéal pour les petites mosquées.",
+      "price_monthly": "39.00",
+      "price_yearly": "390.00",
+      "max_families": 100,
+      "max_users": 5,
+      "max_sms_month": 0,
+      "modules": ["core", "treasury_full", "school_basic", "public_portal", "email_groups"],
+      "is_active": true,
+      "is_public": true,
+      "sort_order": 1
+    }
+  },
+  {
+    "model": "core.plan",
+    "pk": 12,
+    "fields": {
+      "name": "pro",
+      "display_name": "Nidham Pro",
+      "description": "Tout Standard + école complète, SMS, portail famille, analytics. Familles et users illimités.",
+      "price_monthly": "79.00",
+      "price_yearly": "790.00",
+      "max_families": -1,
+      "max_users": -1,
+      "max_sms_month": 150,
+      "modules": ["core", "treasury_full", "treasury_fec", "school_basic", "school_full", "public_portal", "email_groups", "sms", "member_portal", "analytics", "mobile_app"],
+      "is_active": true,
+      "is_public": true,
+      "sort_order": 2
+    }
+  },
+  {
+    "model": "core.plan",
+    "pk": 13,
+    "fields": {
+      "name": "federation",
+      "display_name": "Nidham Fédération",
+      "description": "Tout Pro + dashboard fédéral multi-sites. Sur devis.",
+      "price_monthly": "199.00",
+      "price_yearly": "1990.00",
+      "max_families": -1,
+      "max_users": -1,
+      "max_sms_month": 500,
+      "modules": ["core", "treasury_full", "treasury_fec", "school_basic", "school_full", "public_portal", "email_groups", "sms", "member_portal", "analytics", "mobile_app", "federation"],
+      "is_active": true,
+      "is_public": false,
+      "sort_order": 3
+    }
+  }
+]

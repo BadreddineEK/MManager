@@ -7,5 +7,7 @@ echo "Migrations schéma public (shared)..."
 python manage.py migrate_schemas --shared --noinput
 echo "Migrations tous les schémas tenant..."
 python manage.py migrate_schemas --noinput
+echo "Seeding plans..."
+python manage.py seed_plans
 echo "Démarrage : $@"
 exec "$@"

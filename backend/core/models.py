@@ -529,37 +529,44 @@ class Staff(models.Model):
 
 
 class Plan(models.Model):
-    """Plan tarifaire Nidham : free / starter / pro / premium / federation."""
+    """
+    Plan tarifaire Nidham.
+    Prix, limites, modules : tout en base via fixture plans.json.
+    Ne jamais hardcoder ces valeurs dans le code.
+    """
 
-    PLAN_CHOICES = [
-        ("free",       "Cloud Free"),
-        ("starter",    "Starter — 19€/mois"),
-        ("pro",        "Pro — 49€/mois"),
-        ("premium",    "Premium — 89€/mois"),
-        ("federation", "Fédération — sur devis"),
-    ]
-
-    name          = models.CharField(max_length=50, unique=True)
+    name          = models.CharField(
+        max_length=50, unique=True,
+        help_text="Identifiant technique : free_cloud, standard, pro, federation",
+    )
+    display_name  = models.CharField(
+        max_length=100, default="",
+        help_text="Nom affiche : Nidham Pro, Nidham Standard...",
+    )
+    description   = models.TextField(blank=True, default="")
     price_monthly = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     price_yearly  = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    max_families  = models.IntegerField(default=75,  help_text="-1 = illimite")
+    max_families  = models.IntegerField(default=30,  help_text="-1 = illimite")
     max_users     = models.IntegerField(default=1,   help_text="-1 = illimite")
     max_sms_month = models.IntegerField(default=0,   help_text="-1 = illimite")
     modules       = models.JSONField(
         default=list,
-        help_text='Ex: ["core", "school", "communication"]',
+        help_text="Modules inclus. Tout changement via fixture, jamais dans le code.",
     )
-    is_active  = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    is_active   = models.BooleanField(default=True, help_text="Plan actif pour nouvelles mosquees")
+    is_public   = models.BooleanField(default=True, help_text="Visible sur la page pricing")
+    sort_order  = models.PositiveSmallIntegerField(default=0, help_text="Ordre affichage")
+    created_at  = models.DateTimeField(auto_now_add=True)
+    updated_at  = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name        = "Plan tarifaire"
         verbose_name_plural = "Plans tarifaires"
         db_table            = "core_plan"
-        ordering            = ["price_monthly"]
+        ordering            = ["sort_order", "price_monthly"]
 
     def __str__(self):
-        return f"{self.get_name_display()} (max {self.max_families} familles)"
+        return f"{self.display_name or self.name} ({self.price_monthly}e/mois)"
 
     def allows_module(self, module_name: str) -> bool:
         """Retourne True si le module est inclus dans ce plan."""
@@ -571,6 +578,13 @@ class Plan(models.Model):
         if limit is None or limit == -1:
             return True
         return current_count < limit
+
+    def get_limit_display(self, resource: str) -> str:
+        """Retourne la limite lisible : "30 familles" ou "Illimite"."""
+        limit = getattr(self, f"max_{resource}", None)
+        if limit is None or limit == -1:
+            return "Illimite"
+        return str(limit)
 
 
 class Subscription(models.Model):
@@ -602,7 +616,10 @@ class Subscription(models.Model):
     trial_end     = models.DateField(null=True, blank=True, verbose_name="Fin essai")
     current_period_start      = models.DateField(null=True, blank=True)
     current_period_end        = models.DateField(null=True, blank=True)
+    stripe_customer_id        = models.CharField(max_length=200, blank=True, default="")
     stripe_subscription_id    = models.CharField(max_length=200, blank=True, default="")
+    sms_used_this_month       = models.PositiveIntegerField(default=0)
+    sms_reset_date            = models.DateField(null=True, blank=True)
     helloasso_subscription_id = models.CharField(max_length=200, blank=True, default="")
     created_at    = models.DateTimeField(auto_now_add=True)
     updated_at    = models.DateTimeField(auto_now=True)
@@ -617,4 +634,4 @@ class Subscription(models.Model):
 
     @property
     def is_active(self):
-        return self.status in ("trial", "active")
+        return self.status in ("trialing", "trial", "active")
