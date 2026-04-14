@@ -14,6 +14,7 @@ from .bank_import_views import (
     ImportPendingDetailView,
     ImportPendingListView,
 )
+from .fec_views import FECExportView
 
 app_name = "treasury"
 
@@ -32,6 +33,8 @@ urlpatterns = [
     path("import/bank/", BankImportView.as_view(), name="import-bank"),
     path("import/pending/", ImportPendingListView.as_view(), name="import-pending-list"),
     path("import/pending/<int:pk>/", ImportPendingDetailView.as_view(), name="import-pending-detail"),
+    # Export FEC (Fichier d'Écritures Comptables)
+    path("export/fec/", FECExportView.as_view(), name="export-fec"),
     # Stock caisse
     path("cash-counts/", CashCountListView.as_view(), name="cash-count-list"),
     path("cash-counts/<int:pk>/", CashCountDetailView.as_view(), name="cash-count-detail"),
