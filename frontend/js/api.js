@@ -4,7 +4,8 @@
 
 // En dev (fichier ouvert directement) → nginx dev sur port 8080
 // En prod (servi par Nginx) → URL relative /api (même origine)
-const API = (location.protocol === 'file:' || location.hostname === 'localhost')
+// URL relative /api (nginx tenant) — sauf file:// (dev local)
+const API = location.protocol === 'file:'
   ? 'http://localhost:8080/api'
   : '/api';
 

@@ -58,7 +58,11 @@ function _applyPlanToUI(plan) {
 function _applyModuleVisibility(modules) {
   if (!modules || modules.length === 0) return;
 
-  var groupMap = { 'school': 'nav-school', 'membership': 'nav-membership' };
+  var allMap = {
+    'school':'nav-school','membership':'nav-membership','treasury':'nav-treasury',
+    'campaigns':'nav-campaigns','staff':'nav-staff','audit':'nav-audit','import':'nav-import',
+  };
+  var groupMap = allMap; // alias pour compatibilite
   for (var mod in groupMap) {
     var el = document.getElementById(groupMap[mod]);
     if (!el) continue;

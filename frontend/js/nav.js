@@ -14,6 +14,20 @@ const MORE_SECTIONS = new Set([
 ]);
 
 function showSection(name) {
+  if (typeof currentUser !== 'undefined' && currentUser && currentUser.role !== 'ADMIN') {
+    const perms = currentUser.effective_permissions || {};
+    const g = {
+      families: perms.school?.read, children: perms.school?.read,
+      arrears: perms.school?.read, staff: perms.school?.read,
+      members: perms.membership?.read, 'unpaid-members': perms.membership?.read,
+      treasury: perms.treasury?.read, campaigns: perms.campaigns?.read,
+      users: perms.users?.read, settings: perms.settings?.read,
+    };
+    if (name in g && g[name] === false) {
+      if (typeof toast === 'function') toast('Accès refusé pour cette section.', 'error', 3000);
+      return;
+    }
+  }
   if (window.innerWidth <= 768) closeSidebar();
 
   ALL_SECTIONS.forEach(s => {

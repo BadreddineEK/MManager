@@ -82,7 +82,7 @@ class RegisterMosqueView(APIView):
                 from core.models import Plan, Subscription
                 free_plan = Plan.objects.get(name='free')
                 today = datetime.date.today()
-                trial_end = today + datetime.timedelta(days=30)
+                trial_end = today + datetime.timedelta(days=14)  # 14j comme affiche sur le portail
                 Subscription.objects.create(
                     mosque=mosque,
                     plan=free_plan,
@@ -115,7 +115,8 @@ class RegisterMosqueView(APIView):
             logger.exception('Erreur onboarding slug=%s', slug)
             try:
                 with schema_context('public'):
-                    from core.models import Mosque as M
+                    from core.models import Domain, Mosque as M
+                    Domain.objects.filter(tenant__schema_name=schema_name).delete()
                     M.objects.filter(schema_name=schema_name).delete()
             except Exception:
                 pass

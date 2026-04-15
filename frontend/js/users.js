@@ -127,8 +127,8 @@ async function loadUsers() {
     tr.className = 'fade-in';
     tr.style.animationDelay = `${i * 30}ms`;
     tr.innerHTML = `
-      <td><strong>${u.username}</strong></td>
-      <td>${u.email}</td>
+      <td><strong>${u.username_display || u.username}</strong></td>
+      <td>${u.email || '<span style="color:var(--muted)">—</span>'}</td>
       <td>${u.first_name || ''} ${u.last_name || ''}</td>
       <td><span class="badge ${ROLE_BADGE[u.role] || 'badge-gray'}">${ROLE_LABELS[u.role] || u.role}</span></td>
       <td style="font-size:0.78rem;color:var(--muted);max-width:200px;">${u.role === 'ADMIN' ? '<em>Tout</em>' : permsSummary}</td>
@@ -238,6 +238,24 @@ function onUserRoleChange() {
         membership: { read: true,  write: false, delete: false },
         treasury:   { read: true,  write: false, delete: false },
         campaigns:  { read: true,  write: false, delete: false },
+        users:      { read: false, write: false, delete: false },
+        settings:   { read: false, write: false },
+      });
+    } else if (role === 'TEACHER') {
+      renderPermsTable({
+        school:     { read: true,  write: false, delete: false },
+        membership: { read: false, write: false, delete: false },
+        treasury:   { read: false, write: false, delete: false },
+        campaigns:  { read: false, write: false, delete: false },
+        users:      { read: false, write: false, delete: false },
+        settings:   { read: false, write: false },
+      });
+    } else if (role === 'SECRETARY') {
+      renderPermsTable({
+        school:     { read: false, write: false, delete: false },
+        membership: { read: true,  write: true,  delete: false },
+        treasury:   { read: true,  write: false, delete: false },
+        campaigns:  { read: false, write: false, delete: false },
         users:      { read: false, write: false, delete: false },
         settings:   { read: false, write: false },
       });

@@ -714,7 +714,11 @@ function autoSlug() {
 }
 let _slugTimer = null;
 function onSlugInput() {
-  const slug = document.getElementById('reg-slug').value.trim().toLowerCase();
+  const input = document.getElementById('reg-slug');
+  const p = input.selectionStart;
+  input.value = input.value.toLowerCase().replace(/[^a-z0-9-]/g,'');
+  try { input.setSelectionRange(p,p); } catch(e){}
+  const slug = input.value.trim();
   document.getElementById('reg-domain-preview').textContent = (slug||'votre-id') + '.' + BASE_DOMAIN;
   clearTimeout(_slugTimer);
   const s = document.getElementById('slug-status');
@@ -730,23 +734,27 @@ async function checkSlug(slug) {
     const el = document.getElementById('slug-status');
     if (d.available) { el.className='field-ok'; el.textContent='\u2713 Disponible'; }
     else { el.className='field-error'; el.textContent='\u2717 D\u00e9j\u00e0 pris, essayez un autre'; }
-  } catch(e) {}
+  } catch(e) {
+    const s2=document.getElementById('slug-status');
+    if(s2){s2.className='field-hint';s2.textContent='V\u00e9rification impossible (r\u00e9essayez)';}
+  }
 }
 async function doLogin() {
   const slug = document.getElementById('login-slug').value.trim().toLowerCase();
-  const username = document.getElementById('login-username').value.trim();
+  const displayUsername = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
   const errEl = document.getElementById('login-error');
   const btn = document.getElementById('login-btn');
   errEl.classList.add('hidden');
   if (!slug) { errEl.textContent='Entrez le sous-domaine de votre mosqu\u00e9e'; errEl.classList.remove('hidden'); return; }
-  if (!username) { errEl.textContent='Entrez votre identifiant'; errEl.classList.remove('hidden'); return; }
+  if (!displayUsername) { errEl.textContent='Entrez votre identifiant'; errEl.classList.remove('hidden'); return; }
   if (!password) { errEl.textContent='Entrez votre mot de passe'; errEl.classList.remove('hidden'); return; }
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Connexion...';
+  const internalUsername = slug.replace(/-/g,'_') + '__' + displayUsername;
   try {
     const base = _isDevEnv()
       ? 'http://'+slug+'.nidham.local:8080' : 'https://'+slug+'.nidham.fr';
-    const res = await fetch(base+'/api/auth/login/', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    const res = await fetch(base+'/api/auth/login/', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:internalUsername,password})});
     if (!res.ok) { const d=await res.json().catch(()=>({})); throw new Error(d.detail||'Identifiants incorrects'); }
     const data = await res.json();
     const appUrl = _isDevEnv()
@@ -785,8 +793,8 @@ async function doRegister() {
     document.getElementById('success-screen').classList.remove('hidden');
     document.getElementById('success-mosque-name').textContent=mosqueName;
     document.getElementById('success-domain').textContent=data.domain;
-    // Afficher le login retourné par l'API (préfixé pour unicité globale)
-    const loginUsername = data.login_username || username;
+    // Afficher l'identifiant lisible (sans préfixe interne)
+    const loginUsername = data.admin_username || username;
     document.getElementById('success-username').textContent=loginUsername;
     const appUrl=_isDevEnv()
       ?'http://'+data.domain+':8080/':'https://'+data.domain+'/';

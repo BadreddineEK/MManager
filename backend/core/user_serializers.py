@@ -67,15 +67,17 @@ class UserCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_username(self, value):
-        """Vérifie l'unicité du username au sein de la mosquée."""
+        """Vérifie l'unicité du username (vérifié dans le schéma public)."""
         request = self.context.get("request")
         mosque = getattr(request, "mosque", None)
         if mosque:
             internal = f"{mosque.schema_name}__{value}"
-            if User.objects.filter(username=internal).exists():
-                raise serializers.ValidationError(
-                    "Ce nom d'utilisateur existe déjà pour cette mosquée."
-                )
+            from django_tenants.utils import schema_context
+            with schema_context("public"):
+                if User.objects.filter(username=internal).exists():
+                    raise serializers.ValidationError(
+                        "Ce nom d'utilisateur existe déjà pour cette mosquée."
+                    )
         return value
 
     def create(self, validated_data):

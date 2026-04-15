@@ -38,6 +38,8 @@ async function logout() {
   const hn = location.hostname;
   if (hn.endsWith('.nidham.local'))     location.href = 'http://nidham.local:8080/';
   else if (hn.endsWith('.nidham.fr'))   location.href = 'https://nidham.fr/';
+  else if (/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(hn))
+                                        location.href = 'http://' + hn + ':8080/';
   else                                  location.reload();
 }
 
@@ -51,9 +53,10 @@ function _showApp() {
 function _applyJwtToUI(token) {
   try {
     const payload  = JSON.parse(atob(token.split('.')[1]));
-    const initials = (payload.email || payload.username_display || 'U')[0].toUpperCase();
+    const displayName = payload.username_display || payload.email || 'Utilisateur';
+    const initials = displayName[0].toUpperCase();
     document.getElementById('user-avatar').textContent       = initials;
-    document.getElementById('user-name-display').textContent = payload.email || payload.username_display || '—';
+    document.getElementById('user-name-display').textContent = displayName;
     const roleLabels = {
       ADMIN: 'Admin', TRESORIER: 'Trésorier',
       ECOLE_MANAGER: 'École Manager', TEACHER: 'Professeur',
@@ -97,6 +100,7 @@ function _applyJwtToUI(token) {
       loadCurrentPlan();  // Plan enforcement
     } else {
       localStorage.clear();
+      setTimeout(()=>{ if(typeof toast==='function') toast('Session expirée, veuillez vous reconnecter.','warning',5000); },200);
     }
   } catch (e) {
     localStorage.clear();
