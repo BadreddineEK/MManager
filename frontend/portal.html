@@ -676,10 +676,17 @@ footer{background:var(--gray-900);color:var(--gray-400);padding:2.5rem 1.5rem}
 </footer>
 
 <script>
-const BASE_DOMAIN = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
-  ? 'nidham.local' : 'nidham.fr';
-const API_BASE = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
-  ? 'http://nidham.local:8080/api' : 'https://nidham.fr/api';
+// Détection environnement dev : localhost, *.local, ou IP privée (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+function _isDevEnv() {
+  const h = location.hostname;
+  return h === 'localhost'
+    || h.endsWith('.local')
+    || /^192\.168\./.test(h)
+    || /^10\./.test(h)
+    || /^172\.(1[6-9]|2[0-9]|3[01])\./.test(h);
+}
+const BASE_DOMAIN = _isDevEnv() ? 'nidham.local' : 'nidham.fr';
+const API_BASE    = _isDevEnv() ? 'http://nidham.local:8080/api' : 'https://nidham.fr/api';
 
 function toast(msg, type='info', duration=4000) {
   const el = document.createElement('div');
@@ -737,12 +744,12 @@ async function doLogin() {
   if (!password) { errEl.textContent='Entrez votre mot de passe'; errEl.classList.remove('hidden'); return; }
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Connexion...';
   try {
-    const base = (location.hostname==='localhost'||location.hostname.endsWith('.local'))
+    const base = _isDevEnv()
       ? 'http://'+slug+'.nidham.local:8080' : 'https://'+slug+'.nidham.fr';
     const res = await fetch(base+'/api/auth/login/', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
     if (!res.ok) { const d=await res.json().catch(()=>({})); throw new Error(d.detail||'Identifiants incorrects'); }
     const data = await res.json();
-    const appUrl = (location.hostname==='localhost'||location.hostname.endsWith('.local'))
+    const appUrl = _isDevEnv()
       ? 'http://'+slug+'.nidham.local:8080/#access='+data.access+'&refresh='+data.refresh
       : 'https://'+slug+'.nidham.fr/#access='+data.access+'&refresh='+data.refresh;
     toast('Connexion r\u00e9ussie, redirection...','success',2000);
@@ -781,7 +788,7 @@ async function doRegister() {
     // Afficher le login retourné par l'API (préfixé pour unicité globale)
     const loginUsername = data.login_username || username;
     document.getElementById('success-username').textContent=loginUsername;
-    const appUrl=(location.hostname==='localhost'||location.hostname.endsWith('.local'))
+    const appUrl=_isDevEnv()
       ?'http://'+data.domain+':8080/':'https://'+data.domain+'/';
     document.getElementById('success-link').href=appUrl;
     document.getElementById('success-screen').scrollIntoView({behavior:'smooth'});
