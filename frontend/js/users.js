@@ -4,7 +4,8 @@
 
 const ROLE_LABELS = {
   ADMIN: '🔑 Admin', TRESORIER: '💼 Trésorier',
-  ECOLE_MANAGER: '🎓 École Manager', VIEWER: '👁️ Lecture seule', '': '—',
+  ECOLE_MANAGER: '🎓 École Manager', TEACHER: '📖 Professeur',
+  SECRETARY: '📝 Secrétaire', VIEWER: '👁️ Lecture seule', '': '—',
 };
 const ROLE_BADGE = {
   ADMIN: 'badge-red', TRESORIER: 'badge-blue',

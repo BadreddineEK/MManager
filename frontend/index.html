@@ -78,7 +78,7 @@
     <!-- Dashboard -->
     <div class="nav-group">
       <div class="nav-group-label">Vue d'ensemble</div>
-      <button class="nav-item active" onclick="showSection('school')">
+      <button class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')">
         <span class="nav-icon">📊</span><span>Tableau de bord</span>
       </button>
     </div>
@@ -1385,6 +1385,8 @@
         <option value="ADMIN">🔑 Admin (accès complet)</option>
         <option value="TRESORIER">💼 Trésorier</option>
         <option value="ECOLE_MANAGER">🎓 École Manager</option>
+        <option value="TEACHER">📖 Professeur</option>
+        <option value="SECRETARY">📝 Secrétaire</option>
         <option value="VIEWER">👁️ Lecture seule</option>
       </select>
       <div id="user-modal-perms-section" style="margin-top:16px;">

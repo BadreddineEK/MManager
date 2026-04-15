@@ -4,6 +4,8 @@
    Chargé avant : auth.js
 ═══════════════════════════════════════════════════════════ */
 
+let currentPlan = null;
+
 async function loadCurrentPlan() {
   try {
     const res = await apiFetch('/settings/plan/');

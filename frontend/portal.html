@@ -567,7 +567,7 @@ const BASE_DOMAIN = (location.hostname === 'localhost' || location.hostname.ends
 // API_BASE : l'API publique (onboarding) est sur le domaine racine
 // En dev on force le port 8100
 const API_BASE = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
-  ? `http://nidham.local:8100/api`
+  ? `http://nidham.local:8080/api`
   : 'https://nidham.fr/api';
 
 /* ── Toasts ──────────────────────────────────────────────────────────────── */
@@ -644,7 +644,7 @@ async function doLogin() {
 
   try {
     const mosqueeUrl = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
-      ? `http://${slug}.nidham.local:8100`
+      ? `http://${slug}.nidham.local:8080`
       : `https://${slug}.nidham.fr`;
 
     const res = await fetch(`${mosqueeUrl}/api/auth/login/`, {
@@ -661,7 +661,7 @@ async function doLogin() {
     // Stocker les tokens + rediriger vers l'app de la mosquée
     // On passe les tokens via URL hash (sessionStorage côté app)
     const appUrl = (location.hostname === 'localhost' || location.hostname.endsWith('.local'))
-      ? `http://${slug}.nidham.local:8080/app/#access=${data.access}&refresh=${data.refresh}`
+      ? `http://${slug}.nidham.local:8080/#access=${data.access}&refresh=${data.refresh}`
       : `https://${slug}.nidham.fr/app/#access=${data.access}&refresh=${data.refresh}`;
     toast('Connexion réussie, redirection…', 'success', 2000);
     setTimeout(() => { location.href = appUrl; }, 800);

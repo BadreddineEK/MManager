@@ -56,7 +56,8 @@ function _applyJwtToUI(token) {
     document.getElementById('user-name-display').textContent = payload.email || '—';
     const roleLabels = {
       ADMIN: 'Admin', TRESORIER: 'Trésorier',
-      ECOLE_MANAGER: 'École Manager', VIEWER: 'Lecture seule',
+      ECOLE_MANAGER: 'École Manager', TEACHER: 'Professeur',
+      SECRETARY: 'Secrétaire', VIEWER: 'Lecture seule',
     };
     document.getElementById('user-role-display').textContent =
       roleLabels[payload.role] || payload.role || '—';
