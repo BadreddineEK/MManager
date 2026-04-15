@@ -13,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.permissions import HasMosquePermission
+from core.plan_enforcement import plan_module_permission
 from core.utils import get_mosque, log_action
 
 from .models import Campaign, TreasuryTransaction
@@ -23,7 +24,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
     """CRUD cagnottes / collectes."""
 
     serializer_class = CampaignSerializer
-    permission_classes = [IsAuthenticated, HasMosquePermission]
+    permission_classes = [IsAuthenticated, HasMosquePermission, plan_module_permission("treasury_full")]
 
     def get_queryset(self):
         mosque = get_mosque(self.request)
@@ -52,7 +53,7 @@ class TreasuryTransactionViewSet(viewsets.ModelViewSet):
     """CRUD transactions de tresorerie + endpoint resume mensuel."""
 
     serializer_class = TreasuryTransactionSerializer
-    permission_classes = [IsAuthenticated, HasMosquePermission]
+    permission_classes = [IsAuthenticated, HasMosquePermission, plan_module_permission("treasury_full")]
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["date", "amount", "created_at"]
 

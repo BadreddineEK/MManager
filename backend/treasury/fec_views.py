@@ -22,6 +22,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from core.permissions import HasMosquePermission
+from core.plan_enforcement import plan_module_permission
 from core.utils import get_mosque
 from .models import TreasuryTransaction
 
@@ -131,7 +132,7 @@ class FECExportView(APIView):
       year  (obligatoire) : année fiscale (ex: 2026)
       month (optionnel)   : mois 1-12 pour un export mensuel
     """
-    permission_classes = [IsAuthenticated, HasMosquePermission]
+    permission_classes = [IsAuthenticated, HasMosquePermission, plan_module_permission("treasury_fec")]
 
     def get(self, request):
         mosque = get_mosque(request)

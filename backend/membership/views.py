@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.permissions import HasMosquePermission
+from core.plan_enforcement import PlanLimitMixin, plan_module_permission
 from core.utils import get_mosque, log_action
 
 from .models import Member, MembershipYear
@@ -43,9 +44,11 @@ class MembershipYearViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
-class MemberViewSet(viewsets.ModelViewSet):
+class MemberViewSet(PlanLimitMixin, viewsets.ModelViewSet):
     """CRUD adhérents."""
 
+    plan_limit_resource = "families"
+    plan_limit_model = Member
     serializer_class = MemberSerializer
     permission_classes = [IsAuthenticated, HasMosquePermission]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]

@@ -30,6 +30,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 from rest_framework.permissions import IsAuthenticated
 
 from core.permissions import HasMosquePermission
+from core.plan_enforcement import plan_module_permission
 from rest_framework.views import APIView
 
 from core.utils import get_mosque
@@ -342,7 +343,7 @@ class MembershipPaymentsExcelView(APIView):
 # ── TRÉSORERIE ────────────────────────────────────────────────────────────────
 
 class TreasuryExcelView(APIView):
-    permission_classes = [IsAuthenticated, HasMosquePermission]
+    permission_classes = [IsAuthenticated, HasMosquePermission, plan_module_permission("treasury_full")]
 
     def get(self, request):
         mosque = get_mosque(request)
@@ -376,7 +377,7 @@ class TreasuryExcelView(APIView):
 
 
 class TreasuryPDFView(APIView):
-    permission_classes = [IsAuthenticated, HasMosquePermission]
+    permission_classes = [IsAuthenticated, HasMosquePermission, plan_module_permission("treasury_full")]
 
     def get(self, request):
         mosque = get_mosque(request)
