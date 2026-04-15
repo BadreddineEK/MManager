@@ -78,6 +78,20 @@ def plan_module_permission(module_name: str):
             mosque = getattr(request, "mosque", None)
             if mosque is None:
                 return False
+            # Pendant la période de trial → accès complet à tous les modules
+            sub = _get_subscription(mosque)
+            if sub is not None and sub.status in ("trial", "trialing"):
+                from django.utils import timezone
+                if sub.trial_end:
+                    trial_end = sub.trial_end
+                    if not hasattr(trial_end, "hour"):
+                        from datetime import datetime
+                        from datetime import timezone as dt_tz
+                        trial_end = datetime.combine(
+                            trial_end, datetime.min.time()
+                        ).replace(tzinfo=dt_tz.utc)
+                    if timezone.now() <= trial_end:
+                        return True  # Trial actif → tout autorisé
             plan = _get_plan(mosque)
             if plan is None:
                 logger.warning("PLAN: aucun plan pour %s — acces accorde", mosque.name)
