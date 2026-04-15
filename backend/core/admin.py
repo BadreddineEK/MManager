@@ -101,3 +101,75 @@ class StaffAdmin(admin.ModelAdmin):
     list_filter = ("mosque", "role", "is_active")
     search_fields = ("full_name", "name_keyword", "iban_fragment")
     ordering = ("role", "full_name")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Plans & Abonnements (super-admin Nidham)
+# ─────────────────────────────────────────────────────────────────────────────
+from .models import Plan, Subscription
+
+
+@admin.register(Plan)
+class PlanAdmin(admin.ModelAdmin):
+    list_display = (
+        "name", "display_name", "price_monthly", "price_yearly",
+        "max_families_display", "max_users_display", "max_sms_month",
+        "is_active", "is_public", "sort_order",
+    )
+    list_filter = ("is_active", "is_public")
+    search_fields = ("name", "display_name")
+    ordering = ("sort_order", "price_monthly")
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        ("Identite", {"fields": ("name", "display_name", "description", "sort_order", "is_active", "is_public")}),
+        ("Tarifs", {"fields": ("price_monthly", "price_yearly")}),
+        ("Limites (-1 = illimite)", {"fields": ("max_families", "max_users", "max_sms_month")}),
+        ("Modules", {"fields": ("modules",)}),
+        ("Metadonnees", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+    @admin.display(description="Max familles")
+    def max_families_display(self, obj):
+        return "Illimite" if obj.max_families == -1 else obj.max_families
+
+    @admin.display(description="Max users")
+    def max_users_display(self, obj):
+        return "Illimite" if obj.max_users == -1 else obj.max_users
+
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ("mosque", "plan", "status", "billing_cycle", "trial_end", "current_period_end", "sms_used_this_month", "created_at")
+    list_filter = ("plan", "status", "billing_cycle")
+    search_fields = ("mosque__name", "mosque__slug")
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at", "updated_at", "sms_used_this_month", "sms_reset_date")
+    raw_id_fields = ("mosque",)
+    fieldsets = (
+        ("Mosquee & Plan", {"fields": ("mosque", "plan", "status", "billing_cycle")}),
+        ("Periode", {"fields": ("trial_end", "current_period_start", "current_period_end")}),
+        ("Paiement", {"fields": ("stripe_customer_id", "stripe_subscription_id", "helloasso_subscription_id"), "classes": ("collapse",)}),
+        ("SMS", {"fields": ("sms_used_this_month", "sms_reset_date")}),
+        ("Metadonnees", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+    actions = ["action_activate", "action_suspend", "action_upgrade_pro"]
+
+    @admin.action(description="Activer")
+    def action_activate(self, request, queryset):
+        n = queryset.update(status="active")
+        self.message_user(request, f"{n} abonnement(s) active(s).")
+
+    @admin.action(description="Suspendre (expired)")
+    def action_suspend(self, request, queryset):
+        n = queryset.update(status="expired")
+        self.message_user(request, f"{n} abonnement(s) suspendu(s).")
+
+    @admin.action(description="Upgrader vers Pro")
+    def action_upgrade_pro(self, request, queryset):
+        try:
+            pro = Plan.objects.get(name="pro")
+        except Plan.DoesNotExist:
+            self.message_user(request, "Plan pro introuvable.", level="error")
+            return
+        n = queryset.update(plan=pro, status="active")
+        self.message_user(request, f"{n} abonnement(s) upgrades vers Pro.")
