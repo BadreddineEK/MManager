@@ -35,15 +35,17 @@ class RegisterMosqueView(APIView):
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        data           = serializer.validated_data
-        slug           = data['slug']
-        schema_name    = slug.replace('-', '_')
-        mosque_name    = data['mosque_name']
-        timezone       = data['timezone']
-        admin_username = data['admin_username']
-        admin_email    = data['admin_email']
-        admin_password = data['admin_password']
-        base_domain    = data['base_domain']
+        data            = serializer.validated_data
+        slug            = data['slug']
+        schema_name     = slug.replace('-', '_')
+        mosque_name     = data['mosque_name']
+        timezone        = data['timezone']
+        admin_username  = data['admin_username']
+        admin_email     = data['admin_email']
+        admin_password  = data['admin_password']
+        base_domain     = data['base_domain']
+        # Username interne = slug__username pour éviter les collisions inter-mosquées
+        internal_username = f"{schema_name}__{admin_username}" 
 
         try:
             with schema_context('public'):
@@ -65,13 +67,13 @@ class RegisterMosqueView(APIView):
                 from django.contrib.auth import get_user_model
                 User = get_user_model()
                 User.objects.create_user(
-                    username=admin_username,
+                    username=internal_username,
                     email=admin_email,
                     password=admin_password,
                     mosque=mosque,
                     role='ADMIN',
                 )
-                logger.info('Admin cree: %s dans %s', admin_username, schema_name)
+                logger.info('Admin cree: %s (login=%s) dans %s', admin_username, internal_username, schema_name)
 
             # 4. Assigner plan free + trial 30 jours
             import datetime
@@ -102,8 +104,9 @@ class RegisterMosqueView(APIView):
                         'schema_name': mosque.schema_name,
                     },
                     'domain':         full_domain,
-                    'admin_username': admin_username,
-                    'message': f'Mosquee creee. Login: http://{full_domain}:8100/api/auth/login/',
+                    'admin_username':    admin_username,
+                    'login_username':    internal_username,
+                    'message': f'Mosquée créée. Connectez-vous avec : {internal_username}',
                 },
                 status=status.HTTP_201_CREATED,
             )

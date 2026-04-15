@@ -36,7 +36,7 @@ function applyRBAC() {
   const perms  = currentUser.effective_permissions || {};
   const role   = currentUser.role || '';
 
-  // Nav items
+  // Nav items — masquer UNIQUEMENT si explicitement false
   const navMap = {
     'nav-school':     perms.school?.read,
     'nav-membership': perms.membership?.read,
@@ -47,7 +47,18 @@ function applyRBAC() {
   };
   Object.entries(navMap).forEach(([id, allowed]) => {
     const el = document.getElementById(id);
-    if (el) el.style.display = allowed === false ? 'none' : '';
+    if (el) el.style.display = (allowed === false) ? 'none' : '';
+  });
+
+  // Bottom nav — masquer si pas d'accès
+  const bottomMap = {
+    'bn-families': perms.school?.read,
+    'bn-members':  perms.membership?.read,
+    'bn-treasury': perms.treasury?.read,
+  };
+  Object.entries(bottomMap).forEach(([id, allowed]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (allowed === false) ? 'none' : '';
   });
 
   // Boutons d'ajout (write)
@@ -63,16 +74,32 @@ function applyRBAC() {
   ];
   writeBtns.forEach(([id, allowed]) => {
     const el = document.getElementById(id);
-    if (el) el.style.display = allowed === false ? 'none' : '';
+    if (el) el.style.display = (allowed === false) ? 'none' : '';
   });
 
   // Bouton Enregistrer paramètres
   const saveSettingsBtn = document.getElementById('btn-save-settings');
-  if (saveSettingsBtn) saveSettingsBtn.style.display = perms.settings?.write === false ? 'none' : '';
+  if (saveSettingsBtn) saveSettingsBtn.style.display = (perms.settings?.write === false) ? 'none' : '';
 
   // Rôle dans le chip utilisateur
   const roleDisplay = document.getElementById('user-role-display');
   if (roleDisplay) roleDisplay.textContent = ROLE_LABELS[role] || role || '—';
+
+  // Rediriger automatiquement vers la 1ère section accessible pour les non-ADMIN
+  _redirectToFirstAllowedSection(perms, role);
+}
+
+// ── Redirection vers la 1ère section accessible ───────────────────────────────
+function _redirectToFirstAllowedSection(perms, role) {
+  if (role === 'ADMIN' || !role) return;
+  const ordered = [
+    { section: 'treasury',  allowed: perms.treasury?.read },
+    { section: 'families',  allowed: perms.school?.read },
+    { section: 'members',   allowed: perms.membership?.read },
+    { section: 'campaigns', allowed: perms.campaigns?.read },
+  ];
+  const first = ordered.find(x => x.allowed === true);
+  if (first) showSection(first.section);
 }
 
 // ── Liste utilisateurs ────────────────────────────────────────────────────────

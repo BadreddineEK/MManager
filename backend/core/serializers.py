@@ -29,5 +29,11 @@ class MosqueTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["role"] = user.role
         token["mosque_id"] = user.mosque_id
         token["mosque_slug"] = user.mosque.slug if user.mosque_id else None
+        # username lisible sans le préfixe interne (schema__username)
+        raw = user.username
+        if user.mosque_id and user.mosque and raw.startswith(f"{user.mosque.schema_name}__"):
+            token["username_display"] = raw[len(f"{user.mosque.schema_name}__"):]
+        else:
+            token["username_display"] = raw
 
         return token

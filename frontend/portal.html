@@ -778,7 +778,9 @@ async function doRegister() {
     document.getElementById('success-screen').classList.remove('hidden');
     document.getElementById('success-mosque-name').textContent=mosqueName;
     document.getElementById('success-domain').textContent=data.domain;
-    document.getElementById('success-username').textContent=username;
+    // Afficher le login retourné par l'API (préfixé pour unicité globale)
+    const loginUsername = data.login_username || username;
+    document.getElementById('success-username').textContent=loginUsername;
     const appUrl=(location.hostname==='localhost'||location.hostname.endsWith('.local'))
       ?'http://'+data.domain+':8080/':'https://'+data.domain+'/';
     document.getElementById('success-link').href=appUrl;

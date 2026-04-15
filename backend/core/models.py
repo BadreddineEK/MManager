@@ -273,11 +273,62 @@ class User(AbstractUser):
         """
         Retourne les permissions effectives.
         - Superuser / ADMIN → permissions complètes
-        - Autres rôles → permissions_data (granulaires)
+        - TRESORIER → trésorerie + cagnottes (read/write)
+        - ECOLE_MANAGER → école (read/write/delete)
+        - TEACHER → école read only
+        - SECRETARY → adhérents (read/write)
+        - VIEWER → tout read-only
+        - Permissions granulaires si définies explicitement
         """
         if self.is_superuser or self.role == "ADMIN":
             return _admin_permissions()
-        return self.permissions_data or _default_permissions()
+
+        role_defaults = {
+            "TRESORIER": {
+                "school":      {"read": True,  "write": False, "delete": False},
+                "membership":  {"read": True,  "write": False, "delete": False},
+                "treasury":    {"read": True,  "write": True,  "delete": True},
+                "campaigns":   {"read": True,  "write": True,  "delete": True},
+                "users":       {"read": False, "write": False, "delete": False},
+                "settings":    {"read": False, "write": False},
+            },
+            "ECOLE_MANAGER": {
+                "school":      {"read": True,  "write": True,  "delete": True},
+                "membership":  {"read": True,  "write": False, "delete": False},
+                "treasury":    {"read": False, "write": False, "delete": False},
+                "campaigns":   {"read": False, "write": False, "delete": False},
+                "users":       {"read": False, "write": False, "delete": False},
+                "settings":    {"read": False, "write": False},
+            },
+            "TEACHER": {
+                "school":      {"read": True,  "write": False, "delete": False},
+                "membership":  {"read": False, "write": False, "delete": False},
+                "treasury":    {"read": False, "write": False, "delete": False},
+                "campaigns":   {"read": False, "write": False, "delete": False},
+                "users":       {"read": False, "write": False, "delete": False},
+                "settings":    {"read": False, "write": False},
+            },
+            "SECRETARY": {
+                "school":      {"read": True,  "write": False, "delete": False},
+                "membership":  {"read": True,  "write": True,  "delete": False},
+                "treasury":    {"read": True,  "write": False, "delete": False},
+                "campaigns":   {"read": True,  "write": False, "delete": False},
+                "users":       {"read": False, "write": False, "delete": False},
+                "settings":    {"read": False, "write": False},
+            },
+            "VIEWER": {
+                "school":      {"read": True,  "write": False, "delete": False},
+                "membership":  {"read": True,  "write": False, "delete": False},
+                "treasury":    {"read": True,  "write": False, "delete": False},
+                "campaigns":   {"read": True,  "write": False, "delete": False},
+                "users":       {"read": False, "write": False, "delete": False},
+                "settings":    {"read": False, "write": False},
+            },
+        }
+        stored = self.permissions_data
+        if stored and stored != _default_permissions():
+            return stored
+        return role_defaults.get(self.role, _default_permissions())
 
     def can(self, module: str, action: str) -> bool:
         """

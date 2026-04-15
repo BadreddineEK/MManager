@@ -51,9 +51,9 @@ function _showApp() {
 function _applyJwtToUI(token) {
   try {
     const payload  = JSON.parse(atob(token.split('.')[1]));
-    const initials = (payload.email || 'U')[0].toUpperCase();
+    const initials = (payload.email || payload.username_display || 'U')[0].toUpperCase();
     document.getElementById('user-avatar').textContent       = initials;
-    document.getElementById('user-name-display').textContent = payload.email || '—';
+    document.getElementById('user-name-display').textContent = payload.email || payload.username_display || '—';
     const roleLabels = {
       ADMIN: 'Admin', TRESORIER: 'Trésorier',
       ECOLE_MANAGER: 'École Manager', TEACHER: 'Professeur',
