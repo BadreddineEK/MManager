@@ -1,0 +1,16 @@
+nom_prenom,telephone,email,adresse,mode_paiement,total_paye
+Ahmed Benali,0612345678,ahmed.benali@email.com,,virement,100
+Fatima Karim,0623456789,fatima.karim@email.com,,virement,100
+Youssef Mansouri,0634567890,youssef.mansouri@email.com,,virement,150
+Khadija Salhi,0645678901,k.salhi@email.com,,virement,100
+Bilal Hamidi,0656789012,b.hamidi@email.com,,virement,100
+Nour Bouzid,0667890123,nour.bouzid@email.com,,virement,80
+Amine Tazi,0678901234,a.tazi@email.com,,virement,200
+Soraya Idrissi,0689012345,s.idrissi@email.com,,virement,100
+Omar Cherkaoui,0690123456,o.cherkaoui@email.com,,virement,150
+Leila Moussaoui,0601234567,l.moussaoui@email.com,,virement,100
+Hassan Fennich,0611111111,h.fennich@email.com,,virement,0
+Zineb Ouali,0622222222,z.ouali@email.com,,virement,80
+Moussa Diallo,0633333333,m.diallo@email.com,,virement,100
+Aisha Bouali,0644444444,a.bouali@email.com,,virement,100
+Tariq Zaoui,0655555555,t.zaoui@email.com,,virement,200
