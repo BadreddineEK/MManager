@@ -80,19 +80,22 @@ class RegisterMosqueView(APIView):
             from django_tenants.utils import schema_context as sc
             with sc('public'):
                 from core.models import Plan, Subscription
-                free_plan = Plan.objects.get(name='free')
+                # Trial = plan pro (accès complet pendant l'essai)
+                trial_plan = Plan.objects.filter(name='pro').first() \
+                    or Plan.objects.filter(name='free_cloud').first() \
+                    or Plan.objects.first()
                 today = datetime.date.today()
                 trial_end = today + datetime.timedelta(days=14)  # 14j comme affiche sur le portail
                 Subscription.objects.create(
                     mosque=mosque,
-                    plan=free_plan,
+                    plan=trial_plan,
                     status='trial',
                     billing_cycle='monthly',
                     trial_end=trial_end,
                     current_period_start=today,
                     current_period_end=trial_end,
                 )
-                logger.info('Subscription free/trial creee pour %s', mosque.name)
+                logger.info('Subscription trial (plan=%s) creee pour %s', trial_plan.name, mosque.name)
 
             return Response(
                 {
