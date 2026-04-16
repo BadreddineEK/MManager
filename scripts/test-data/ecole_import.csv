@@ -1,0 +1,13 @@
+nom_parents,prenom_enfant,niveau,total_du,total_verse,tel_papa,tel_maman,email
+Benali,Adam,CE1,150,150,0612345678,,ahmed.benali@email.com
+Benali,Mariam,Grande Section,120,120,0612345678,,ahmed.benali@email.com
+Mansouri,Ibrahim,CE2,150,100,0634567890,,youssef.mansouri@email.com
+Mansouri,Sara,CP,120,120,0634567890,,youssef.mansouri@email.com
+Karim,Yasmine,CE1,150,150,,0623456789,fatima.karim@email.com
+Hamidi,Ilyass,CM1,150,150,0656789012,,b.hamidi@email.com
+Hamidi,Nadia,Petite Section,100,50,0656789012,,b.hamidi@email.com
+Tazi,Younes,CM2,150,150,0678901234,,a.tazi@email.com
+Tazi,Rania,CE2,150,100,0678901234,,a.tazi@email.com
+Tazi,Sami,Grande Section,120,120,0678901234,,a.tazi@email.com
+Cherkaoui,Karim,CE1,150,150,0690123456,,o.cherkaoui@email.com
+Diallo,Amina,CP,120,0,0633333333,,m.diallo@email.com
