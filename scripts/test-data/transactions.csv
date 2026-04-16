@@ -1,0 +1,21 @@
+date,type,categorie,montant,description,reference
+2024-09-05,recette,cotisation,1200.00,Cotisations septembre 2024,COT-2024-09
+2024-09-10,recette,don,500.00,Don anonyme vendredi,DON-001
+2024-09-15,depense,electricite,180.50,Facture EDF septembre,EDF-SEP24
+2024-09-20,depense,entretien,95.00,Produits nettoyage,ENT-001
+2024-10-05,recette,cotisation,1350.00,Cotisations octobre 2024,COT-2024-10
+2024-10-12,recette,don,750.00,Collecte vendredi 11 oct,DON-002
+2024-10-18,depense,eau,45.20,Facture eau octobre,EAU-OCT24
+2024-10-25,depense,fournitures,210.00,Tapis de prière x5,ACH-001
+2024-11-05,recette,cotisation,1100.00,Cotisations novembre 2024,COT-2024-11
+2024-11-08,recette,don,2000.00,Don exceptionnel,DON-003
+2024-11-15,depense,loyer,800.00,Loyer novembre 2024,LOY-NOV24
+2024-11-22,depense,internet,35.99,Abonnement internet,NET-NOV24
+2024-12-05,recette,cotisation,1200.00,Cotisations décembre 2024,COT-2024-12
+2024-12-10,recette,don_ramadan,3500.00,Dons Ramadan anticipés,RAM-001
+2024-12-20,depense,electricite,220.00,Facture EDF décembre,EDF-DEC24
+2025-01-05,recette,cotisation,1400.00,Cotisations janvier 2025,COT-2025-01
+2025-01-15,depense,entretien,150.00,Réparation robinetterie,ENT-002
+2025-02-05,recette,cotisation,1300.00,Cotisations février 2025,COT-2025-02
+2025-02-14,recette,don,600.00,Collecte vendredi 14 fév,DON-004
+2025-03-05,recette,cotisation,1250.00,Cotisations mars 2025,COT-2025-03

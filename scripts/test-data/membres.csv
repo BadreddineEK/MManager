@@ -1,0 +1,16 @@
+prenom,nom,email,telephone,date_naissance,date_adhesion,statut,montant_cotisation,notes
+Ahmed,Benali,ahmed.benali@email.com,0612345678,1985-03-15,2024-09-01,actif,100,Membre fondateur
+Fatima,Karim,fatima.karim@email.com,0623456789,1990-07-22,2024-09-01,actif,100,
+Youssef,Mansouri,youssef.mansouri@email.com,0634567890,1978-11-30,2024-10-01,actif,150,Donateur régulier
+Khadija,Salhi,k.salhi@email.com,0645678901,1995-04-12,2024-10-15,actif,100,
+Bilal,Hamidi,b.hamidi@email.com,0656789012,1982-08-05,2024-11-01,actif,100,
+Nour,Bouzid,nour.bouzid@email.com,0667890123,1998-01-25,2025-01-01,actif,80,Étudiant
+Amine,Tazi,a.tazi@email.com,0678901234,1975-06-18,2025-01-15,actif,200,
+Soraya,Idrissi,s.idrissi@email.com,0689012345,1988-09-03,2025-02-01,actif,100,
+Omar,Cherkaoui,o.cherkaoui@email.com,0690123456,1970-12-20,2025-02-15,actif,150,
+Leila,Moussaoui,l.moussaoui@email.com,0601234567,1993-05-07,2025-03-01,actif,100,
+Hassan,Fennich,h.fennich@email.com,0611111111,1965-02-14,2023-09-01,inactif,0,Déménagé
+Zineb,Ouali,z.ouali@email.com,0622222222,2000-10-30,2024-09-01,actif,80,Étudiante
+Moussa,Diallo,m.diallo@email.com,0633333333,1980-07-11,2024-09-01,actif,100,
+Aisha,Bouali,a.bouali@email.com,0644444444,1987-03-28,2024-09-01,actif,100,
+Tariq,Zaoui,t.zaoui@email.com,0655555555,1972-11-15,2024-09-01,actif,200,Trésorier adjoint
