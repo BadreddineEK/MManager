@@ -3,6 +3,31 @@
    DOIT être chargé EN DERNIER (dépend de tous les autres modules)
 ═══════════════════════════════════════════════════════════ */
 
+// ── Retour vers le portail ────────────────────────────────────────────────────
+function _goToPortal() {
+  const hn = location.hostname;
+  if (hn.endsWith('.nidham.local')) location.href = 'http://nidham.local:8080/portal.html';
+  else if (hn.endsWith('.nidham.fr'))  location.href = 'https://nidham.fr/';
+  else                                 location.href = '/portal.html';
+}
+
+// ── Verification tenant au demarrage ─────────────────────────────────────────
+async function _checkTenant() {
+  const hn = location.hostname;
+  if (hn === 'localhost' || hn === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(hn)) return true;
+  try {
+    const res = await fetch('/health/', { method: 'GET' });
+    if (!res.ok) throw new Error('tenant not found');
+    return true;
+  } catch (e) {
+    const screen = document.getElementById('tenant-error-screen');
+    const msg    = document.getElementById('tenant-error-domain');
+    if (screen) screen.classList.remove('hidden');
+    if (msg)    msg.textContent = 'Sous-domaine introuvable : ' + hn;
+    return false;
+  }
+}
+
 async function login() {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
@@ -72,7 +97,11 @@ function _applyJwtToUI(token) {
 }
 
 // ── Auto-login : hash URL ou localStorage ────────────────────────────────────
-(function restoreSession() {
+(async function restoreSession() {
+  // 0. Verifier que le tenant existe
+  const tenantOk = await _checkTenant();
+  if (!tenantOk) return;
+
   // 1. Lire tokens depuis #access=...&refresh=... (injecté par portal.html)
   if (location.hash && location.hash.length > 1) {
     const hp = new URLSearchParams(location.hash.slice(1));

@@ -18,6 +18,26 @@
 <!-- ── Toast container ── -->
 <div id="toast-container"></div>
 
+<!-- ══ ECRAN TENANT INTROUVABLE ════════════════════════════════════════════ -->
+<div id="tenant-error-screen" class="hidden" style="
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);z-index:9999;">
+  <div style="text-align:center;padding:2rem;max-width:420px;">
+    <div style="font-size:4rem;margin-bottom:1rem;">&#x1F54C;</div>
+    <h2 style="color:#f1f5f9;font-size:1.5rem;margin-bottom:.5rem;">Mosqu&#xe9;e introuvable</h2>
+    <p id="tenant-error-domain" style="color:#94a3b8;margin-bottom:1.5rem;font-size:.95rem;"></p>
+    <p style="color:#64748b;margin-bottom:2rem;font-size:.85rem;">
+      Ce sous-domaine n&#x27;est associ&#xe9; &#xe0; aucune mosqu&#xe9;e enregistr&#xe9;e sur Nidham.<br>
+      V&#xe9;rifiez l&#x27;adresse ou cr&#xe9;ez votre espace depuis le portail.
+    </p>
+    <button onclick="_goToPortal()" style="
+      background:#6366f1;color:#fff;border:none;border-radius:8px;
+      padding:.75rem 1.5rem;font-size:.95rem;cursor:pointer;">
+      &#x2190; Retour au portail
+    </button>
+  </div>
+</div>
+
 <!-- ── Confirm dialog ── -->
 <div id="confirm-overlay">
   <div class="confirm-box">
