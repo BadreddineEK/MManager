@@ -66,30 +66,32 @@ function _applyPlanToUI(plan) {
 function _applyModuleVisibility(modules) {
   if (!modules || modules.length === 0) return;
 
+  // Ces items sont toujours accessibles pour l'ADMIN, peu importe le plan
+  var ALWAYS_VISIBLE = ['users', 'settings', 'import', 'audit'];
+
+  // Modules pilotés par le plan
   var allMap = {
-    'school':'nav-school','membership':'nav-membership','treasury':'nav-treasury',
-    'campaigns':'nav-campaigns','staff':'nav-staff','audit':'nav-audit','import':'nav-import',
+    'school':      'nav-school',
+    'membership':  'nav-membership',
+    'treasury':    'nav-treasury',
+    'campaigns':   'nav-campaigns',
+    'staff':       'nav-staff',
   };
-  var groupMap = allMap; // alias pour compatibilite
-  for (var mod in groupMap) {
-    var el = document.getElementById(groupMap[mod]);
+  for (var mod in allMap) {
+    var el = document.getElementById(allMap[mod]);
     if (!el) continue;
     var locked = modules.indexOf(mod) === -1;
     el.classList.toggle('nav-module-locked', locked);
     el.title = locked ? 'Module non inclus dans votre plan' : '';
   }
 
-  var itemMap = {
-    'treasury': 'nav-treasury', 'campaigns': 'nav-campaigns',
-    'staff': 'nav-staff', 'audit': 'nav-audit', 'import': 'nav-import'
-  };
-  for (var mod2 in itemMap) {
-    var el2 = document.getElementById(itemMap[mod2]);
-    if (!el2) continue;
-    var locked2 = modules.indexOf(mod2) === -1;
-    el2.classList.toggle('nav-module-locked', locked2);
-    el2.title = locked2 ? 'Module non inclus dans votre plan' : '';
-  }
+  // Toujours débloquer les items d'administration
+  ALWAYS_VISIBLE.forEach(function(id) {
+    var el = document.getElementById('nav-' + id);
+    if (!el) return;
+    el.classList.remove('nav-module-locked');
+    el.title = '';
+  });
 }
 
 function isPlanModuleAllowed(module) {
