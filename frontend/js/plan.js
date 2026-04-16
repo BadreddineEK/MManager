@@ -56,7 +56,7 @@ function _applyPlanToUI(plan) {
   const normalized = [];
   modules.forEach(function(m) {
     normalized.push(m);
-    if (m.startsWith('treasury')) normalized.push('treasury');
+    if (m.startsWith('treasury')) { normalized.push('treasury'); normalized.push('campaigns'); }
     if (m.startsWith('school'))   normalized.push('school');
     if (m === 'core')             normalized.push('membership');
   });
