@@ -1,0 +1,21 @@
+date,objet,montant_entree,montant_sortie,categorie
+2024-09-05,Cotisations septembre 2024,1200.00,,cotisation
+2024-09-10,Don anonyme vendredi,500.00,,don
+2024-09-15,Facture EDF septembre,,180.50,electricite
+2024-09-20,Produits nettoyage,,95.00,entretien
+2024-10-05,Cotisations octobre 2024,1350.00,,cotisation
+2024-10-12,Collecte vendredi 11 oct,750.00,,don
+2024-10-18,Facture eau octobre,,45.20,eau
+2024-10-25,Tapis de prière x5,,210.00,fournitures
+2024-11-05,Cotisations novembre 2024,1100.00,,cotisation
+2024-11-08,Don exceptionnel,2000.00,,don
+2024-11-15,Loyer novembre 2024,,800.00,loyer
+2024-11-22,Abonnement internet,,35.99,internet
+2024-12-05,Cotisations décembre 2024,1200.00,,cotisation
+2024-12-10,Dons Ramadan anticipés,3500.00,,don
+2024-12-20,Facture EDF décembre,,220.00,electricite
+2025-01-05,Cotisations janvier 2025,1400.00,,cotisation
+2025-01-15,Réparation robinetterie,,150.00,entretien
+2025-02-05,Cotisations février 2025,1300.00,,cotisation
+2025-02-14,Collecte vendredi 14 fév,600.00,,don
+2025-03-05,Cotisations mars 2025,1250.00,,cotisation
