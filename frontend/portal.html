@@ -741,20 +741,20 @@ async function checkSlug(slug) {
 }
 async function doLogin() {
   const slug = document.getElementById('login-slug').value.trim().toLowerCase();
-  const displayUsername = document.getElementById('login-username').value.trim();
+  const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
   const errEl = document.getElementById('login-error');
   const btn = document.getElementById('login-btn');
   errEl.classList.add('hidden');
   if (!slug) { errEl.textContent='Entrez le sous-domaine de votre mosqu\u00e9e'; errEl.classList.remove('hidden'); return; }
-  if (!displayUsername) { errEl.textContent='Entrez votre identifiant'; errEl.classList.remove('hidden'); return; }
+  if (!username) { errEl.textContent='Entrez votre identifiant'; errEl.classList.remove('hidden'); return; }
   if (!password) { errEl.textContent='Entrez votre mot de passe'; errEl.classList.remove('hidden'); return; }
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Connexion...';
-  const internalUsername = slug.replace(/-/g,'_') + '__' + displayUsername;
   try {
+    // Le backend préfixe automatiquement username avec le schema du tenant
     const base = _isDevEnv()
       ? 'http://'+slug+'.nidham.local:8080' : 'https://'+slug+'.nidham.fr';
-    const res = await fetch(base+'/api/auth/login/', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:internalUsername,password})});
+    const res = await fetch(base+'/api/auth/login/', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
     if (!res.ok) { const d=await res.json().catch(()=>({})); throw new Error(d.detail||'Identifiants incorrects'); }
     const data = await res.json();
     const appUrl = _isDevEnv()
