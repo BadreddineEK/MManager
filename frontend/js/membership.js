@@ -281,3 +281,62 @@ async function downloadMemberSheet(memberId, memberName) {
     hideProgress();
   }
 }
+
+// ── Liste des paiements cotisations ──────────────────────────────────────────
+
+async function loadMembershipPaymentsList() {
+  const tbody = document.getElementById('membership-payments-table');
+  if (!tbody) return;
+  tbody.innerHTML = skeletonRows(4, 8);
+
+  const method = document.getElementById('mp-method-filter')?.value || '';
+  const status = document.getElementById('mp-status-filter')?.value || '';
+  let url = '/membership/payments/?ordering=-date';
+  if (method) url += `&method=${method}`;
+  if (status) url += `&status=${status}`;
+
+  const res = await apiFetch(url);
+  if (!res || !res.ok) { tbody.innerHTML = '<tr><td colspan="8">Erreur chargement</td></tr>'; return; }
+  const data = await res.json();
+  const payments = data.results || data;
+
+  // KPI summary
+  const summaryEl = document.getElementById('mp-summary');
+  if (summaryEl && payments.length > 0) {
+    const total = payments.reduce((s, p) => s + parseFloat(p.amount), 0);
+    document.getElementById('mp-total-amount').textContent = total.toFixed(2) + ' €';
+    document.getElementById('mp-count').textContent = payments.length;
+    summaryEl.style.display = 'flex';
+  } else if (summaryEl) {
+    summaryEl.style.display = 'none';
+  }
+
+  if (!payments.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted);">Aucune cotisation enregistrée.</td></tr>`;
+    return;
+  }
+
+  const methodLabels = { cash: 'Espèces', cheque: 'Chèque', virement: 'Virement', autre: 'Autre' };
+  tbody.innerHTML = payments.map((p, i) => `
+    <tr class="fade-in" style="animation-delay:${i * 20}ms">
+      <td>${p.date}</td>
+      <td><strong>${esc(p.member_name || '—')}</strong></td>
+      <td>${esc(String(p.year_label || '—'))}</td>
+      <td><span class="badge badge-green">${parseFloat(p.amount).toFixed(2)} €</span></td>
+      <td><span class="badge badge-gray">${methodLabels[p.method] || p.method}</span></td>
+      <td><span class="badge ${p.status === 'validated' ? 'badge-green' : 'badge-yellow'}">${p.status === 'validated' ? '✅ Validé' : '⏳ En attente'}</span></td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.note || '') || '<span class="text-muted">—</span>'}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMembershipPayment(${p.id})" title="Supprimer">🗑</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+async function deleteMembershipPayment(id) {
+  const ok = await confirmDialog({ title: 'Supprimer cette cotisation ?', msg: 'La transaction trésorerie associée sera aussi supprimée.', icon: '🗑️' });
+  if (!ok) return;
+  const res = await apiFetch(`/membership/payments/${id}/`, 'DELETE');
+  if (!res || res.ok) { toast('Cotisation supprimée', 'info'); loadMembershipPaymentsList(); }
+  else toast('Erreur suppression', 'error');
+}

@@ -112,6 +112,9 @@
       <button class="nav-item" id="nav-children" onclick="showSection('children')">
         <span class="nav-icon">🧒</span><span>Enfants</span>
       </button>
+      <button class="nav-item" id="nav-school-payments" onclick="showSection('school-payments')">
+        <span class="nav-icon">💳</span><span>Paiements</span>
+      </button>
       <button class="nav-item" id="nav-arrears" onclick="showSection('arrears')">
         <span class="nav-icon">⚠️</span><span>Impayés</span>
       </button>
@@ -122,6 +125,9 @@
       <div class="nav-group-label">Adhésion</div>
       <button class="nav-item" id="nav-members" onclick="showSection('members')">
         <span class="nav-icon">🤝</span><span>Adhérents</span>
+      </button>
+      <button class="nav-item" id="nav-membership-payments" onclick="showSection('membership-payments')">
+        <span class="nav-icon">🪙</span><span>Cotisations</span>
       </button>
       <button class="nav-item" id="nav-unpaid-members" onclick="showSection('unpaid-members')">
         <span class="nav-icon">🔴</span><span>Non cotisants</span>
@@ -370,7 +376,45 @@
       </div>
     </div>
 
-    <!-- ── Paiements école ── (supprimé : passe par la trésorerie) -->
+    <!-- ── Paiements école ── -->
+    <div id="section-school-payments" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Paiements école</h2>
+          <div class="breadcrumb">École coranique · Historique des paiements</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-success btn-sm" onclick="exportFile('school-payments','excel')">⬇ Excel</button>
+          <button class="btn btn-primary" onclick="addSchoolPayment()">💳 Nouveau paiement</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="toolbar" style="flex-wrap:wrap;gap:8px;">
+          <input type="text" class="search-input" id="sp-search" placeholder="🔍  Rechercher par famille..." oninput="loadSchoolPaymentsList()" style="flex:1;min-width:200px;" />
+          <select id="sp-method-filter" onchange="loadSchoolPaymentsList()" style="width:auto;margin:0;">
+            <option value="">Tous les modes</option>
+            <option value="cash">Espèces</option>
+            <option value="cheque">Chèque</option>
+            <option value="virement">Virement</option>
+          </select>
+          <select id="sp-status-filter" onchange="loadSchoolPaymentsList()" style="width:auto;margin:0;">
+            <option value="">Tous statuts</option>
+            <option value="validated">✅ Validé</option>
+            <option value="pending">⏳ En attente</option>
+          </select>
+        </div>
+        <div id="sp-summary" class="stats-row" style="margin-bottom:16px;display:none;">
+          <div class="stat-card"><div class="stat-icon">📥</div><div class="num text-green" id="sp-total-amount">—</div><div class="lbl">Total collecté</div></div>
+          <div class="stat-card"><div class="stat-icon">📋</div><div class="num" id="sp-count">—</div><div class="lbl">Paiements</div></div>
+        </div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Famille</th><th>Enfant</th><th>Année</th><th>Montant</th><th>Mode</th><th>Statut</th><th>Note</th><th>Actions</th></tr></thead>
+            <tbody id="school-payments-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
     <!-- ── Impayés ── -->
     <div id="section-arrears" class="hidden">
@@ -432,7 +476,45 @@
       </div>
     </div>
 
-    <!-- ── Cotisations ── (supprimé : passe par la trésorerie) -->
+    <!-- ── Paiements cotisations ── -->
+    <div id="section-membership-payments" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Paiements cotisations</h2>
+          <div class="breadcrumb">Adhésion · Historique des cotisations</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-success btn-sm" onclick="exportFile('membership-payments','excel')">⬇ Excel</button>
+          <button class="btn btn-primary" onclick="addMembershipPayment()">🪙 Nouvelle cotisation</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="toolbar" style="flex-wrap:wrap;gap:8px;">
+          <input type="text" class="search-input" id="mp-search" placeholder="🔍  Rechercher par adhérent..." oninput="loadMembershipPaymentsList()" style="flex:1;min-width:200px;" />
+          <select id="mp-method-filter" onchange="loadMembershipPaymentsList()" style="width:auto;margin:0;">
+            <option value="">Tous les modes</option>
+            <option value="cash">Espèces</option>
+            <option value="cheque">Chèque</option>
+            <option value="virement">Virement</option>
+          </select>
+          <select id="mp-status-filter" onchange="loadMembershipPaymentsList()" style="width:auto;margin:0;">
+            <option value="">Tous statuts</option>
+            <option value="validated">✅ Validé</option>
+            <option value="pending">⏳ En attente</option>
+          </select>
+        </div>
+        <div id="mp-summary" class="stats-row" style="margin-bottom:16px;display:none;">
+          <div class="stat-card"><div class="stat-icon">🪙</div><div class="num text-green" id="mp-total-amount">—</div><div class="lbl">Total collecté</div></div>
+          <div class="stat-card"><div class="stat-icon">📋</div><div class="num" id="mp-count">—</div><div class="lbl">Paiements</div></div>
+        </div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Adhérent</th><th>Année</th><th>Montant</th><th>Mode</th><th>Statut</th><th>Note</th><th>Actions</th></tr></thead>
+            <tbody id="membership-payments-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
     <!-- ── Non cotisants ── -->
     <div id="section-unpaid-members" class="hidden">
