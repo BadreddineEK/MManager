@@ -114,8 +114,13 @@ class TreasuryTransaction(models.Model):
         help_text="Null = espèces / non bancaire",
     )
     source = models.CharField(
-        max_length=10,
-        choices=[("manual", "Saisie manuelle"), ("import", "Import CSV")],
+        max_length=15,
+        choices=[
+            ("manual",      "Saisie manuelle"),
+            ("import",      "Import CSV bancaire"),
+            ("cash_school", "Especes ecole"),
+            ("cash_cotis",  "Especes cotisation"),
+        ],
         default="manual",
         verbose_name="Source",
     )
@@ -135,6 +140,21 @@ class TreasuryTransaction(models.Model):
         null=True, blank=True,
         verbose_name="Statut import",
         help_text="Null pour les transactions saisies manuellement",
+    )
+    # Liens vers paiements ecole / cotisation
+    school_payment = models.OneToOneField(
+        "school.SchoolPayment",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="treasury_tx",
+        verbose_name="Paiement ecole lie",
+    )
+    membership_payment = models.OneToOneField(
+        "membership.MembershipPayment",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="treasury_tx",
+        verbose_name="Paiement cotisation lie",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

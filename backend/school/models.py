@@ -146,6 +146,13 @@ class SchoolPayment(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant")
     method = models.CharField(max_length=20, choices=METHOD_CHOICES, default="cash", verbose_name="Mode de paiement")
     note = models.TextField(blank=True, default="", verbose_name="Note")
+    status = models.CharField(
+        max_length=15,
+        choices=[("validated", "Valide"), ("pending", "En attente")],
+        default="validated",
+        verbose_name="Statut",
+        help_text="validated = en caisse / pending = a valider par le tresorier",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
