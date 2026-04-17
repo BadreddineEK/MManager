@@ -1388,10 +1388,11 @@
 <div class="modal-overlay" id="modal-school-payment">
   <div class="modal">
     <div class="modal-header">
-      <h3>💳 Enregistrer un paiement école</h3>
+      <h3 id="modal-sp-title">💳 Enregistrer un paiement école</h3>
       <button class="modal-close" onclick="closeModal('modal-school-payment')">✕</button>
     </div>
     <div class="modal-body">
+      <input type="hidden" id="sp-id" />
       <input type="hidden" id="sp-family-id" />
       <label>Famille</label>
       <select id="sp-family"></select>
@@ -1427,10 +1428,11 @@
 <div class="modal-overlay" id="modal-membership-payment">
   <div class="modal">
     <div class="modal-header">
-      <h3>💳 Enregistrer un paiement cotisation</h3>
+      <h3 id="modal-mp-title">💳 Enregistrer un paiement cotisation</h3>
       <button class="modal-close" onclick="closeModal('modal-membership-payment')">✕</button>
     </div>
     <div class="modal-body">
+      <input type="hidden" id="mp-id" />
       <input type="hidden" id="mp-member-id" />
       <label>Adhérent</label>
       <select id="mp-member"></select>

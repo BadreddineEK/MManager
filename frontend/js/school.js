@@ -246,10 +246,33 @@ async function addSchoolPayment(familyId = null, familyName = '') {
     document.getElementById('sp-child').innerHTML = '<option value="">— Tous les enfants —</option>';
   }
 
+  document.getElementById('sp-id').value     = '';
   document.getElementById('sp-amount').value = '';
   document.getElementById('sp-date').value   = new Date().toISOString().split('T')[0];
   document.getElementById('sp-method').value = 'cash';
   document.getElementById('sp-note').value   = '';
+  document.getElementById('modal-sp-title').textContent = '💳 Enregistrer un paiement école';
+  document.getElementById('modal-sp-error').classList.add('hidden');
+  openModal('modal-school-payment');
+}
+
+async function editSchoolPayment(id) {
+  const res = await apiFetch(`/school/payments/${id}/`);
+  if (!res || !res.ok) { toast('Erreur chargement paiement', 'error'); return; }
+  const p = await res.json();
+
+  await Promise.all([_spLoadFamilies(), _spLoadYears()]);
+  document.getElementById('sp-family').value = p.family;
+  await _spLoadChildrenForFamily(p.family);
+
+  document.getElementById('sp-id').value     = p.id;
+  document.getElementById('sp-child').value  = p.child || '';
+  document.getElementById('sp-year').value   = p.school_year;
+  document.getElementById('sp-amount').value = p.amount;
+  document.getElementById('sp-date').value   = p.date;
+  document.getElementById('sp-method').value = p.method;
+  document.getElementById('sp-note').value   = p.note || '';
+  document.getElementById('modal-sp-title').textContent = '✏️ Modifier le paiement école';
   document.getElementById('modal-sp-error').classList.add('hidden');
   openModal('modal-school-payment');
 }
@@ -311,7 +334,10 @@ async function saveSchoolPayment() {
     return;
   }
 
-  const res = await apiFetch('/school/payments/', 'POST', body);
+  const id     = document.getElementById('sp-id').value;
+  const url    = id ? `/school/payments/${id}/` : '/school/payments/';
+  const method = id ? 'PUT' : 'POST';
+  const res    = await apiFetch(url, method, body);
   if (!res || !res.ok) {
     const err = await res.json().catch(() => ({}));
     errEl.textContent = JSON.stringify(err);
@@ -319,8 +345,8 @@ async function saveSchoolPayment() {
     return;
   }
   closeModal('modal-school-payment');
-  toast('Paiement enregistré ✓ — Transaction trésorerie créée automatiquement');
-  loadFamilies();
+  toast(id ? 'Paiement modifié ✓ — Trésorerie mise à jour' : 'Paiement enregistré ✓ — Transaction trésorerie créée automatiquement');
+  if (id) loadSchoolPaymentsList(); else loadFamilies();
 }
 
 // ── Impayés ───────────────────────────────────────────────────────────────────
@@ -432,6 +458,7 @@ async function loadSchoolPaymentsList() {
       <td><span class="badge ${p.status === 'validated' ? 'badge-green' : 'badge-yellow'}">${p.status === 'validated' ? '✅ Validé' : '⏳ En attente'}</span></td>
       <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.note || '') || '<span class="text-muted">—</span>'}</td>
       <td><div class="td-actions">
+        <button class="btn btn-sm btn-icon" onclick="editSchoolPayment(${p.id})" title="Modifier">✏️</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSchoolPayment(${p.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>

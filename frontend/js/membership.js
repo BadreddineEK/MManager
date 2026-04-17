@@ -129,10 +129,31 @@ async function addMembershipPayment(memberId = null, memberName = '') {
     document.getElementById('mp-member').value = memberId;
   }
 
+  document.getElementById('mp-id').value     = '';
   document.getElementById('mp-amount').value = '';
   document.getElementById('mp-date').value   = new Date().toISOString().split('T')[0];
   document.getElementById('mp-method').value = 'cash';
   document.getElementById('mp-note').value   = '';
+  document.getElementById('modal-mp-title').textContent = '💳 Enregistrer un paiement cotisation';
+  document.getElementById('modal-mp-error').classList.add('hidden');
+  openModal('modal-membership-payment');
+}
+
+async function editMembershipPayment(id) {
+  const res = await apiFetch(`/membership/payments/${id}/`);
+  if (!res || !res.ok) { toast('Erreur chargement cotisation', 'error'); return; }
+  const p = await res.json();
+
+  await Promise.all([_mpLoadMembers(), _mpLoadYears()]);
+
+  document.getElementById('mp-id').value              = p.id;
+  document.getElementById('mp-member').value          = p.member;
+  document.getElementById('mp-year').value            = p.membership_year;
+  document.getElementById('mp-amount').value          = p.amount;
+  document.getElementById('mp-date').value            = p.date;
+  document.getElementById('mp-method').value          = p.method;
+  document.getElementById('mp-note').value            = p.note || '';
+  document.getElementById('modal-mp-title').textContent = '✏️ Modifier la cotisation';
   document.getElementById('modal-mp-error').classList.add('hidden');
   openModal('modal-membership-payment');
 }
@@ -178,7 +199,10 @@ async function saveMembershipPayment() {
     return;
   }
 
-  const res = await apiFetch('/membership/payments/', 'POST', body);
+  const id     = document.getElementById('mp-id').value;
+  const url    = id ? `/membership/payments/${id}/` : '/membership/payments/';
+  const method = id ? 'PUT' : 'POST';
+  const res    = await apiFetch(url, method, body);
   if (!res || !res.ok) {
     const err = await res.json().catch(() => ({}));
     errEl.textContent = JSON.stringify(err);
@@ -186,8 +210,8 @@ async function saveMembershipPayment() {
     return;
   }
   closeModal('modal-membership-payment');
-  toast('Cotisation enregistrée ✓ — Transaction trésorerie créée automatiquement');
-  loadMembers();
+  toast(id ? 'Cotisation modifiée ✓ — Trésorerie mise à jour' : 'Cotisation enregistrée ✓ — Transaction trésorerie créée automatiquement');
+  if (id) loadMembershipPaymentsList(); else loadMembers();
 }
 
 // ── Non cotisants ─────────────────────────────────────────────────────────────
@@ -327,6 +351,7 @@ async function loadMembershipPaymentsList() {
       <td><span class="badge ${p.status === 'validated' ? 'badge-green' : 'badge-yellow'}">${p.status === 'validated' ? '✅ Validé' : '⏳ En attente'}</span></td>
       <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.note || '') || '<span class="text-muted">—</span>'}</td>
       <td><div class="td-actions">
+        <button class="btn btn-sm btn-icon" onclick="editMembershipPayment(${p.id})" title="Modifier">✏️</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMembershipPayment(${p.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>

@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 
 from core.permissions import HasMosquePermission
-from core.utils import get_mosque
+from core.utils import get_mosque, log_action
 from .models import MembershipPayment
 from .serializers import MembershipPaymentSerializer
 
@@ -29,8 +29,40 @@ class MembershipPaymentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         mosque = get_mosque(self.request)
-        serializer.save(mosque=mosque)
-        # Signal auto-cree TreasuryTransaction si method != virement
+        obj = serializer.save(mosque=mosque)
+        log_action(self.request, "CREATE", "MembershipPayment", obj.id, {
+            "member": str(obj.member),
+            "amount": str(obj.amount),
+            "method": obj.method,
+            "date": str(obj.date),
+        })
 
     def perform_update(self, serializer):
-        serializer.save()
+        old = serializer.instance
+        old_data = {
+            "amount": str(old.amount),
+            "method": old.method,
+            "date": str(old.date),
+            "status": old.status,
+            "note": old.note,
+        }
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "MembershipPayment", obj.id, {
+            "before": old_data,
+            "after": {
+                "amount": str(obj.amount),
+                "method": obj.method,
+                "date": str(obj.date),
+                "status": obj.status,
+                "note": obj.note,
+            },
+        })
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "MembershipPayment", instance.id, {
+            "member": str(instance.member),
+            "amount": str(instance.amount),
+            "method": instance.method,
+            "date": str(instance.date),
+        })
+        instance.delete()

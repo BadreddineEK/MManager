@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 
 from core.permissions import HasMosquePermission
-from core.utils import get_mosque
+from core.utils import get_mosque, log_action
 from .models import SchoolPayment
 from .serializers import SchoolPaymentSerializer
 
@@ -33,9 +33,40 @@ class SchoolPaymentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         mosque = get_mosque(self.request)
-        serializer.save(mosque=mosque)
-        # Signal treasury/signals.py cree automatiquement la TreasuryTransaction
+        obj = serializer.save(mosque=mosque)
+        log_action(self.request, "CREATE", "SchoolPayment", obj.id, {
+            "family": str(obj.family),
+            "amount": str(obj.amount),
+            "method": obj.method,
+            "date": str(obj.date),
+        })
 
     def perform_update(self, serializer):
-        serializer.save()
-        # Signal met a jour la TreasuryTransaction liee automatiquement
+        old = serializer.instance
+        old_data = {
+            "amount": str(old.amount),
+            "method": old.method,
+            "date": str(old.date),
+            "status": old.status,
+            "note": old.note,
+        }
+        obj = serializer.save()
+        log_action(self.request, "UPDATE", "SchoolPayment", obj.id, {
+            "before": old_data,
+            "after": {
+                "amount": str(obj.amount),
+                "method": obj.method,
+                "date": str(obj.date),
+                "status": obj.status,
+                "note": obj.note,
+            },
+        })
+
+    def perform_destroy(self, instance):
+        log_action(self.request, "DELETE", "SchoolPayment", instance.id, {
+            "family": str(instance.family),
+            "amount": str(instance.amount),
+            "method": instance.method,
+            "date": str(instance.date),
+        })
+        instance.delete()
