@@ -36,14 +36,20 @@ function applyRBAC() {
   const perms  = currentUser.effective_permissions || {};
   const role   = currentUser.role || '';
 
-  // Nav items — masquer UNIQUEMENT si explicitement false
+  // Nav items — masquer si la permission est false
+  // nav-school et nav-membership sont des divs de groupe
+  // nav-audit et nav-import sont reservés aux ADMIN uniquement
+  const isAdmin = role === 'ADMIN';
   const navMap = {
-    'nav-school':     perms.school?.read,
-    'nav-membership': perms.membership?.read,
-    'nav-treasury':   perms.treasury?.read,
-    'nav-campaigns':  perms.campaigns?.read,
-    'nav-users':      perms.users?.read,
-    'nav-settings':   perms.settings?.read,
+    'nav-school':         perms.school?.read,
+    'nav-membership':     perms.membership?.read,
+    'nav-treasury':       perms.treasury?.read,
+    'nav-campaigns':      perms.campaigns?.read,
+    'nav-unpaid-members': perms.membership?.read,
+    'nav-users':          perms.users?.read,
+    'nav-settings':       perms.settings?.read,
+    'nav-audit':          isAdmin ? true : false,
+    'nav-import':         isAdmin ? true : false,
   };
   Object.entries(navMap).forEach(([id, allowed]) => {
     const el = document.getElementById(id);
