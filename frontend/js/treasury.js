@@ -23,8 +23,26 @@ function resetTreasuryFilters() {
 }
 
 
+// ── Badge "À valider" ─────────────────────────────────────────────────────────
+async function _refreshPendingBadge() {
+  const badge = document.getElementById('pending-badge');
+  if (!badge) return;
+  const res = await apiFetch('/treasury/import/pending/');
+  if (!res || !res.ok) return;
+  const txs = await res.json();
+  if (txs.length > 0) {
+    badge.textContent = txs.length;
+    badge.style.display = 'inline';
+  } else {
+    badge.textContent = '';
+    badge.style.display = 'none';
+  }
+}
+
 async function loadTreasury() {
   document.getElementById('treasury-table').innerHTML = skeletonRows(4, 9);
+  // Mettre à jour le badge "À valider" en arrière-plan
+  _refreshPendingBadge();
   const direction = document.getElementById('trs-direction-filter').value;
   const category  = document.getElementById('trs-category-filter').value;
   const regime    = document.getElementById('trs-regime-filter').value;
@@ -578,7 +596,15 @@ async function loadImportPending() {
   const txs = await res.json();
 
   const badge = document.getElementById('pending-badge');
-  if (badge) badge.textContent = txs.length > 0 ? txs.length : '';
+  if (badge) {
+    if (txs.length > 0) {
+      badge.textContent = txs.length;
+      badge.style.display = 'inline';
+    } else {
+      badge.textContent = '';
+      badge.style.display = 'none';
+    }
+  }
 
   if (!txs.length) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted);">✅ Aucune transaction en attente — tout est validé.</td></tr>`;
