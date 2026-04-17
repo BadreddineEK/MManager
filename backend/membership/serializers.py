@@ -54,6 +54,6 @@ class MembershipPaymentSerializer(serializers.ModelSerializer):
         fields = [
             "id", "membership_year", "year_label",
             "member", "member_name",
-            "date", "amount", "method", "note", "created_at",
+            "date", "amount", "method", "note", "status", "created_at",
         ]
         read_only_fields = ["created_at"]

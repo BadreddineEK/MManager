@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 # Vues v1 (inchangees)
 from .views import ChildViewSet, FamilyViewSet, SchoolYearViewSet
+from .payment_views import SchoolPaymentViewSet
 
 # Vues v2 (nouveaux)
 from .views_v2 import (
@@ -24,6 +25,7 @@ router = DefaultRouter()
 router.register("years",    SchoolYearViewSet,         basename="school-year")
 router.register("families", FamilyViewSet,             basename="family")
 router.register("children", ChildViewSet,              basename="child")
+router.register("payments", SchoolPaymentViewSet,       basename="school-payment")
 # v2
 router.register("classes",  ClassViewSet,              basename="class")
 router.register("sessions", AttendanceSessionViewSet,  basename="session")

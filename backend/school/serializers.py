@@ -74,6 +74,7 @@ class SchoolPaymentSerializer(serializers.ModelSerializer):
             "method",
             "method_display",
             "note",
+            "status",
             "created_at",
         ]
         read_only_fields = ["created_at"]
