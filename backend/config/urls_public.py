@@ -28,4 +28,6 @@ urlpatterns = [
     path("api/auth/", include("core.urls", namespace="core")),
     path("api/onboarding/", include("onboarding.urls", namespace="onboarding")),
     path("nidham-admin/", include("nidham_admin.urls", namespace="nidham_admin")),
+    # KPI public (ecran TV, sans auth, accessible depuis le schema public aussi)
+    path("api/kpi/", include("kpi.urls", namespace="kpi")),
 ]
