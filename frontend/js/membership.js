@@ -117,18 +117,77 @@ async function deleteMember(id) {
   loadMembers();
 }
 
-// ── Cotisations → Trésorerie ──────────────────────────────────────────────────
-/**
- * Ouvre le modal trésorerie pré-rempli pour une cotisation adhérent.
- * @param {number} memberId   - ID de l'adhérent (optionnel)
- * @param {string} memberName - Nom affiché dans le libellé (optionnel)
- */
-function addMembershipPayment(memberId = null, memberName = '') {
-  if (typeof openTreasuryModal !== 'function') {
-    toast('Module trésorerie non chargé', 'error');
+// ── Cotisations ───────────────────────────────────────────────────────────────
+
+async function addMembershipPayment(memberId = null, memberName = '') {
+  await Promise.all([
+    _mpLoadMembers(),
+    _mpLoadYears(),
+  ]);
+
+  if (memberId) {
+    document.getElementById('mp-member').value = memberId;
+  }
+
+  document.getElementById('mp-amount').value = '';
+  document.getElementById('mp-date').value   = new Date().toISOString().split('T')[0];
+  document.getElementById('mp-method').value = 'cash';
+  document.getElementById('mp-note').value   = '';
+  document.getElementById('modal-mp-error').classList.add('hidden');
+  openModal('modal-membership-payment');
+}
+
+async function _mpLoadMembers() {
+  const res = await apiFetch('/membership/members/');
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  const members = data.results || data;
+  const sel = document.getElementById('mp-member');
+  sel.innerHTML = '<option value="">— Choisir un adhérent —</option>';
+  members.forEach(m => {
+    sel.innerHTML += `<option value="${m.id}">${esc(m.full_name)}</option>`;
+  });
+}
+
+async function _mpLoadYears() {
+  const res = await apiFetch('/membership/years/');
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  const years = data.results || data;
+  const sel = document.getElementById('mp-year');
+  sel.innerHTML = '<option value="">— Choisir une année —</option>';
+  years.forEach(y => {
+    sel.innerHTML += `<option value="${y.id}" ${y.is_active ? 'selected' : ''}>${y.year}${y.is_active ? ' ✓' : ''} — ${y.amount_expected} €</option>`;
+  });
+}
+
+async function saveMembershipPayment() {
+  const errEl = document.getElementById('modal-mp-error');
+  const body = {
+    member:          parseInt(document.getElementById('mp-member').value) || null,
+    membership_year: parseInt(document.getElementById('mp-year').value)   || null,
+    amount:          parseFloat(document.getElementById('mp-amount').value),
+    date:            document.getElementById('mp-date').value,
+    method:          document.getElementById('mp-method').value,
+    note:            document.getElementById('mp-note').value.trim(),
+  };
+
+  if (!body.member || !body.membership_year || !body.amount || !body.date) {
+    errEl.textContent = 'Adhérent, année, montant et date sont obligatoires.';
+    errEl.classList.remove('hidden');
     return;
   }
-  openTreasuryModal({ category: 'cotisation', memberId, memberName });
+
+  const res = await apiFetch('/membership/payments/', 'POST', body);
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    errEl.classList.remove('hidden');
+    return;
+  }
+  closeModal('modal-membership-payment');
+  toast('Cotisation enregistrée ✓ — Transaction trésorerie créée automatiquement');
+  loadMembers();
 }
 
 // ── Non cotisants ─────────────────────────────────────────────────────────────

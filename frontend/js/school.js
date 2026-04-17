@@ -229,19 +229,98 @@ async function deleteChild(id) {
   loadChildren();
 }
 
-// ── Paiements école → Trésorerie ─────────────────────────────────────────────
-/**
- * Ouvre le modal trésorerie pré-rempli pour un paiement école.
- * @param {number} familyId  - ID de la famille (optionnel)
- * @param {string} familyName - Nom affiché dans le libellé (optionnel)
- */
-function addSchoolPayment(familyId = null, familyName = '') {
-  // S'assurer que le modal trésorerie est disponible
-  if (typeof openTreasuryModal !== 'function') {
-    toast('Module trésorerie non chargé', 'error');
+// ── Paiements école ──────────────────────────────────────────────────────────
+
+async function addSchoolPayment(familyId = null, familyName = '') {
+  // Charger familles + années dans les sélects
+  await Promise.all([
+    _spLoadFamilies(),
+    _spLoadYears(),
+  ]);
+
+  // Pré-sélectionner la famille si fournie
+  if (familyId) {
+    document.getElementById('sp-family').value = familyId;
+    await _spLoadChildrenForFamily(familyId);
+  } else {
+    document.getElementById('sp-child').innerHTML = '<option value="">— Tous les enfants —</option>';
+  }
+
+  document.getElementById('sp-amount').value = '';
+  document.getElementById('sp-date').value   = new Date().toISOString().split('T')[0];
+  document.getElementById('sp-method').value = 'cash';
+  document.getElementById('sp-note').value   = '';
+  document.getElementById('modal-sp-error').classList.add('hidden');
+  openModal('modal-school-payment');
+}
+
+async function _spLoadFamilies() {
+  if (!allFamilies.length) {
+    const res = await apiFetch('/school/families/');
+    if (res && res.ok) {
+      const data = await res.json();
+      allFamilies = data.results || data;
+    }
+  }
+  const sel = document.getElementById('sp-family');
+  sel.innerHTML = '<option value="">— Choisir une famille —</option>';
+  allFamilies.forEach(f => {
+    sel.innerHTML += `<option value="${f.id}">${esc(f.primary_contact_name)}</option>`;
+  });
+  sel.onchange = () => _spLoadChildrenForFamily(sel.value);
+}
+
+async function _spLoadChildrenForFamily(familyId) {
+  const sel = document.getElementById('sp-child');
+  sel.innerHTML = '<option value="">— Tous les enfants —</option>';
+  if (!familyId) return;
+  const res = await apiFetch(`/school/children/?family=${familyId}`);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  const children = data.results || data;
+  children.forEach(c => {
+    sel.innerHTML += `<option value="${c.id}">${esc(c.first_name)} (${esc(c.level)})</option>`;
+  });
+}
+
+async function _spLoadYears() {
+  if (!schoolYears.length) await loadSchoolYears();
+  const sel = document.getElementById('sp-year');
+  sel.innerHTML = '<option value="">— Choisir une année —</option>';
+  schoolYears.forEach(y => {
+    const active = y.is_active ? ' ✓' : '';
+    sel.innerHTML += `<option value="${y.id}" ${y.is_active ? 'selected' : ''}>${esc(y.label)}${active}</option>`;
+  });
+}
+
+async function saveSchoolPayment() {
+  const errEl = document.getElementById('modal-sp-error');
+  const body = {
+    family:      parseInt(document.getElementById('sp-family').value) || null,
+    child:       parseInt(document.getElementById('sp-child').value)  || null,
+    school_year: parseInt(document.getElementById('sp-year').value)   || null,
+    amount:      parseFloat(document.getElementById('sp-amount').value),
+    date:        document.getElementById('sp-date').value,
+    method:      document.getElementById('sp-method').value,
+    note:        document.getElementById('sp-note').value.trim(),
+  };
+
+  if (!body.family || !body.school_year || !body.amount || !body.date) {
+    errEl.textContent = 'Famille, année scolaire, montant et date sont obligatoires.';
+    errEl.classList.remove('hidden');
     return;
   }
-  openTreasuryModal({ category: 'ecole', familyId, familyName });
+
+  const res = await apiFetch('/school/payments/', 'POST', body);
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    errEl.classList.remove('hidden');
+    return;
+  }
+  closeModal('modal-school-payment');
+  toast('Paiement enregistré ✓ — Transaction trésorerie créée automatiquement');
+  loadFamilies();
 }
 
 // ── Impayés ───────────────────────────────────────────────────────────────────

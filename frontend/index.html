@@ -1299,6 +1299,83 @@
   </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════════════════
+     Modal Paiement École
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-school-payment">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>💳 Enregistrer un paiement école</h3>
+      <button class="modal-close" onclick="closeModal('modal-school-payment')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sp-family-id" />
+      <label>Famille</label>
+      <select id="sp-family"></select>
+      <label>Enfant (optionnel)</label>
+      <select id="sp-child"><option value="">— Tous les enfants —</option></select>
+      <label>Année scolaire *</label>
+      <select id="sp-year"></select>
+      <label>Montant (€) *</label>
+      <input type="number" id="sp-amount" step="0.01" min="0" placeholder="Ex: 50.00" />
+      <label>Date *</label>
+      <input type="date" id="sp-date" />
+      <label>Mode de paiement *</label>
+      <select id="sp-method">
+        <option value="cash">Espèces</option>
+        <option value="cheque">Chèque</option>
+        <option value="virement">Virement bancaire</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label>Note (optionnel)</label>
+      <input type="text" id="sp-note" placeholder="Ex: Paiement partiel mois de mars" />
+      <div id="modal-sp-error" class="alert alert-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-school-payment')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveSchoolPayment()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Modal Paiement Cotisation
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-membership-payment">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>💳 Enregistrer un paiement cotisation</h3>
+      <button class="modal-close" onclick="closeModal('modal-membership-payment')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mp-member-id" />
+      <label>Adhérent</label>
+      <select id="mp-member"></select>
+      <label>Année de cotisation *</label>
+      <select id="mp-year"></select>
+      <label>Montant (€) *</label>
+      <input type="number" id="mp-amount" step="0.01" min="0" placeholder="Ex: 30.00" />
+      <label>Date *</label>
+      <input type="date" id="mp-date" />
+      <label>Mode de paiement *</label>
+      <select id="mp-method">
+        <option value="cash">Espèces</option>
+        <option value="cheque">Chèque</option>
+        <option value="virement">Virement bancaire</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label>Note (optionnel)</label>
+      <input type="text" id="mp-note" placeholder="Ex: Cotisation 2025-2026" />
+      <div id="modal-mp-error" class="alert alert-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-membership-payment')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveMembershipPayment()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Cotisation → voir Modal Transaction Trésorerie avec category=cotisation -->
 
 <!-- Modal Transaction Trésorerie -->
