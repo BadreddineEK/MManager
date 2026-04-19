@@ -102,3 +102,11 @@ function setBottomNav(activeId) {
   const el = document.getElementById(activeId);
   if (el) el.classList.add('active');
 }
+
+// ── Écran KPI ────────────────────────────────────────────────────────────────
+function openKpiScreen() {
+  const slug = getMosqueSlug();
+  const base = window.location.origin + window.location.pathname.replace('index.html', '').replace(/\/$/, '');
+  const url  = `${base}/kpi.html${slug ? '?slug=' + encodeURIComponent(slug) + '&from=portal' : ''}`;
+  window.open(url, '_blank', 'noopener');
+}

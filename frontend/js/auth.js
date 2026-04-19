@@ -96,6 +96,16 @@ function _applyJwtToUI(token) {
   } catch (e) { /* token malformé */ }
 }
 
+// ── Slug mosquée courant (depuis JWT) ────────────────────────────────────────
+function getMosqueSlug() {
+  try {
+    const token = localStorage.getItem('access');
+    if (!token) return '';
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.mosque_slug || '';
+  } catch (e) { return ''; }
+}
+
 // ── Auto-login : hash URL ou localStorage ────────────────────────────────────
 (async function restoreSession() {
   // 0. Verifier que le tenant existe

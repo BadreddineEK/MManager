@@ -730,7 +730,37 @@ const savedTheme = localStorage.getItem('kpi_theme') || 'dark';
 applyTheme(savedTheme);
 
 async function init() {
-  await loadMosqueList(); // on attend la liste avant de vérifier le slug sauvegardé
+  // 1. Lire ?slug= depuis l'URL (ouverture depuis le portail)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlSlug   = urlParams.get('slug');
+  const fromPortal = urlParams.get('from') === 'portal';
+
+  // Afficher lien retour portail si vient du portail
+  if (fromPortal) {
+    const footer = document.querySelector('.kpi-footer');
+    if (footer) {
+      const backBtn = document.createElement('a');
+      backBtn.href = 'javascript:void(0)';
+      backBtn.textContent = '← Retour au portail';
+      backBtn.onclick = () => window.close();
+      backBtn.style.cssText = 'color:var(--purple);font-weight:600;';
+      footer.prepend(backBtn);
+    }
+  }
+
+  await loadMosqueList();
+
+  if (urlSlug) {
+    // Slug fourni dans l'URL → démarrer directement, ne pas montrer le setup
+    document.getElementById('slug-input').value = urlSlug;
+    mosqueSlug = urlSlug;
+    localStorage.setItem('kpi_slug', urlSlug);
+    document.getElementById('setup-loading').style.display = 'block';
+    fetchKPI();
+    return;
+  }
+
+  // 2. Sinon slug sauvegardé en localStorage
   const saved = localStorage.getItem('kpi_slug');
   if (saved) {
     document.getElementById('slug-input').value = saved;
