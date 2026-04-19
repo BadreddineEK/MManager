@@ -1138,9 +1138,78 @@
         <div class="card" style="margin-bottom:20px;">
           <div class="card-body tab-selector">
             <span class="tab-label">Type de données :</span>
-            <button class="btn btn-primary btn-sm" id="import-tab-members" onclick="switchImportTab('members')">🤝 Adhérents</button>
+            <button class="btn btn-sm" id="import-tab-setup" onclick="switchImportTab('setup')">⚙️ Paramètres mosquée</button>
+            <button class="btn btn-sm" id="import-tab-members" onclick="switchImportTab('members')">🤝 Adhérents</button>
             <button class="btn btn-sm" id="import-tab-school" onclick="switchImportTab('school')">🏫 Familles &amp; École</button>
             <button class="btn btn-sm" id="import-tab-transactions" onclick="switchImportTab('transactions')">💰 Historique trésorerie</button>
+          </div>
+        </div>
+
+        <!-- ══ Paramètres mosquée ══════════════════════════════════════ -->
+        <div id="import-panel-setup" class="hidden">
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span>⚙️ Configuration de votre mosquée</span></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+              <div id="setup-form-success" class="alert alert-success hidden">✅ Paramètres enregistrés !</div>
+              <div id="setup-form-error" class="alert alert-error hidden"></div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Nom de la mosquée *</label>
+                  <input type="text" id="setup-mosque-name" placeholder="Ex: Mosquée Al-Fath de Meximieux" />
+                </div>
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Fuseau horaire</label>
+                  <select id="setup-timezone">
+                    <option value="Europe/Paris">Europe/Paris (défaut)</option>
+                    <option value="Europe/London">Europe/London</option>
+                    <option value="Africa/Algiers">Africa/Algiers</option>
+                    <option value="Africa/Tunis">Africa/Tunis</option>
+                    <option value="Africa/Casablanca">Africa/Casablanca</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Année scolaire active *</label>
+                  <input type="text" id="setup-school-year" placeholder="Ex: 2025-2026" />
+                </div>
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Niveaux école (séparés par virgule)</label>
+                  <input type="text" id="setup-school-levels" placeholder="Ex: NP,N1,N2,N3,N4,N5,N6" value="NP,N1,N2,N3,N4,N5,N6" />
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;">
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Tarif école (€)</label>
+                  <input type="number" id="setup-school-fee" step="0.01" min="0" placeholder="Ex: 180.00" />
+                </div>
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Mode tarif école</label>
+                  <select id="setup-school-fee-mode">
+                    <option value="annual">Annuel</option>
+                    <option value="monthly">Mensuel</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Cotisation (€)</label>
+                  <input type="number" id="setup-membership-fee" step="0.01" min="0" placeholder="Ex: 30.00" />
+                </div>
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Mode cotisation</label>
+                  <select id="setup-membership-mode">
+                    <option value="per_person">Par personne</option>
+                    <option value="per_family">Par famille</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-top:6px;">
+                <button class="btn btn-primary" onclick="saveSetupForm()">💾 Enregistrer les paramètres</button>
+              </div>
+            </div>
           </div>
         </div>
 

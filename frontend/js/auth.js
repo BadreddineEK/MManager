@@ -51,6 +51,7 @@ async function login() {
     loadDashboard();
     loadCurrentUser();  // RBAC
     loadCurrentPlan();  // Plan enforcement
+    checkOnboardingStatus();  // Onboarding si 1ère config
   } catch (e) {
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
@@ -106,6 +107,61 @@ function getMosqueSlug() {
   } catch (e) { return ''; }
 }
 
+// ── Onboarding : check 1ère configuration ───────────────────────────────────
+async function checkOnboardingStatus() {
+  try {
+    // Seulement pour les ADMIN
+    const token = localStorage.getItem('access');
+    if (!token) return;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.role !== 'ADMIN') return;
+
+    const res = await apiFetch('/settings/status/');
+    if (!res || !res.ok) return;
+    const data = await res.json();
+
+    if (!data.configured) {
+      // 1ère connexion → afficher bannière + aller sur onboarding
+      _showOnboardingBanner();
+      showSection('import');
+      // Activer l'onglet "Paramètres mosquée" en premier
+      if (typeof switchImportTab === 'function') switchImportTab('setup');
+    }
+  } catch (e) { /* silencieux */ }
+}
+
+function _showOnboardingBanner() {
+  const existing = document.getElementById('onboarding-welcome-banner');
+  if (existing) { existing.classList.remove('hidden'); return; }
+  const banner = document.createElement('div');
+  banner.id = 'onboarding-welcome-banner';
+  banner.innerHTML = `
+    <div style="
+      background: linear-gradient(135deg, rgba(167,139,250,.15), rgba(96,165,250,.1));
+      border: 1.5px solid var(--purple);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: flex; align-items: flex-start; gap: 16px;
+    ">
+      <span style="font-size:2rem;flex-shrink:0;">🎉</span>
+      <div>
+        <div style="font-weight:800;font-size:1.05rem;margin-bottom:6px;">Bienvenue sur Nidham Manager !</div>
+        <div style="font-size:.88rem;color:var(--muted);line-height:1.6;">
+          Avant de commencer, configurez votre mosquée en 2 minutes :<br>
+          <strong>1.</strong> Remplissez les paramètres ci-dessous (nom, année scolaire, tarifs)<br>
+          <strong>2.</strong> Importez vos données existantes si besoin (adhérents, familles, trésorerie)
+        </div>
+        <button onclick="document.getElementById('onboarding-welcome-banner').classList.add('hidden');localStorage.setItem('onboarding_banner_dismissed','1');"
+          style="margin-top:10px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 12px;font-size:.8rem;cursor:pointer;color:var(--muted);">
+          Fermer
+        </button>
+      </div>
+    </div>`;
+  const section = document.getElementById('section-import');
+  if (section) section.insertBefore(banner, section.firstChild.nextSibling);
+}
+
 // ── Auto-login : hash URL ou localStorage ────────────────────────────────────
 (async function restoreSession() {
   // 0. Verifier que le tenant existe
@@ -136,6 +192,7 @@ function getMosqueSlug() {
       _showApp();
       loadDashboard();
       loadCurrentUser();  // RBAC
+      checkOnboardingStatus();  // Onboarding si 1ère config
       loadCurrentPlan();  // Plan enforcement
     } else {
       localStorage.clear();

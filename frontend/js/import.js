@@ -15,15 +15,80 @@
 // ─────────────────────────────────────────────────────────────────
 
 async function initImportSection() {
-  switchImportTab('members');   // Adhérents = onglet par défaut
+  switchImportTab('setup');  // Paramètres mosquée = onglet par défaut
   await Promise.all([
     loadMembershipYearsForImport(),
     loadSchoolYearsForImport(),
+    loadSettingsIntoSetupForm(),
   ]);
 }
 
+async function loadSettingsIntoSetupForm() {
+  try {
+    const res = await apiFetch('/settings/');
+    if (!res || !res.ok) return;
+    const d = await res.json();
+    if (d.mosque_name)  document.getElementById('setup-mosque-name').value  = d.mosque_name;
+    if (d.mosque_timezone) {
+      const sel = document.getElementById('setup-timezone');
+      if (sel) sel.value = d.mosque_timezone;
+    }
+    if (d.active_school_year_label) document.getElementById('setup-school-year').value   = d.active_school_year_label;
+    if (d.school_levels?.length)    document.getElementById('setup-school-levels').value = d.school_levels.join(',');
+    if (d.school_fee_default)       document.getElementById('setup-school-fee').value    = d.school_fee_default;
+    if (d.school_fee_mode)          document.getElementById('setup-school-fee-mode').value = d.school_fee_mode;
+    if (d.membership_fee_amount)    document.getElementById('setup-membership-fee').value = d.membership_fee_amount;
+    if (d.membership_fee_mode)      document.getElementById('setup-membership-mode').value = d.membership_fee_mode;
+  } catch(e) { /* silencieux */ }
+}
+
+async function saveSetupForm() {
+  const errEl = document.getElementById('setup-form-error');
+  const okEl  = document.getElementById('setup-form-success');
+  errEl.classList.add('hidden');
+  okEl.classList.add('hidden');
+
+  const mosqueName = document.getElementById('setup-mosque-name').value.trim();
+  if (!mosqueName) {
+    errEl.textContent = 'Le nom de la mosquée est obligatoire.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const levelsRaw = document.getElementById('setup-school-levels').value.trim();
+  const levels = levelsRaw ? levelsRaw.split(',').map(l => l.trim().toUpperCase()).filter(Boolean) : ['NP','N1','N2','N3','N4','N5','N6'];
+
+  const body = {
+    mosque_name:              mosqueName,
+    mosque_timezone:          document.getElementById('setup-timezone').value,
+    active_school_year_label: document.getElementById('setup-school-year').value.trim(),
+    school_levels:            levels,
+    school_fee_default:       parseFloat(document.getElementById('setup-school-fee').value) || 0,
+    school_fee_mode:          document.getElementById('setup-school-fee-mode').value,
+    membership_fee_amount:    parseFloat(document.getElementById('setup-membership-fee').value) || 0,
+    membership_fee_mode:      document.getElementById('setup-membership-mode').value,
+  };
+
+  const res = await apiFetch('/settings/', 'PUT', body);
+  if (!res || !res.ok) {
+    const err = await res?.json().catch(() => ({}));
+    errEl.textContent = JSON.stringify(err);
+    errEl.classList.remove('hidden');
+    return;
+  }
+  okEl.classList.remove('hidden');
+  // Masquer la bannière si présente
+  document.getElementById('onboarding-welcome-banner')?.classList.add('hidden');
+  localStorage.setItem('onboarding_banner_dismissed', '1');
+  toast('Paramètres enregistrés ✓', 'success');
+
+  // Mettre à jour le nom affiché dans la sidebar
+  const nameEl = document.getElementById('sidebar-mosque-name') || document.getElementById('dashboard-mosque-name');
+  if (nameEl) nameEl.textContent = body.mosque_name;
+}
+
 function switchImportTab(tab) {
-  const tabs = ['transactions', 'members', 'school'];
+  const tabs = ['setup', 'transactions', 'members', 'school'];
   tabs.forEach(t => {
     const panel = document.getElementById(`import-panel-${t}`);
     const btn   = document.getElementById(`import-tab-${t}`);
