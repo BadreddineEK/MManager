@@ -85,6 +85,7 @@ services:
       - -c
       - |
         apk add --no-cache openssl
+        chmod +x /scripts/backup.sh
         /scripts/backup.sh
     environment:
       DATABASE_URL: postgres://nidham:devpassword@db_dev:5432/nidham_dev
@@ -107,6 +108,7 @@ services:
       - -c
       - |
         apk add --no-cache openssl
+        chmod +x /scripts/backup.sh
         mkdir -p /etc/crontabs
         echo "0 2 * * * /scripts/backup.sh >> /backups/backup.log 2>&1" > /etc/crontabs/root
         crond -f -l 8
