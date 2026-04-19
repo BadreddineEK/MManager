@@ -243,16 +243,44 @@ footer{background:var(--gray-900);color:var(--gray-400);padding:2.5rem 1.5rem}
   .footer-links{flex-direction:column;gap:1.5rem}
   .plans-grid,.features-grid{grid-template-columns:1fr}
 }
+  /* ── Modal KPI ── */
+  #kpi-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:999;display:none;align-items:center;justify-content:center;}
+  #kpi-modal-overlay.open{display:flex;}
+  #kpi-modal{background:#fff;border-radius:16px;padding:28px 32px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+  #kpi-modal h3{font-size:1.1rem;font-weight:700;color:var(--gray-900);margin:0 0 6px;}
+  #kpi-modal p{font-size:.85rem;color:var(--gray-500);margin:0 0 18px;}
+  #kpi-modal input{width:100%;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.95rem;outline:none;box-sizing:border-box;transition:border-color .2s;}
+  #kpi-modal input:focus{border-color:var(--green);}
+  #kpi-modal-actions{display:flex;gap:10px;margin-top:16px;}
+  #kpi-modal-actions button{flex:1;padding:10px;border-radius:8px;font-weight:600;font-size:.9rem;cursor:pointer;border:none;transition:all .2s;}
+  .kpi-modal-confirm{background:var(--green);color:#fff;}
+  .kpi-modal-confirm:hover{background:var(--green-d);}
+  .kpi-modal-cancel{background:var(--gray-100);color:var(--gray-700);}
+  .kpi-modal-cancel:hover{background:var(--gray-200);}
 </style>
 </head>
 <body>
 <div id="toast-container"></div>
+
+<!-- Modal KPI -->
+<div id="kpi-modal-overlay" onclick="closeKpiModal(event)">
+  <div id="kpi-modal">
+    <h3>📺 Tableau de bord KPI</h3>
+    <p>Saisissez le slug de votre mosquée pour accéder aux indicateurs en temps réel (lecture seule, aucune donnée personnelle).</p>
+    <input type="text" id="kpi-slug-input" placeholder="Ex: mosquee-alpha" autocomplete="off" />
+    <div id="kpi-modal-actions">
+      <button class="kpi-modal-cancel" onclick="closeKpiModal()">Annuler</button>
+      <button class="kpi-modal-confirm" onclick="goToKpi()">Afficher les KPI →</button>
+    </div>
+  </div>
+</div>
 
 <!-- HEADER -->
 <header>
   <div class="header-inner">
     <div class="logo"><div class="logo-icon">🕌</div>Nidham</div>
     <nav class="header-actions">
+      <button class="btn-ghost" onclick="openKpiFromPortal()" title="Afficher le tableau de bord KPI public">📺 KPI</button>
       <button class="btn-ghost" onclick="scrollToLogin()">Se connecter</button>
       <button class="btn-primary" onclick="scrollToRegister()">Essai gratuit 14j</button>
     </nav>
@@ -818,6 +846,29 @@ async function loadStats() {
   document.getElementById('stat-mosques').textContent='4+';
 }
 loadStats();
+
+// ── KPI depuis portail ───────────────────────────────────────────────────────
+function openKpiFromPortal() {
+  document.getElementById('kpi-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('kpi-slug-input').focus(), 100);
+}
+function closeKpiModal(e) {
+  if (!e || e.target === document.getElementById('kpi-modal-overlay')) {
+    document.getElementById('kpi-modal-overlay').classList.remove('open');
+  }
+}
+function goToKpi() {
+  const slug = document.getElementById('kpi-slug-input').value.trim();
+  if (!slug) { document.getElementById('kpi-slug-input').focus(); return; }
+  const isDevEnv = location.hostname.includes('nidham.local') || location.hostname === 'localhost';
+  const base = isDevEnv ? `http://${slug}.nidham.local:8080` : `https://${slug}.nidham.fr`;
+  window.open(`${base}/kpi.html?slug=${encodeURIComponent(slug)}&from=portal`, '_blank', 'noopener');
+  closeKpiModal();
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeKpiModal();
+  if (e.key === 'Enter' && document.getElementById('kpi-modal-overlay').classList.contains('open')) goToKpi();
+});
 </script>
 </body>
 </html>
