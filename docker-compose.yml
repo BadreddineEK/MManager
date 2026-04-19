@@ -100,7 +100,7 @@ services:
   backup:
     image: postgres:16-alpine
     restart: "no"
-    entrypoint: ["sh", "-c", "apk add --no-cache openssl && /scripts/backup.sh"]
+    entrypoint: ["sh", "-c", "apk add --no-cache openssl && chmod +x /scripts/backup.sh && /scripts/backup.sh"]
     env_file:
       - .env
     volumes:
@@ -121,6 +121,7 @@ services:
       - -c
       - |
         apk add --no-cache openssl
+        chmod +x /scripts/backup.sh
         echo "0 2 * * * /scripts/backup.sh >> /backups/backup.log 2>&1" | crontab -
         crond -f -l 8
     env_file:
