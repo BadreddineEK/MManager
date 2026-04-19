@@ -1,14 +1,14 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Nidham DEV — docker-compose.dev.yml
+# -----------------------------------------------------------
+# Nidham DEV - docker-compose.dev.yml
 # Usage : docker compose -f docker-compose.dev.yml up -d
-# Port 8100 (dev) — séparé de la prod (port 80)
-# BDD séparée : nidham_dev sur port 5433
-# Nginx dev port 8080 — sert portal.html + proxy API
-# ─────────────────────────────────────────────────────────────────────────────
+# Port 8100 (dev) - separe de la prod (port 80)
+# BDD separee : nidham_dev sur port 5433
+# Nginx dev port 8080 - sert portal.html + proxy API
+# -----------------------------------------------------------
 
 services:
 
-  # ── PostgreSQL 16 DEV ──────────────────────────────────────────────────────────
+  # PostgreSQL 16 DEV
   db_dev:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -26,7 +26,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # ── Backend Django DEV (runserver + hot-reload) ───────────────────────────────────
+  # Backend Django DEV (runserver + hot-reload)
   backend_dev:
     build: ./backend
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
     volumes:
       - ./backend:/app
 
-  # ── Nginx DEV — sert portal.html + proxy API ─────────────────────────────
+  # Nginx DEV - sert portal.html + proxy API
   nginx_dev:
     image: nginx:alpine
     restart: unless-stopped
@@ -54,13 +54,19 @@ services:
     depends_on:
       - backend_dev
 
-  # ── Cron DEV — expire trials chaque nuit a 01h00 ─────────────────────────────
+  # Cron DEV - expire trials chaque nuit a 01h00
+  # Fix Alpine : pas de crontab -> ecriture directe dans /etc/crontabs/root
   cron_dev:
     build: ./backend
     restart: unless-stopped
     entrypoint: ["/app/entrypoint.dev.sh"]
-    command: >
-      sh -c "echo '0 1 * * * cd /app && python manage.py expire_trials >> /tmp/cron.log 2>&1' | crontab - && crond -f -l 8"
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p /etc/crontabs
+        echo "0 1 * * * cd /app && python manage.py expire_trials >> /tmp/cron.log 2>&1" > /etc/crontabs/root
+        crond -f -l 8
     env_file:
       - .env.dev
     depends_on:
@@ -68,6 +74,52 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+
+  # Backup one-shot DEV
+  # Usage : docker compose -f docker-compose.dev.yml run --rm backup_dev
+  backup_dev:
+    image: postgres:16-alpine
+    restart: "no"
+    entrypoint:
+      - sh
+      - -c
+      - |
+        apk add --no-cache openssl
+        /scripts/backup.sh
+    environment:
+      DATABASE_URL: postgres://nidham:devpassword@db_dev:5432/nidham_dev
+      BACKUP_PASSPHRASE: devpassphrase_change_me
+      BACKUP_KEEP: "10"
+    volumes:
+      - ./backups:/backups
+      - ./scripts:/scripts
+    depends_on:
+      db_dev:
+        condition: service_healthy
+
+  # Backup cron DEV - sauvegarde quotidienne a 02h00
+  # Alpine crond lit /etc/crontabs/root directement (sans crontab command)
+  backup_cron_dev:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    entrypoint:
+      - sh
+      - -c
+      - |
+        apk add --no-cache openssl
+        mkdir -p /etc/crontabs
+        echo "0 2 * * * /scripts/backup.sh >> /backups/backup.log 2>&1" > /etc/crontabs/root
+        crond -f -l 8
+    environment:
+      DATABASE_URL: postgres://nidham:devpassword@db_dev:5432/nidham_dev
+      BACKUP_PASSPHRASE: devpassphrase_change_me
+      BACKUP_KEEP: "10"
+    volumes:
+      - ./backups:/backups
+      - ./scripts:/scripts
+    depends_on:
+      db_dev:
+        condition: service_healthy
 
 volumes:
   postgres_dev_data:
