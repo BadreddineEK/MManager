@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 # Vues v1 (inchangees)
 from .views import ChildViewSet, FamilyViewSet, SchoolYearViewSet
 from .payment_views import SchoolPaymentViewSet
+from .receipt_views import SchoolPaymentReceiptView
 
 # Vues v2 (nouveaux)
 from .views_v2 import (
@@ -32,6 +33,12 @@ router.register("sessions", AttendanceSessionViewSet,  basename="session")
 router.register("periods",  GradePeriodViewSet,        basename="period")
 
 urlpatterns = router.urls + [
+    # Recu PDF pour un paiement ecole
+    path(
+        "payments/<int:pk>/receipt/",
+        SchoolPaymentReceiptView.as_view(),
+        name="school-payment-receipt",
+    ),
     # Suivi Coran
     path(
         "children/<int:child_id>/quran/",

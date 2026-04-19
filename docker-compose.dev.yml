@@ -64,9 +64,11 @@ services:
       - sh
       - -c
       - |
-        mkdir -p /etc/crontabs
-        echo "0 1 * * * cd /app && python manage.py expire_trials >> /tmp/cron.log 2>&1" > /etc/crontabs/root
-        crond -f -l 8
+        # Exporter les vars d env Docker vers /etc/environment (requis par cron Debian)
+        printenv | grep -v "^_" | sed "s/'/\\'/g" >> /etc/environment
+        echo "0 1 * * * root . /etc/environment && cd /app && python manage.py expire_trials >> /tmp/cron.log 2>&1" > /etc/cron.d/expire_trials
+        chmod 0644 /etc/cron.d/expire_trials
+        cron -f
     env_file:
       - .env.dev
     depends_on:

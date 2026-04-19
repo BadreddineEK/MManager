@@ -459,10 +459,36 @@ async function loadSchoolPaymentsList() {
       <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.note || '') || '<span class="text-muted">—</span>'}</td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editSchoolPayment(${p.id})" title="Modifier">✏️</button>
+        <button class="btn btn-sm btn-icon" onclick="downloadSchoolPaymentReceipt(${p.id}, ${JSON.stringify(p.family_name || p.child_name || '')})" title="Télécharger le reçu PDF">🧾</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSchoolPayment(${p.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>
   `).join('');
+}
+
+// -- Recu PDF paiement ecole
+async function downloadSchoolPaymentReceipt(id, label) {
+  showProgress();
+  try {
+    const res = await apiFetch(`/school/payments/${id}/receipt/`);
+    if (!res || !res.ok) {
+      const err = res ? await res.json().catch(() => ({})) : {};
+      toast(err.detail || 'Erreur reception du recu', 'error', 4000);
+      return;
+    }
+    const blob   = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
+    const a      = document.createElement('a');
+    a.href       = objUrl;
+    a.download   = `recu_ecole_${(label || 'paiement').replace(/\s+/g, '_')}_${id}.pdf`;
+    a.click();
+    URL.revokeObjectURL(objUrl);
+    toast('Recu telecharge ✓');
+  } catch (e) {
+    toast('Erreur : ' + e.message, 'error');
+  } finally {
+    hideProgress();
+  }
 }
 
 async function deleteSchoolPayment(id) {

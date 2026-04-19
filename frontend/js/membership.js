@@ -352,10 +352,36 @@ async function loadMembershipPaymentsList() {
       <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.note || '') || '<span class="text-muted">—</span>'}</td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editMembershipPayment(${p.id})" title="Modifier">✏️</button>
+        <button class="btn btn-sm btn-icon" onclick="downloadMembershipPaymentReceipt(${p.id}, ${JSON.stringify(p.member_name || '')})" title="Télécharger le reçu PDF">🧾</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMembershipPayment(${p.id})" title="Supprimer">🗑</button>
       </div></td>
     </tr>
   `).join('');
+}
+
+// -- Recu PDF paiement cotisation
+async function downloadMembershipPaymentReceipt(id, label) {
+  showProgress();
+  try {
+    const res = await apiFetch(`/treasury/receipt/membership/${id}/`);
+    if (!res || !res.ok) {
+      const err = res ? await res.json().catch(() => ({})) : {};
+      toast(err.detail || 'Erreur reception du recu', 'error', 4000);
+      return;
+    }
+    const blob   = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
+    const a      = document.createElement('a');
+    a.href       = objUrl;
+    a.download   = `recu_cotisation_${(label || 'paiement').replace(/\s+/g, '_')}_${id}.pdf`;
+    a.click();
+    URL.revokeObjectURL(objUrl);
+    toast('Recu telecharge ✓');
+  } catch (e) {
+    toast('Erreur : ' + e.message, 'error');
+  } finally {
+    hideProgress();
+  }
 }
 
 async function deleteMembershipPayment(id) {

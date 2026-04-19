@@ -7,9 +7,11 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Dépendances système : libpq-dev (psycopg2) + gcc (compilation)
+# cron est nécessaire pour le scheduler Django (expire_trials, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
+    cron \
     && rm -rf /var/lib/apt/lists/*
 
 # Installation des dépendances Python (couche séparée pour le cache Docker)
