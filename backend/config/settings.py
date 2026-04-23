@@ -171,6 +171,15 @@ REST_FRAMEWORK = {
     ),
     # Toujours du JSON propre, jamais de traceback exposé au client
     "EXCEPTION_HANDLER": "core.exception_handler.custom_exception_handler",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/min",
+        "user": "300/min",
+        "login": "5/5min",
+    },
 }
 
 # ── JWT (djangorestframework-simplejwt) ───────────────────────────────────────
@@ -247,3 +256,5 @@ LOGGING = {
     },
 }
 
+
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
