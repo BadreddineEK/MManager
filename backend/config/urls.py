@@ -1,12 +1,29 @@
 """Configuration des URLs principales — Mosquée Manager."""
 from django.contrib import admin
+from django.db import connection, OperationalError
 from django.http import JsonResponse
 from django.urls import include, path
 
+APP_VERSION = "1.0.0"
+
 
 def health_check(request: "django.http.HttpRequest") -> JsonResponse:
-    """Point de contrôle santé — utilisé par Docker, load balancers, Cloudflare."""
-    return JsonResponse({"status": "ok", "service": "mosque-manager"})
+    """Point de contrôle santé — Docker, load balancers, CI/CD, UptimeRobot.
+    HTTP 200 si tout va bien, HTTP 503 si la DB est inaccessible.
+    """
+    db_status = "ok"
+    try:
+        connection.ensure_connection()
+    except OperationalError:
+        db_status = "error"
+
+    tenant_schema = getattr(connection, "schema_name", "unknown")
+    overall = "ok" if db_status == "ok" else "degraded"
+
+    return JsonResponse(
+        {"status": overall, "db": db_status, "tenant": tenant_schema, "version": APP_VERSION},
+        status=200 if overall == "ok" else 503,
+    )
 
 
 urlpatterns = [

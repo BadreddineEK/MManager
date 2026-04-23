@@ -11,12 +11,24 @@ Note : Les APIs métier (familles, trésorerie, école...) sont dans urls.py
        et ne sont accessibles qu'après activation du tenant.
 """
 from django.contrib import admin
+from django.db import connection, OperationalError
 from django.http import JsonResponse
 from django.urls import include, path
 
+from config.urls import APP_VERSION
+
 
 def health_check(request):
-    return JsonResponse({"status": "ok", "service": "nidham", "schema": "public"})
+    db_status = "ok"
+    try:
+        connection.ensure_connection()
+    except OperationalError:
+        db_status = "error"
+    overall = "ok" if db_status == "ok" else "degraded"
+    return JsonResponse(
+        {"status": overall, "db": db_status, "schema": "public", "version": APP_VERSION},
+        status=200 if overall == "ok" else 503,
+    )
 
 
 urlpatterns = [

@@ -169,6 +169,8 @@ REST_FRAMEWORK = {
         if DEBUG
         else ["rest_framework.renderers.JSONRenderer"]
     ),
+    # Toujours du JSON propre, jamais de traceback exposé au client
+    "EXCEPTION_HANDLER": "core.exception_handler.custom_exception_handler",
 }
 
 # ── JWT (djangorestframework-simplejwt) ───────────────────────────────────────
