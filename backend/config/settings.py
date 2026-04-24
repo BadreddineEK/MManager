@@ -200,16 +200,29 @@ CORS_ALLOW_CREDENTIALS = True
 # CORS_ALLOWED_ORIGINS=https://mosque.votredomaine.com
 CORS_ALLOWED_ORIGINS: list[str] = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
-# ── Sécurité HTTPS (prod derrière Cloudflare Tunnel) ─────────────────────────
-# CSRF_COOKIE_SECURE et SESSION_COOKIE_SECURE nécessitent HTTPS.
-# En accès local HTTP (Raspberry Pi LAN), on les désactive.
-# Ils seront réactivés automatiquement quand Cloudflare Tunnel (HTTPS) sera configuré.
+# ── Sécurité (prod derrière Cloudflare Tunnel / Nginx) ────────────────────────
+# _https=True quand HTTPS_ENABLED=true dans .env (passage VPS + Cloudflare)
 _https = os.environ.get("HTTPS_ENABLED", "false").lower() == "true"
+
+# Toujours actifs (HTTP + HTTPS)
+SECURE_CONTENT_TYPE_NOSNIFF = True       # Nginx envoie aussi X-Content-Type-Options
+SECURE_BROWSER_XSS_FILTER = True         # Legacy IE, inoffensif
+X_FRAME_OPTIONS = "DENY"                 # Nginx envoie aussi X-Frame-Options
+SESSION_COOKIE_HTTPONLY = True           # JS ne peut pas lire le cookie session
+CSRF_COOKIE_HTTPONLY = False             # CSRF token doit être lisible par JS
+SESSION_COOKIE_SAMESITE = "Lax"          # Protège contre CSRF cross-site
+CSRF_COOKIE_SAMESITE = "Lax"
+
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SECURE_SSL_REDIRECT = False          # Cloudflare gère le redirect HTTP→HTTPS
+    SECURE_SSL_REDIRECT = False          # Cloudflare / Nginx gèrent HTTP→HTTPS
+    # Activés automatiquement dès que HTTPS_ENABLED=true (VPS + Cloudflare)
     SESSION_COOKIE_SECURE = _https
     CSRF_COOKIE_SECURE = _https
+    # HSTS — activé uniquement en HTTPS (VPS). Durée 1 an, inclut sous-domaines.
+    SECURE_HSTS_SECONDS = 31536000 if _https else 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = _https
+    SECURE_HSTS_PRELOAD = _https
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 # Pas de print() en prod — tout passe par le logger standard Django
