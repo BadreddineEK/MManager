@@ -205,6 +205,7 @@ CORS_ALLOWED_ORIGINS: list[str] = env.list("CORS_ALLOWED_ORIGINS", default=[])
 _https = os.environ.get("HTTPS_ENABLED", "false").lower() == "true"
 
 # Toujours actifs (HTTP + HTTPS)
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"  # Aligne avec nginx
 SECURE_CONTENT_TYPE_NOSNIFF = True       # Nginx envoie aussi X-Content-Type-Options
 SECURE_BROWSER_XSS_FILTER = True         # Legacy IE, inoffensif
 X_FRAME_OPTIONS = "DENY"                 # Nginx envoie aussi X-Frame-Options
@@ -223,6 +224,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000 if _https else 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = _https
     SECURE_HSTS_PRELOAD = _https
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 # Pas de print() en prod — tout passe par le logger standard Django
