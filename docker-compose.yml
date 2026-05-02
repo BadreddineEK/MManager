@@ -88,9 +88,11 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    command: tunnel run
+    command: ["tunnel","--config","/etc/cloudflared/config.yml","run","nidham-pi"]
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    volumes:
+      - /home/mosquee/.cloudflared:/etc/cloudflared:ro
     depends_on:
       - nginx
     profiles:
