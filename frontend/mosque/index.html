@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <base href="/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nidham</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── Progress bar top ── -->
+<div id="top-progress" class="hidden"></div>
+
+<!-- ── Toast container ── -->
+<div id="toast-container"></div>
+
+<!-- ══ ECRAN TENANT INTROUVABLE ════════════════════════════════════════════ -->
+<div id="tenant-error-screen" class="hidden" style="
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);z-index:9999;">
+  <div style="text-align:center;padding:2rem;max-width:420px;">
+    <div style="font-size:4rem;margin-bottom:1rem;">&#x1F54C;</div>
+    <h2 style="color:#f1f5f9;font-size:1.5rem;margin-bottom:.5rem;">Mosqu&#xe9;e introuvable</h2>
+    <p id="tenant-error-domain" style="color:#94a3b8;margin-bottom:1.5rem;font-size:.95rem;"></p>
+    <p style="color:#64748b;margin-bottom:2rem;font-size:.85rem;">
+      Ce sous-domaine n&#x27;est associ&#xe9; &#xe0; aucune mosqu&#xe9;e enregistr&#xe9;e sur Nidham.<br>
+      V&#xe9;rifiez l&#x27;adresse ou cr&#xe9;ez votre espace depuis le portail.
+    </p>
+    <button onclick="_goToPortal()" style="
+      background:#6366f1;color:#fff;border:none;border-radius:8px;
+      padding:.75rem 1.5rem;font-size:.95rem;cursor:pointer;">
+      &#x2190; Retour au portail
+    </button>
+  </div>
+</div>
+
+<!-- ── Confirm dialog ── -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">Confirmation</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-sm" id="confirm-cancel-btn">Annuler</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ECRAN LOGIN ══════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="icon">🕌</span>
+      <h1>Nidham</h1>
+      <p>Administration &amp; gestion de votre mosquée</p>
+    </div>
+    <div id="login-error" class="alert alert-error hidden"></div>
+    <label>Identifiant</label>
+    <input type="text" id="username" placeholder="admin" autocomplete="username" />
+    <label>Mot de passe</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
+           onkeydown="if(event.key==='Enter') login()" />
+    <button class="btn btn-primary btn-full" onclick="login()" style="margin-top:4px; padding:11px 16px; font-size:0.92rem;">
+      Se connecter
+    </button>
+  </div>
+</div>
+
+<!-- ══ APP PRINCIPALE ══════════════════════════════════════════════════════ -->
+<div id="app-screen" class="app hidden">
+
+  <!-- ── Hamburger (mobile) ── -->
+  <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- ── Overlay sidebar (mobile) ── -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🕌</div>
+      <div class="brand-name" id="sidebar-mosque-name">Ma Mosquée</div>
+      <div class="brand-sub">Administration · <span id="plan-badge" class="plan-badge">Free</span></div>
+    </div>
+
+    <div id="plan-banner" class="plan-banner hidden">
+      <span id="plan-trial-info"></span>
+      <button class="btn-upgrade" onclick="showSection('settings')">Upgrader →</button>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="nav-group">
+      <div class="nav-group-label">Vue d'ensemble</div>
+      <button class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')">
+        <span class="nav-icon">📊</span><span>Tableau de bord</span>
+      </button>
+    </div>
+
+    <!-- École -->
+    <div class="nav-group" id="nav-school">
+      <div class="nav-group-label">École coranique</div>
+      <button class="nav-item" id="nav-families" onclick="showSection('families')">
+        <span class="nav-icon">👨‍👩‍👧</span><span>Familles</span>
+      </button>
+      <button class="nav-item" id="nav-children" onclick="showSection('children')">
+        <span class="nav-icon">🧒</span><span>Enfants</span>
+      </button>
+      <button class="nav-item" id="nav-school-payments" onclick="showSection('school-payments')">
+        <span class="nav-icon">💳</span><span>Paiements</span>
+      </button>
+      <button class="nav-item" id="nav-arrears" onclick="showSection('arrears')">
+        <span class="nav-icon">⚠️</span><span>Impayés</span>
+      </button>
+    </div>
+
+    <!-- Adhésion -->
+    <div class="nav-group" id="nav-membership">
+      <div class="nav-group-label">Adhésion</div>
+      <button class="nav-item" id="nav-members" onclick="showSection('members')">
+        <span class="nav-icon">🤝</span><span>Adhérents</span>
+      </button>
+      <button class="nav-item" id="nav-membership-payments" onclick="showSection('membership-payments')">
+        <span class="nav-icon">🪙</span><span>Cotisations</span>
+      </button>
+      <button class="nav-item" id="nav-unpaid-members" onclick="showSection('unpaid-members')">
+        <span class="nav-icon">🔴</span><span>Non cotisants</span>
+      </button>
+    </div>
+
+    <!-- Finance -->
+    <div class="nav-group">
+      <div class="nav-group-label">Finance</div>
+      <button class="nav-item" id="nav-treasury" onclick="showSection('treasury')">
+        <span class="nav-icon">🏦</span><span>Trésorerie</span>
+      </button>
+      <button class="nav-item" id="nav-campaigns" onclick="showSection('campaigns')">
+        <span class="nav-icon">🎯</span><span>Cagnottes</span>
+      </button>
+    </div>
+
+    <!-- Admin -->
+    <div class="nav-group">
+      <div class="nav-group-label">Administration</div>
+      <button class="nav-item" id="nav-users" onclick="showSection('users')">
+        <span class="nav-icon">👥</span><span>Utilisateurs</span>
+      </button>
+      <button class="nav-item" id="nav-audit" onclick="showSection('audit')">
+        <span class="nav-icon">📋</span><span>Journal d'audit</span>
+      </button>
+      <button class="nav-item" id="nav-settings" onclick="showSection('settings')">
+        <span class="nav-icon">⚙️</span><span>Paramètres</span>
+      </button>
+      <button class="nav-item" id="nav-import" onclick="showSection('import')">
+        <span class="nav-icon">🚀</span><span>Onboarding</span>
+      </button>
+    </div>
+
+    <!-- Bouton KPI écran -->
+    <div class="sidebar-section" style="padding: 0 12px 8px;">
+      <button class="nav-item" id="nav-kpi-screen" onclick="openKpiScreen()" style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);">
+        <span class="nav-icon">📺</span><span>Écran KPI</span>
+        <span style="margin-left:auto;font-size:.65rem;background:rgba(167,139,250,.2);color:var(--purple);border-radius:99px;padding:2px 7px;font-weight:700;">TV</span>
+      </button>
+    </div>
+
+    <!-- Footer utilisateur -->
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-details">
+          <div class="u-name" id="user-name-display">—</div>
+          <div class="u-role" id="user-role-display">—</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">
+        <span>🚪</span><span>Déconnexion</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Contenu principal ── -->
+  <div class="main">
+
+    <!-- ── Bottom nav (mobile) ── -->
+    <nav class="bottom-nav">
+      <div class="bottom-nav-items">
+        <button class="bottom-nav-item active" id="bn-dashboard" onclick="showSection('dashboard');setBottomNav('bn-dashboard')">
+          <span class="bn-icon">📊</span><span>Tableau</span>
+        </button>
+        <button class="bottom-nav-item" id="bn-families" onclick="showSection('families');setBottomNav('bn-families')">
+          <span class="bn-icon">👨‍👩‍👧</span><span>Familles</span>
+        </button>
+        <button class="bottom-nav-item" id="bn-treasury" onclick="showSection('treasury');setBottomNav('bn-treasury')">
+          <span class="bn-icon">🏦</span><span>Finance</span>
+        </button>
+        <button class="bottom-nav-item" id="bn-members" onclick="showSection('members');setBottomNav('bn-members')">
+          <span class="bn-icon">🤝</span><span>Adhésion</span>
+        </button>
+        <button class="bottom-nav-item" id="bn-more" onclick="toggleSidebar()">
+          <span class="bn-icon">☰</span><span>Plus</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ── Tableau de bord ── -->
+    <div id="section-dashboard">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Tableau de bord</h2>
+          <div class="breadcrumb">Vue d'ensemble — <span id="dashboard-mosque-name">—</span></div>
+        </div>
+        <div class="page-header-actions">
+          <select id="school-year-select" onchange="loadDashboard()" style="width:auto;margin:0;font-size:0.82rem;"></select>
+        </div>
+      </div>
+      <div class="page-body">
+
+        <!-- ── KPI Row ── -->
+        <div class="dash-kpi-row">
+
+          <div class="dash-kpi-card dash-kpi-treasury">
+            <div class="dash-kpi-top">
+              <div class="dash-kpi-icon">🏦</div>
+              <div class="dash-kpi-badge" id="kpi-balance-trend"></div>
+            </div>
+            <div class="dash-kpi-num" id="stat-balance">—</div>
+            <div class="dash-kpi-label">Solde trésorerie</div>
+            <div class="dash-kpi-sub" id="stat-balance-month"></div>
+          </div>
+
+          <div class="dash-kpi-card dash-kpi-school">
+            <div class="dash-kpi-top">
+              <div class="dash-kpi-icon">🎓</div>
+              <div class="dash-kpi-badge badge-warning" id="kpi-arrears-badge"></div>
+            </div>
+            <div class="dash-kpi-num" id="stat-families">—</div>
+            <div class="dash-kpi-label">Familles inscrites</div>
+            <div class="dash-kpi-sub"><span id="stat-children">—</span> enfants · <span class="text-red" id="stat-arrears">—</span> impayés</div>
+          </div>
+
+          <div class="dash-kpi-card dash-kpi-members">
+            <div class="dash-kpi-top">
+              <div class="dash-kpi-icon">🤝</div>
+              <div class="dash-kpi-badge" id="kpi-members-badge"></div>
+            </div>
+            <div class="dash-kpi-num" id="stat-members">—</div>
+            <div class="dash-kpi-label">Adhérents</div>
+            <div class="dash-kpi-sub"><span id="stat-members-paid">—</span> à jour · <span class="text-red" id="stat-members-unpaid">—</span> non cotisants</div>
+          </div>
+
+          <div class="dash-kpi-card dash-kpi-month">
+            <div class="dash-kpi-top">
+              <div class="dash-kpi-icon">📅</div>
+            </div>
+            <div class="dash-kpi-num text-green" id="stat-month-in">—</div>
+            <div class="dash-kpi-label">Entrées ce mois</div>
+            <div class="dash-kpi-sub"><span class="text-red" id="stat-month-out">—</span> en sorties</div>
+          </div>
+
+        </div>
+
+        <!-- ── Alertes ── -->
+        <div id="dash-alerts-row" class="dash-alerts-row hidden"></div>
+
+        <!-- ── Graphique trésorerie pleine largeur ── -->
+        <div class="chart-card dash-chart-wide">
+          <div class="chart-title-row">
+            <div class="chart-title">
+              <span class="ct-icon">📈</span>
+              Flux de trésorerie
+              <span class="chart-title-sub" id="dash-trs-period"></span>
+            </div>
+            <div class="dash-trs-filter" id="dash-trs-filter">
+              <button class="dtf-btn dtf-active" data-mode="6m">6 mois</button>
+              <button class="dtf-btn" data-mode="year">Cette année</button>
+              <button class="dtf-btn" data-mode="last-year">An passé</button>
+              <select class="dtf-select" id="dash-trs-year-select" title="Choisir une année">
+                <option value="">Année…</option>
+              </select>
+            </div>
+          </div>
+          <canvas id="chart-treasury" height="110"></canvas>
+        </div>
+
+        <!-- ── Grille 3 graphiques ── -->
+        <div class="dash-charts-3">
+          <div class="chart-card">
+            <div class="chart-title"><span class="ct-icon">🗂️</span> Recettes <span id="dash-cat-period" class="chart-title-sub"></span></div>
+            <canvas id="chart-categories" height="220"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title"><span class="ct-icon">🧒</span> Élèves par niveau</div>
+            <canvas id="chart-levels" height="220"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title"><span class="ct-icon">�</span> Cotisations adhérents</div>
+            <div id="chart-membership-donut-wrap" style="position:relative;">
+              <canvas id="chart-membership" height="220"></canvas>
+              <div id="chart-membership-center" class="donut-center"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Accès rapides ── -->
+        <div class="dash-quick-actions">
+          <span class="dash-qa-label">Accès rapides</span>
+          <button class="btn btn-sm" onclick="addSchoolPayment()">💳 Paiement école</button>
+          <button class="btn btn-sm" onclick="addMembershipPayment()">🪙 Cotisation</button>
+          <button class="btn btn-sm" onclick="showSection('arrears')">⚠️ Voir impayés</button>
+          <button class="btn btn-sm" onclick="showSection('unpaid-members')">🔴 Non cotisants</button>
+          <button class="btn btn-sm" onclick="openTreasuryModal()">➕ Transaction</button>
+          <button class="btn btn-sm" onclick="showSection('treasury')">🏦 Trésorerie</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Familles ── -->
+    <div id="section-families" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Familles</h2>
+          <div class="breadcrumb">École coranique · Gestion des familles</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-success btn-sm" onclick="exportFile('families','excel')">⬇ Excel</button>
+          <button class="btn btn-purple-soft btn-sm" onclick="exportFile('families','pdf')">⬇ PDF</button>
+
+          <button id="btn-bulk-school" class="btn btn-sm" onclick="openBulkModal('families')" title="Saisir plusieurs familles d'un coup">✏️ Saisie multiple</button>
+          <button class="btn btn-sm" onclick="addSchoolPayment()" title="Enregistrer un paiement école dans la trésorerie">💳 Paiement école</button>
+          <button id="btn-add-school" class="btn btn-primary" onclick="openFamilyModal()">+ Famille</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="toolbar">
+          <input type="text" class="search-input" id="family-search" placeholder="🔍  Rechercher par nom, email, téléphone..." oninput="searchFamilies()" />
+        </div>
+        <div id="families-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Nom contact</th><th>Téléphone</th><th>Email</th><th>Enfants</th><th>Total payé</th><th>Actions</th></tr></thead>
+            <tbody id="families-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Enfants ── -->
+    <div id="section-children" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Enfants</h2>
+          <div class="breadcrumb">École coranique · Liste des élèves</div>
+        </div>
+        <div class="page-header-actions">
+
+          <button class="btn btn-sm" onclick="openBulkModal('children')" title="Saisir plusieurs enfants d'un coup">✏️ Saisie multiple</button>
+          <button class="btn btn-primary" onclick="openChildModal()">+ Enfant</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="toolbar">
+          <input type="text" class="search-input" id="child-search" placeholder="🔍  Rechercher par prénom ou famille..." oninput="searchChildren()" />
+          <select id="child-level-filter" onchange="loadChildren()" style="width:auto;margin:0;">
+            <option value="">Tous les niveaux</option>
+            <option>NP</option><option>N1</option><option>N2</option>
+            <option>N3</option><option>N4</option><option>N5</option><option>N6</option>
+          </select>
+        </div>
+        <div id="children-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Prénom</th><th>Niveau</th><th>Famille</th><th>Date naissance</th><th>Actions</th></tr></thead>
+            <tbody id="children-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Paiements école ── -->
+    <div id="section-school-payments" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Paiements école</h2>
+          <div class="breadcrumb">École coranique · Historique des paiements</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-success btn-sm" onclick="exportFile('school-payments','excel')">⬇ Excel</button>
+          <button class="btn btn-primary" onclick="addSchoolPayment()">💳 Nouveau paiement</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="toolbar" style="flex-wrap:wrap;gap:8px;">
+          <input type="text" class="search-input" id="sp-search" placeholder="🔍  Rechercher par famille..." oninput="loadSchoolPaymentsList()" style="flex:1;min-width:200px;" />
+          <select id="sp-method-filter" onchange="loadSchoolPaymentsList()" style="width:auto;margin:0;">
+            <option value="">Tous les modes</option>
+            <option value="cash">Espèces</option>
+            <option value="cheque">Chèque</option>
+            <option value="virement">Virement</option>
+          </select>
+          <select id="sp-status-filter" onchange="loadSchoolPaymentsList()" style="width:auto;margin:0;">
+            <option value="">Tous statuts</option>
+            <option value="validated">✅ Validé</option>
+            <option value="pending">⏳ En attente</option>
+          </select>
+        </div>
+        <div id="sp-summary" class="stats-row" style="margin-bottom:16px;display:none;">
+          <div class="stat-card"><div class="stat-icon">📥</div><div class="num text-green" id="sp-total-amount">—</div><div class="lbl">Total collecté</div></div>
+          <div class="stat-card"><div class="stat-icon">📋</div><div class="num" id="sp-count">—</div><div class="lbl">Paiements</div></div>
+        </div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Famille</th><th>Enfant</th><th>Année</th><th>Montant</th><th>Mode</th><th>Statut</th><th>Note</th><th>Actions</th></tr></thead>
+            <tbody id="school-payments-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Impayés ── -->
+    <div id="section-arrears" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Familles avec impayés</h2>
+          <div class="breadcrumb">École coranique · Suivi des impayés</div>
+        </div>
+        <div class="page-header-actions">
+          <button id="btn-send-arrears-notif" class="btn btn-sm" onclick="sendArrearsNotifs()" title="Envoyer un email de rappel à chaque famille avec un email renseigné">
+            📧 Envoyer rappels
+          </button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div id="arrears-info" class="alert alert-info hidden"></div>
+        <div id="arrears-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Famille</th><th>Téléphone</th><th>Email</th><th>Enfants</th></tr></thead>
+            <tbody id="arrears-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Adhérents ── -->
+    <div id="section-members" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Adhérents</h2>
+          <div class="breadcrumb">Adhésion · Registre des membres</div>
+        </div>
+        <div class="page-header-actions">
+          <select id="member-status-filter" onchange="loadMembers()" style="width:auto;margin:0;font-size:0.82rem;">
+            <option value="">Tous</option>
+            <option value="paid">✅ À jour</option>
+            <option value="unpaid">❌ Non cotisants</option>
+          </select>
+          <button class="btn btn-success btn-sm" onclick="exportFile('members','excel')">⬇ Excel</button>
+          <button class="btn btn-purple-soft btn-sm" onclick="exportFile('members','pdf')">⬇ PDF</button>
+
+          <button id="btn-bulk-members" class="btn btn-sm" onclick="openBulkModal('members')" title="Saisir plusieurs adhérents d'un coup">✏️ Saisie multiple</button>
+          <button class="btn btn-sm" onclick="addMembershipPayment()" title="Enregistrer une cotisation dans la trésorerie">💳 Cotisation</button>
+          <button id="btn-add-member" class="btn btn-primary" onclick="openMemberModal()">+ Adhérent</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="toolbar">
+          <input type="text" class="search-input" id="member-search" placeholder="🔍  Rechercher par nom, email, téléphone..." oninput="searchMembers()" />
+        </div>
+        <div id="members-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Cotisation annuelle</th><th>Total payé</th><th>Actions</th></tr></thead>
+            <tbody id="members-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Paiements cotisations ── -->
+    <div id="section-membership-payments" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Paiements cotisations</h2>
+          <div class="breadcrumb">Adhésion · Historique des cotisations</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-success btn-sm" onclick="exportFile('membership-payments','excel')">⬇ Excel</button>
+          <button class="btn btn-primary" onclick="addMembershipPayment()">🪙 Nouvelle cotisation</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="toolbar" style="flex-wrap:wrap;gap:8px;">
+          <input type="text" class="search-input" id="mp-search" placeholder="🔍  Rechercher par adhérent..." oninput="loadMembershipPaymentsList()" style="flex:1;min-width:200px;" />
+          <select id="mp-method-filter" onchange="loadMembershipPaymentsList()" style="width:auto;margin:0;">
+            <option value="">Tous les modes</option>
+            <option value="cash">Espèces</option>
+            <option value="cheque">Chèque</option>
+            <option value="virement">Virement</option>
+          </select>
+          <select id="mp-status-filter" onchange="loadMembershipPaymentsList()" style="width:auto;margin:0;">
+            <option value="">Tous statuts</option>
+            <option value="validated">✅ Validé</option>
+            <option value="pending">⏳ En attente</option>
+          </select>
+        </div>
+        <div id="mp-summary" class="stats-row" style="margin-bottom:16px;display:none;">
+          <div class="stat-card"><div class="stat-icon">🪙</div><div class="num text-green" id="mp-total-amount">—</div><div class="lbl">Total collecté</div></div>
+          <div class="stat-card"><div class="stat-icon">📋</div><div class="num" id="mp-count">—</div><div class="lbl">Paiements</div></div>
+        </div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Adhérent</th><th>Année</th><th>Montant</th><th>Mode</th><th>Statut</th><th>Note</th><th>Actions</th></tr></thead>
+            <tbody id="membership-payments-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Non cotisants ── -->
+    <div id="section-unpaid-members" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Non cotisants</h2>
+          <div class="breadcrumb">Adhésion · Adhérents sans cotisation active</div>
+        </div>
+        <div class="page-header-actions">
+          <button id="btn-send-unpaid-notif" class="btn btn-sm" onclick="sendUnpaidMembersNotifs()" title="Envoyer un email de rappel à chaque adhérent non cotisant avec un email renseigné">
+            📧 Envoyer rappels
+          </button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div id="unpaid-members-info" class="alert alert-info hidden"></div>
+        <div id="unpaid-members-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Total payé (historique)</th></tr></thead>
+            <tbody id="unpaid-members-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Trésorerie ── -->
+    <div id="section-treasury" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Trésorerie</h2>
+          <div class="breadcrumb">Finance · Suivi des entrées &amp; sorties</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-success btn-sm" onclick="exportFile('treasury','excel')">⬇ Excel</button>
+          <button class="btn btn-purple-soft btn-sm" onclick="exportFile('treasury','pdf')">⬇ PDF</button>
+          <button class="btn btn-sm" onclick="openAnnualReceiptModal()" title="Générer un reçu fiscal annuel">🧾 Récap annuel</button>
+          <button class="btn btn-sm" onclick="openMonthlyRecapModal()" title="Récapitulatif mensuel imprimable">📅 Récap mensuel</button>
+
+          <button id="btn-bulk-treasury" class="btn btn-sm" onclick="openBulkModal('treasury')" title="Saisir plusieurs transactions d'un coup">✏️ Saisie multiple</button>
+          <button class="btn btn-sm" onclick="openBankImportModal()" title="Importer un relevé bancaire CSV">🏦 Import bancaire</button>
+          <button id="btn-add-treasury" class="btn btn-primary" onclick="openTreasuryModal()">+ Transaction</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <!-- Onglets trésorerie -->
+        <div style="display:flex;gap:8px;margin-bottom:20px;align-items:center;">
+          <button id="treasury-main-tab" class="btn btn-primary btn-sm" onclick="switchTreasuryTab('main')">📋 Transactions</button>
+          <button id="treasury-pending-tab" class="btn btn-sm" onclick="switchTreasuryTab('pending')">⚠️ À valider <span id="pending-badge" style="background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:.75rem;margin-left:4px;display:none;"></span></button>
+          <button id="treasury-cash-tab" class="btn btn-sm" onclick="switchTreasuryTab('cash')">💵 Stock caisse</button>
+          <button id="treasury-dashboard-tab" class="btn btn-sm" onclick="switchTreasuryTab('dashboard')">📊 Tableau de bord</button>
+        </div>
+
+        <!-- Panneau principal -->
+        <div id="treasury-main-panel">
+        <div class="stats-row trs-kpi-row" style="margin-bottom:20px;">
+          <div class="stat-card">
+            <div class="stat-icon">📥</div>
+            <div class="num text-green" id="trs-in">—</div>
+            <div class="lbl">Entrées (période)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📤</div>
+            <div class="num text-red" id="trs-out">—</div>
+            <div class="lbl">Sorties (période)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⚖️</div>
+            <div class="num" id="trs-balance">—</div>
+            <div class="lbl">Solde</div>
+          </div>
+          <div class="stat-card" title="Solde Loi 1901 (Association)">
+            <div class="stat-icon">🔵</div>
+            <div class="num" id="trs-balance-1901">—</div>
+            <div class="lbl">Solde 1901</div>
+          </div>
+          <div class="stat-card" title="Solde Loi 1905 (Culte)">
+            <div class="stat-icon">🟣</div>
+            <div class="num" id="trs-balance-1905">—</div>
+            <div class="lbl">Solde 1905</div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <select id="trs-direction-filter" onchange="loadTreasury()" style="width:auto;margin:0;">
+            <option value="">Entrées + Sorties</option>
+            <option value="IN">📥 Entrées</option>
+            <option value="OUT">📤 Sorties</option>
+          </select>
+          <select id="trs-category-filter" onchange="loadTreasury()" style="width:auto;margin:0;">
+            <option value="">Toutes catégories</option>
+            <option value="don">Don / Sadaqa</option>
+            <option value="loyer">Loyer</option>
+            <option value="salaire">Salaire / Honoraires</option>
+            <option value="facture">Facture / Charges</option>
+            <option value="ecole">École coranique</option>
+            <option value="cotisation">Cotisation adhérent</option>
+            <option value="projet">Projet / Travaux</option>
+            <option value="subvention">Subvention</option>
+            <option value="autre">Autre</option>
+          </select>
+          <select id="trs-regime-filter" onchange="loadTreasury()" style="width:auto;margin:0;" title="Filtrer par régime fiscal">
+            <option value="">⚖️ Tous régimes</option>
+            <option value="1901">🔵 Loi 1901</option>
+            <option value="1905">🟣 Loi 1905</option>
+          </select>
+          <input type="month" id="trs-month-filter" onchange="loadTreasury()" style="width:auto;margin:0;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;" />
+          <input type="number" id="trs-year-filter" placeholder="Année ex: 2025" min="2020" max="2099" onchange="loadTreasury()" style="width:140px;margin:0;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;" />
+          <select id="trs-bank-filter" onchange="loadTreasury()" style="width:auto;margin:0;" title="Filtrer par compte bancaire">
+            <option value="">🏦 Tous les comptes</option>
+          </select>
+          <input type="text" class="search-input" id="trs-search" placeholder="🔍  Rechercher..." oninput="loadTreasury()" />
+          <button class="btn btn-sm" onclick="resetTreasuryFilters()" title="Réinitialiser les filtres" style="white-space:nowrap;">🗑 Reset</button>
+          <button class="btn btn-sm" onclick="exportTreasuryCSV()" title="Exporter en CSV">⬇️ Export CSV</button>
+        </div>
+        <div id="treasury-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Direction</th><th>Montant</th><th>Mode</th><th>Régime</th><th>Note</th><th>Actions</th></tr></thead>
+            <tbody id="treasury-table"></tbody>
+          </table>
+        </div><!-- end .card.table-wrapper -->
+        </div><!-- end #treasury-main-panel -->
+
+        <!-- Panneau transactions en attente de validation -->
+        <div id="treasury-pending-panel" class="hidden">
+          <div class="card table-wrapper" style="margin-top:0;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Libellé</th>
+                  <th>Montant</th>
+                  <th>Catégorie</th>
+                  <th>Note</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="import-pending-table"></tbody>
+            </table>
+          </div>
+        </div><!-- end #treasury-pending-panel -->
+
+        <!-- Panneau Stock Caisse -->
+        <div id="treasury-cash-panel" class="hidden">
+          <div class="stats-row" style="grid-template-columns:1fr;max-width:300px;margin-bottom:20px;">
+            <div class="stat-card">
+              <div class="stat-icon">💵</div>
+              <div class="num" id="cash-latest-total">—</div>
+              <div class="lbl">Solde caisse (dernier pointage)</div>
+            </div>
+          </div>
+          <div style="margin-bottom:16px;">
+            <button class="btn btn-primary" onclick="openCashCountModal()">+ Nouveau pointage</button>
+          </div>
+          <div class="card table-wrapper">
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Total</th><th>Note</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="cash-counts-table">
+                <tr><td colspan="4" style="text-align:center;color:#888">Chargement…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div><!-- end #treasury-cash-panel -->
+
+        <!-- Panneau tableau de bord -->
+        <div id="treasury-dashboard-panel" class="hidden">
+          <div class="stats-row" style="margin-bottom:20px;">
+            <div class="stat-card">
+              <div class="stat-icon">📥</div>
+              <div class="num text-green" id="dash-total-in">—</div>
+              <div class="lbl">Total entrées</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">📤</div>
+              <div class="num text-red" id="dash-total-out">—</div>
+              <div class="lbl">Total sorties</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">⚖️</div>
+              <div class="num" id="dash-balance">—</div>
+              <div class="lbl">Solde global</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">💵</div>
+              <div class="num" id="dash-cash-stock">—</div>
+              <div class="lbl">Stock caisse</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px;">
+            <div class="card"><div class="card-body">
+              <h4 style="margin:0 0 12px;font-size:.95rem;">🏦 Solde par compte</h4>
+              <div id="dash-by-account"></div>
+            </div></div>
+            <div class="card"><div class="card-body">
+              <h4 style="margin:0 0 8px;font-size:.95rem;">📂 Top catégories (12 mois)</h4>
+              <p style="font-size:.8rem;color:var(--muted);margin:0 0 8px;">Entrées</p>
+              <div id="dash-top-in"></div>
+              <p style="font-size:.8rem;color:var(--muted);margin:8px 0;">Sorties</p>
+              <div id="dash-top-out"></div>
+            </div></div>
+          </div>
+          <div class="card"><div class="card-body">
+            <h4 style="margin:0 0 12px;font-size:.95rem;">📈 Évolution mensuelle (12 mois)</h4>
+            <div id="dash-monthly-chart" style="overflow-x:auto;"></div>
+          </div></div>
+        </div><!-- end #treasury-dashboard-panel -->
+
+      </div><!-- end .page-body -->
+    </div><!-- end #section-treasury -->
+
+    <!-- ── Utilisateurs ── -->
+    <div id="section-users" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Utilisateurs</h2>
+          <div class="breadcrumb">Administration · Gestion des accès</div>
+        </div>
+        <div class="page-header-actions">
+          <button id="btn-add-user" class="btn btn-primary" onclick="openUserModal()">+ Utilisateur</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div id="users-alert"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead><tr><th>Utilisateur</th><th>Email</th><th>Nom complet</th><th>Rôle</th><th>Modules accessibles</th><th>Actif</th><th>Actions</th></tr></thead>
+            <tbody id="users-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Cagnottes ── -->
+    <div id="section-campaigns" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>🎯 Cagnottes &amp; Collectes</h2>
+          <p class="page-sub">Gérez vos collectes avec objectif et suivi de progression</p>
+        </div>
+        <div class="page-header-right">
+          <button id="btn-add-campaign" class="btn btn-primary" onclick="openCampaignModal()">+ Nouvelle cagnotte</button>
+        </div>
+      </div>
+      <div id="campaigns-grid" class="campaigns-grid"></div>
+      <div style="margin-top:32px;">
+        <div class="page-header" style="margin-bottom:12px;">
+          <div class="page-header-left">
+            <h3 style="font-size:1rem;font-weight:600;">Transactions liées à une cagnotte</h3>
+          </div>
+          <div class="page-header-right">
+            <select id="campaign-tx-filter" onchange="loadCampaignTransactions()" style="min-width:200px;">
+              <option value="">Toutes les cagnottes</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table">
+            <thead><tr>
+              <th>Date</th><th>Libellé</th><th>Cagnotte</th><th>Sens</th><th>Montant</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="campaign-tx-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Journal d'audit ── -->
+    <div id="section-audit" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Journal d'audit</h2>
+          <div class="breadcrumb">Administration · Traçabilité des actions</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-sm" onclick="resetAuditFilters()">✕ Réinitialiser filtres</button>
+          <button class="btn btn-sm" onclick="loadAudit(1)">↺ Actualiser</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="toolbar" style="flex-wrap:wrap;gap:10px;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:0.75rem;color:var(--muted);margin:0;">Action</label>
+            <select id="audit-filter-action" onchange="loadAudit(1)" style="width:auto;margin:0;font-size:0.82rem;">
+              <option value="">Toutes</option>
+              <option value="CREATE">Création</option>
+              <option value="UPDATE">Modification</option>
+              <option value="DELETE">Suppression</option>
+              <option value="LOGIN">Connexion</option>
+              <option value="LOGOUT">Déconnexion</option>
+              <option value="EXPORT">Export</option>
+              <option value="IMPORT">Import</option>
+              <option value="SEND_NOTIF">Notification</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:0.75rem;color:var(--muted);margin:0;">Entité</label>
+            <input type="text" id="audit-filter-entity" placeholder="Ex: Family, Member…"
+                   style="width:160px;margin:0;font-size:0.82rem;" onkeydown="if(event.key==='Enter')loadAudit(1)" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:0.75rem;color:var(--muted);margin:0;">Utilisateur (ID)</label>
+            <input type="number" id="audit-filter-user" placeholder="ID"
+                   style="width:90px;margin:0;font-size:0.82rem;" onkeydown="if(event.key==='Enter')loadAudit(1)" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:0.75rem;color:var(--muted);margin:0;">Du</label>
+            <input type="date" id="audit-filter-from" style="width:auto;margin:0;font-size:0.82rem;" onchange="loadAudit(1)" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:0.75rem;color:var(--muted);margin:0;">Au</label>
+            <input type="date" id="audit-filter-to" style="width:auto;margin:0;font-size:0.82rem;" onchange="loadAudit(1)" />
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="loadAudit(1)" style="align-self:flex-end;">🔍 Filtrer</button>
+        </div>
+        <div id="audit-alert" style="margin-top:8px;"></div>
+        <div style="font-size:0.8rem;color:var(--muted);margin:8px 0 4px;" id="audit-info"></div>
+        <div class="card table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:130px;">Date / Heure</th>
+                <th>Utilisateur</th>
+                <th style="width:120px;">Action</th>
+                <th>Entité</th>
+                <th style="width:60px;">ID</th>
+                <th>Détails</th>
+              </tr>
+            </thead>
+            <tbody id="audit-table">
+              <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">
+                Cliquez sur « Actualiser » pour charger le journal.
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="audit-pager" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <!-- ── Paramètres ── -->
+    <div id="section-settings" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Paramètres</h2>
+          <div class="breadcrumb">Administration · Configuration de la mosquée</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-sm" onclick="loadSettings()">↺ Recharger</button>
+          <button id="btn-save-settings" class="btn btn-primary" onclick="saveSettings()">💾 Enregistrer</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div id="settings-alert"></div>
+
+        <!-- Onglets paramètres -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px;border-bottom:2px solid var(--border);padding-bottom:0;">
+          <button class="btn btn-primary btn-sm" id="stab-general"  onclick="switchSettingsTab('general')"  style="border-radius:8px 8px 0 0;margin-bottom:-2px;">🕌 Général</button>
+          <button class="btn btn-sm"             id="stab-finance"  onclick="switchSettingsTab('finance')"  style="border-radius:8px 8px 0 0;margin-bottom:-2px;">💰 Finances</button>
+          <button class="btn btn-sm"             id="stab-receipts" onclick="switchSettingsTab('receipts')" style="border-radius:8px 8px 0 0;margin-bottom:-2px;">🧾 Reçus PDF</button>
+          <button class="btn btn-sm"             id="stab-kpi"      onclick="switchSettingsTab('kpi')"      style="border-radius:8px 8px 0 0;margin-bottom:-2px;">📺 KPI public</button>
+          <button class="btn btn-sm"             id="stab-smtp"     onclick="switchSettingsTab('smtp')"     style="border-radius:8px 8px 0 0;margin-bottom:-2px;">✉️ Emails</button>
+          <button class="btn btn-sm"             id="stab-bank"     onclick="switchSettingsTab('bank')"     style="border-radius:8px 8px 0 0;margin-bottom:-2px;">🏦 Banque</button>
+          <button class="btn btn-sm"             id="stab-backup"   onclick="switchSettingsTab('backup')"   style="border-radius:8px 8px 0 0;margin-bottom:-2px;">💾 Sauvegarde</button>
+        </div>
+
+        <!-- ── Onglet Général ── -->
+        <div id="spanel-general">
+          <div class="settings-section">
+            <h3>🕌 Identité de la mosquée</h3>
+            <label>Nom de la mosquée *</label>
+            <input type="text" id="s-mosque-name" placeholder="Ex: Grande Mosquée de Meximieux" />
+            <label>Fuseau horaire</label>
+            <input type="text" id="s-mosque-timezone" placeholder="Europe/Paris" />
+            <label>Slug (lecture seule)</label>
+            <input type="text" id="s-mosque-slug" disabled style="color:var(--muted);" />
+          </div>
+        </div>
+
+        <!-- ── Onglet Finances ── -->
+        <div id="spanel-finance" class="hidden">
+          <div class="settings-section">
+            <h3>🎓 École coranique</h3>
+            <label>Année scolaire active</label>
+            <input type="text" id="s-school-year" placeholder="2025-2026" />
+            <label>Frais de scolarité par défaut (€)</label>
+            <input type="number" id="s-school-fee" placeholder="0" min="0" step="0.01" />
+            <label>Mode de paiement</label>
+            <select id="s-school-fee-mode">
+              <option value="annual">Annuel</option>
+              <option value="monthly">Mensuel</option>
+            </select>
+            <label>Niveaux scolaires (séparés par des virgules)</label>
+            <input type="text" id="s-school-levels" placeholder="NP,N1,N2,N3,N4,N5,N6" />
+          </div>
+          <div class="settings-section">
+            <h3>🤝 Adhésion</h3>
+            <label>Montant de la cotisation (€)</label>
+            <input type="number" id="s-membership-fee" placeholder="0" min="0" step="0.01" />
+            <label>Mode de cotisation</label>
+            <select id="s-membership-mode">
+              <option value="per_person">Par personne</option>
+              <option value="per_family">Par famille</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ── Onglet Reçus PDF ── -->
+        <div id="spanel-receipts" class="hidden">
+          <div class="settings-section">
+            <h3>🧾 Reçus fiscaux PDF</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Ces informations apparaîtront sur tous les reçus générés.
+            </p>
+            <label>URL du logo <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+            <input type="url" id="s-receipt-logo" placeholder="https://..." />
+            <label>Adresse de la mosquée</label>
+            <textarea id="s-receipt-address" placeholder="12 rue de la Paix&#10;01800 Meximieux" rows="3"></textarea>
+            <label>Téléphone</label>
+            <input type="text" id="s-receipt-phone" placeholder="04 74 00 00 00" />
+            <label>Mention légale</label>
+            <textarea id="s-receipt-legal" rows="3"
+              placeholder="Association loi 1901 — Don déductible à 66% dans la limite de 20% du revenu imposable (art. 200 CGI)."></textarea>
+          </div>
+        </div>
+
+        <!-- ── Onglet KPI public ── -->
+        <div id="spanel-kpi" class="hidden">
+          <div class="settings-section">
+            <h3>📺 Écran KPI public</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Configurez l'affichage de l'écran KPI (tableau de bord public pour TV/tablette).
+            </p>
+            <label style="font-weight:600;margin-bottom:10px;display:block;">Widgets visibles</label>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+                <input type="checkbox" id="s-kpi-school" style="width:auto;margin:0;accent-color:var(--accent);" />
+                🎓 École coranique
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+                <input type="checkbox" id="s-kpi-membership" style="width:auto;margin:0;accent-color:var(--accent);" />
+                🤝 Adhérents
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+                <input type="checkbox" id="s-kpi-treasury" style="width:auto;margin:0;accent-color:var(--accent);" />
+                💰 Trésorerie
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;">
+                <input type="checkbox" id="s-kpi-campaigns" style="width:auto;margin:0;accent-color:var(--accent);" />
+                🎯 Cagnottes &amp; Collectes
+              </label>
+            </div>
+            <label>Fréquence de rafraîchissement</label>
+            <select id="s-kpi-refresh">
+              <option value="30">30 secondes</option>
+              <option value="60">1 minute</option>
+              <option value="120">2 minutes</option>
+              <option value="300">5 minutes</option>
+            </select>
+            <div style="margin-top:20px;padding:16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;">
+              <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">
+                Ouvre l'écran KPI dans un nouvel onglet avec votre mosquée déjà sélectionnée.
+              </p>
+              <button class="btn btn-primary" onclick="openKPIScreen()">📺 Ouvrir l'écran KPI</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Onglet Emails SMTP ── -->
+        <div id="spanel-smtp" class="hidden">
+          <div class="settings-section">
+            <h3>✉️ Notifications email (SMTP)</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Configurez le serveur SMTP pour l'envoi des rappels aux familles et adhérents.
+              Exemple Gmail : host <code>smtp.gmail.com</code>, port <code>587</code>, TLS activé.
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 100px;gap:12px;">
+              <div>
+                <label>Serveur SMTP (host)</label>
+                <input type="text" id="s-smtp-host" placeholder="smtp.gmail.com" />
+              </div>
+              <div>
+                <label>Port</label>
+                <input type="number" id="s-smtp-port" placeholder="587" min="1" max="65535" />
+              </div>
+            </div>
+            <label>Identifiant SMTP (email)</label>
+            <input type="text" id="s-smtp-user" placeholder="votre.compte@gmail.com" autocomplete="off" />
+            <label>Mot de passe SMTP</label>
+            <input type="password" id="s-smtp-password" placeholder="••••••••" autocomplete="new-password" />
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;margin-top:4px;">
+              <input type="checkbox" id="s-smtp-use-tls" style="width:auto;margin:0;accent-color:var(--accent);" />
+              Utiliser STARTTLS (port 587 recommandé)
+            </label>
+            <label style="margin-top:12px;">Email expéditeur (affiché dans « De : »)</label>
+            <input type="email" id="s-email-from" placeholder="noreply@mosquee.fr" />
+            <label>Préfixe objet des emails</label>
+            <input type="text" id="s-email-subject-prefix" placeholder="[Mosquée Manager]" />
+            <div style="margin-top:18px;padding:16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;">
+              <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">
+                Enregistrez d'abord les paramètres, puis testez la configuration SMTP.
+              </p>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <input type="email" id="s-smtp-test-email" placeholder="destinataire@test.com"
+                       style="width:220px;margin:0;font-size:0.85rem;" />
+                <button id="btn-smtp-test" class="btn btn-sm" onclick="testEmail()">✉️ Tester SMTP</button>
+              </div>
+              <div id="smtp-test-status" style="margin-top:10px;font-size:0.82rem;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Onglet Banque ── -->
+        <div id="spanel-bank" class="hidden">
+          <div class="settings-section">
+            <h3>🏦 Comptes bancaires</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Configurez vos comptes bancaires (1901 / 1905). Ils seront proposés lors de l'import CSV.
+            </p>
+            <div id="bank-accounts-list" style="margin-bottom:16px;"></div>
+            <button class="btn btn-sm btn-primary" onclick="openBankAccountModal()">+ Ajouter un compte</button>
+          </div>
+          <div class="settings-section">
+            <h3>⚙️ Règles de dispatch automatique</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Définissez des mots-clés pour catégoriser automatiquement les transactions lors d'un import bancaire.
+              Les règles sont évaluées par ordre de priorité (1 = en premier).
+            </p>
+            <div id="dispatch-rules-list" style="margin-bottom:16px;"></div>
+            <button class="btn btn-sm btn-primary" onclick="openDispatchRuleModal()">+ Ajouter une règle</button>
+          </div>
+        </div>
+
+        <!-- ── Onglet Sauvegarde ── -->
+        <div id="spanel-backup" class="hidden">
+          <div class="settings-section">
+            <h3>💾 Sauvegarde &amp; Restauration</h3>
+            <p style="font-size:0.83rem;color:var(--muted);margin-bottom:18px;line-height:1.6;">
+              Exportez l'intégralité des données en un fichier <strong>ZIP</strong> CSV.
+              Restaurez pour fusionner sans doublons.
+            </p>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="backupExport()">⬇️ Télécharger la sauvegarde (ZIP)</button>
+              <span id="backup-export-status" style="font-size:0.8rem;color:var(--muted);"></span>
+            </div>
+            <div style="background:var(--bg);border:1.5px dashed var(--border);border-radius:10px;padding:20px;">
+              <p style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:10px;">📤 Restaurer depuis un fichier ZIP</p>
+              <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">
+                Sélectionnez un fichier <code>.zip</code> généré par cette application.
+              </p>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <input type="file" id="backup-file-input" accept=".zip"
+                       style="width:auto;margin:0;font-size:0.82rem;"
+                       onchange="backupImportPreview()" />
+                <button class="btn btn-success" id="backup-import-btn" onclick="backupImport()" disabled>↑ Importer</button>
+              </div>
+              <div id="backup-import-status" style="margin-top:12px;font-size:0.82rem;"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ SECTION PERSONNEL ═══════════════════════════════════════════════ -->
+    <div id="section-staff" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>👨‍💼 Personnel</h2>
+          <div class="breadcrumb">Administration · Imams, enseignants &amp; staff</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-primary" onclick="openStaffModal()">+ Ajouter</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="card" style="margin-bottom:16px;border-left:4px solid var(--accent);">
+          <div class="card-body" style="padding:14px 18px;">
+            <p style="margin:0;font-size:.84rem;color:var(--muted);line-height:1.6;">
+              Le <strong>mot-clé CSV</strong> associé à chaque membre permet de reconnaître automatiquement
+              ses virements de salaire lors de l'import bancaire et de les catégoriser en <em>Salaire / Honoraires</em>.
+            </p>
+          </div>
+        </div>
+        <div id="staff-list" style="margin-bottom:16px;"></div>
+      </div>
+    </div>
+    <!-- ══ SECTION IMPORT DONNÉES ══════════════════════════════════════════ -->
+    <div id="section-import" class="hidden">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>🚀 Onboarding</h2>
+          <div class="breadcrumb">Administration — Import initial des données de votre mosquée</div>
+        </div>
+      </div>
+      <div class="page-body">
+
+        <!-- Bandeau d'information -->
+        <div class="card" style="margin-bottom:20px;border-left:4px solid var(--accent);">
+          <div class="card-body" style="padding:16px 20px;">
+            <p style="margin:0 0 8px;font-weight:700;font-size:.95rem;">ℹ️ À quoi sert cette section ?</p>
+            <p style="margin:0;font-size:.85rem;color:var(--muted);line-height:1.6;">
+              Cette section permet d'importer les données <strong>existantes</strong> de votre mosquée lors de la première mise en service.<br>
+              Téléchargez le template CSV correspondant, remplissez-le dans Excel ou Google Sheets, puis importez-le.<br>
+              <strong>Chaque import propose un mode simulation</strong> (dry run) pour vérifier les données avant de les enregistrer définitivement.<br>
+              L'import bancaire mensuel (relevés de compte) se fait depuis la section <strong>Trésorerie → 🏦 Import bancaire</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Sélecteur de type -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-body tab-selector">
+            <span class="tab-label">Type de données :</span>
+            <button class="btn btn-sm" id="import-tab-setup" onclick="switchImportTab('setup')">⚙️ Paramètres mosquée</button>
+            <button class="btn btn-sm" id="import-tab-members" onclick="switchImportTab('members')">🤝 Adhérents</button>
+            <button class="btn btn-sm" id="import-tab-school" onclick="switchImportTab('school')">🏫 Familles &amp; École</button>
+            <button class="btn btn-sm" id="import-tab-transactions" onclick="switchImportTab('transactions')">💰 Historique trésorerie</button>
+          </div>
+        </div>
+
+        <!-- ══ Paramètres mosquée ══════════════════════════════════════ -->
+        <div id="import-panel-setup" class="hidden">
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span>⚙️ Configuration de votre mosquée</span></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+              <div id="setup-form-success" class="alert alert-success hidden">✅ Paramètres enregistrés !</div>
+              <div id="setup-form-error" class="alert alert-error hidden"></div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Nom de la mosquée *</label>
+                  <input type="text" id="setup-mosque-name" placeholder="Ex: Mosquée Al-Fath de Meximieux" />
+                </div>
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Fuseau horaire</label>
+                  <select id="setup-timezone">
+                    <option value="Europe/Paris">Europe/Paris (défaut)</option>
+                    <option value="Europe/London">Europe/London</option>
+                    <option value="Africa/Algiers">Africa/Algiers</option>
+                    <option value="Africa/Tunis">Africa/Tunis</option>
+                    <option value="Africa/Casablanca">Africa/Casablanca</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Année scolaire active *</label>
+                  <input type="text" id="setup-school-year" placeholder="Ex: 2025-2026" />
+                </div>
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Niveaux école (séparés par virgule)</label>
+                  <input type="text" id="setup-school-levels" placeholder="Ex: NP,N1,N2,N3,N4,N5,N6" value="NP,N1,N2,N3,N4,N5,N6" />
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;">
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Tarif école (€)</label>
+                  <input type="number" id="setup-school-fee" step="0.01" min="0" placeholder="Ex: 180.00" />
+                </div>
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Mode tarif école</label>
+                  <select id="setup-school-fee-mode">
+                    <option value="annual">Annuel</option>
+                    <option value="monthly">Mensuel</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Cotisation (€)</label>
+                  <input type="number" id="setup-membership-fee" step="0.01" min="0" placeholder="Ex: 30.00" />
+                </div>
+                <div>
+                  <label style="font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;">Mode cotisation</label>
+                  <select id="setup-membership-mode">
+                    <option value="per_person">Par personne</option>
+                    <option value="per_family">Par famille</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-top:6px;">
+                <button class="btn btn-primary" onclick="saveSetupForm()">💾 Enregistrer les paramètres</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ Adhérents ══════════════════════════════════════════════ -->
+        <div id="import-panel-members">
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <span>🤝 Import adhérents</span>
+              <a class="btn btn-sm" href="templates/onboarding_adherents.csv" download style="margin-left:auto;">⬇ Template CSV</a>
+            </div>
+            <div class="card-body">
+              <div style="background:#f8f7ff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:.84rem;line-height:1.7;">
+                <strong>Colonnes du fichier :</strong><br>
+                <code>nom_prenom</code> — Nom et prénom (ex : <em>MARTIN Pierre</em>)<br>
+                <code>telephone</code> — Numéro de téléphone<br>
+                <code>email</code> — Adresse email (optionnel)<br>
+                <code>adresse</code> — Adresse postale (optionnel)<br>
+                <code>mode_paiement</code> — <em>virement / cheque / especes</em> (optionnel)<br>
+                <code>montant_paye</code> — Total versé sur l'année (optionnel, ex : <em>120.00</em>)<br>
+                <code>jan, fev, mars, avr, mai, juin, juil, aout, sept, oct, nov, dec</code> — Montant par mois si disponible (optionnel)
+              </div>
+              <div class="form-row">
+                <div class="form-col">
+                  <label>Fichier CSV ou Excel (.xlsx)</label>
+                  <input type="file" id="import-members-file" accept=".csv,.xlsx" />
+                </div>
+                <div class="form-col">
+                  <label>Année de cotisation cible</label>
+                  <select id="import-members-year"></select>
+                </div>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:.85rem;cursor:pointer;font-weight:500;">
+                <input type="checkbox" id="import-members-dryrun" style="width:auto;margin:0;" checked />
+                🔍 Simulation — prévisualiser sans modifier la base de données
+              </label>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" onclick="runImport('members')">📥 Lancer l'import</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ Familles & École ═══════════════════════════════════════ -->
+        <div id="import-panel-school" class="hidden">
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <span>🏫 Import familles &amp; élèves</span>
+              <a class="btn btn-sm" href="templates/onboarding_ecole.csv" download style="margin-left:auto;">⬇ Template CSV</a>
+            </div>
+            <div class="card-body">
+              <div style="background:#f8f7ff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:.84rem;line-height:1.7;">
+                <strong>Colonnes du fichier :</strong><br>
+                <code>nom_famille</code> — Nom du contact principal (ex : <em>MARTIN Pierre</em>)<br>
+                <code>tel_papa</code>, <code>tel_maman</code> — Téléphones (optionnels)<br>
+                <code>email</code> — Email famille (optionnel)<br>
+                <code>enfant1_prenom</code>, <code>enfant1_niveau</code> — 1er enfant (niveau : NP / N1 / N2 / N3 / N4 / N5)<br>
+                <code>enfant2_prenom</code>, <code>enfant2_niveau</code> — 2e enfant (optionnel)<br>
+                <code>enfant3_prenom</code>, <code>enfant3_niveau</code> — 3e enfant (optionnel)<br>
+                <code>montant_verse</code> — Total versé sur l'année scolaire (optionnel)<br>
+                <code>sept, oct, nov, dec, jan, fev, mars, avr, mai, juin</code> — Montant par mois si disponible (optionnel)
+              </div>
+              <div class="form-row">
+                <div class="form-col">
+                  <label>Fichier CSV ou Excel (.xlsx)</label>
+                  <input type="file" id="import-school-file" accept=".csv,.xlsx" />
+                </div>
+                <div class="form-col">
+                  <label>Année scolaire cible</label>
+                  <select id="import-school-year"></select>
+                </div>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:.85rem;cursor:pointer;font-weight:500;">
+                <input type="checkbox" id="import-school-dryrun" style="width:auto;margin:0;" checked />
+                🔍 Simulation — prévisualiser sans modifier la base de données
+              </label>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" onclick="runImport('school')">📥 Lancer l'import</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ Historique trésorerie ══════════════════════════════════ -->
+        <div id="import-panel-transactions" class="hidden">
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <span>💰 Import historique trésorerie</span>
+              <a class="btn btn-sm" href="templates/onboarding_transactions.csv" download style="margin-left:auto;">⬇ Template CSV</a>
+            </div>
+            <div class="card-body">
+              <div style="background:#fff8e1;border:1px solid #fde68a;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:.84rem;line-height:1.7;">
+                <strong>⚠️ Usage unique — historique passé uniquement</strong><br>
+                Cet import sert à renseigner les transactions <strong>passées</strong> (avant la mise en service de l'application).<br>
+                Pour les relevés bancaires mensuels, utilisez <strong>Trésorerie → 🏦 Import bancaire</strong>.
+              </div>
+              <div style="background:#f8f7ff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:.84rem;line-height:1.7;">
+                <strong>Colonnes du fichier :</strong><br>
+                <code>date</code> — Format JJ/MM/AAAA (ex : <em>15/09/2024</em>)<br>
+                <code>libelle</code> — Description de la transaction<br>
+                <code>montant_entree</code> — Montant reçu (laisser vide si sortie)<br>
+                <code>montant_sortie</code> — Montant dépensé (laisser vide si entrée)<br>
+                <code>categorie</code> — <em>don / cotisation / loyer / salaire / facture / ecole / projet / subvention / autre</em><br>
+                <code>mode_paiement</code> — <em>virement / cheque / especes / autre</em> (optionnel)<br>
+                <code>note</code> — Commentaire libre (optionnel)
+              </div>
+              <div class="form-row">
+                <div class="form-col">
+                  <label>Fichier CSV ou Excel (.xlsx)</label>
+                  <input type="file" id="import-tx-file" accept=".csv,.xlsx" />
+                </div>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:.85rem;cursor:pointer;font-weight:500;">
+                <input type="checkbox" id="import-tx-dryrun" style="width:auto;margin:0;" checked />
+                🔍 Simulation — prévisualiser sans modifier la base de données
+              </label>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" onclick="runImport('transactions')">📥 Lancer l'import</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ Résultat ═══════════════════════════════════════════════ -->
+        <div id="import-result" class="hidden">
+          <div class="card">
+            <div class="card-header" id="import-result-header"><span>Résultat</span></div>
+            <div class="card-body" id="import-result-body"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /.main -->
+</div><!-- /#app-screen -->
+
+<!-- ══ MODALS ══════════════════════════════════════════════════════════════ -->
+<!-- ══ MODAL BULK — Saisie multiple type tableur ══════════════════════════ -->
+<div class="modal-overlay" id="modal-bulk">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="bulk-modal-title">Saisie multiple</h3>
+      <button class="modal-close" onclick="closeModal('modal-bulk')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="bulk-table-wrap">
+        <table class="bulk-table">
+          <thead id="bulk-thead"></thead>
+          <tbody id="bulk-tbody"></tbody>
+        </table>
+      </div>
+      <div class="bulk-toolbar">
+        <span class="bulk-row-count" id="bulk-row-count">0 ligne(s)</span>
+        <button class="btn btn-sm" onclick="_bulkAddRow()">+ Ligne</button>
+        <button class="btn btn-primary" id="bulk-save-btn" onclick="saveBulk()">💾 Enregistrer tout</button>
+        <button class="btn btn-sm" onclick="closeModal('modal-bulk')">Annuler</button>
+      </div>
+      <div id="bulk-report" class="hidden"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Famille -->
+<div class="modal-overlay" id="modal-family">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-family-title">Ajouter une famille</h3>
+      <button class="modal-close" onclick="closeModal('modal-family')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="family-id" />
+      <label>Nom du contact principal *</label>
+      <input type="text" id="family-name" placeholder="Ex: Ahmed Benali" />
+      <label>Téléphone principal *</label>
+      <input type="text" id="family-phone1" placeholder="06 12 34 56 78" />
+      <label>Téléphone secondaire</label>
+      <input type="text" id="family-phone2" placeholder="(optionnel)" />
+      <label>Email</label>
+      <input type="email" id="family-email" placeholder="famille@email.com" />
+      <label>Adresse</label>
+      <textarea id="family-address" placeholder="(optionnel)"></textarea>
+      <div id="modal-family-error" class="alert alert-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-family')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveFamily()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Enfant -->
+<div class="modal-overlay" id="modal-child">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-child-title">Ajouter un enfant</h3>
+      <button class="modal-close" onclick="closeModal('modal-child')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="child-id" />
+      <label>Prénom *</label>
+      <input type="text" id="child-firstname" placeholder="Ex: Youssef" />
+      <label>Famille *</label>
+      <select id="child-family"></select>
+      <label>Niveau *</label>
+      <select id="child-level">
+        <option value="">-- Choisir --</option>
+        <option>NP</option><option>N1</option><option>N2</option>
+        <option>N3</option><option>N4</option><option>N5</option><option>N6</option>
+      </select>
+      <label>Date de naissance</label>
+      <input type="date" id="child-birthdate" />
+      <div id="modal-child-error" class="alert alert-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-child')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveChild()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Paiement École → voir Modal Transaction Trésorerie avec category=ecole -->
+
+<!-- Modal Adhérent -->
+<div class="modal-overlay" id="modal-member">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-member-title">Ajouter un adhérent</h3>
+      <button class="modal-close" onclick="closeModal('modal-member')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="member-id" />
+      <label>Nom complet *</label>
+      <input type="text" id="member-fullname" placeholder="Ex: Mohamed Dupont" />
+      <label>Téléphone</label>
+      <input type="text" id="member-phone" placeholder="06 12 34 56 78" />
+      <label>Email</label>
+      <input type="email" id="member-email" placeholder="(optionnel)" />
+      <label>Adresse</label>
+      <textarea id="member-address" placeholder="(optionnel)"></textarea>
+      <div id="modal-member-error" class="alert alert-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-member')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveMember()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     Modal Paiement École
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-school-payment">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-sp-title">💳 Enregistrer un paiement école</h3>
+      <button class="modal-close" onclick="closeModal('modal-school-payment')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sp-id" />
+      <input type="hidden" id="sp-family-id" />
+      <label>Famille</label>
+      <select id="sp-family"></select>
+      <label>Enfant (optionnel)</label>
+      <select id="sp-child"><option value="">— Tous les enfants —</option></select>
+      <label>Année scolaire *</label>
+      <select id="sp-year"></select>
+      <label>Montant (€) *</label>
+      <input type="number" id="sp-amount" step="0.01" min="0" placeholder="Ex: 50.00" />
+      <label>Date *</label>
+      <input type="date" id="sp-date" />
+      <label>Mode de paiement *</label>
+      <select id="sp-method">
+        <option value="cash">Espèces</option>
+        <option value="cheque">Chèque</option>
+        <option value="virement">Virement bancaire</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label>Note (optionnel)</label>
+      <input type="text" id="sp-note" placeholder="Ex: Paiement partiel mois de mars" />
+      <div id="modal-sp-error" class="alert alert-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-school-payment')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveSchoolPayment()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Modal Paiement Cotisation
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-membership-payment">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-mp-title">💳 Enregistrer un paiement cotisation</h3>
+      <button class="modal-close" onclick="closeModal('modal-membership-payment')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mp-id" />
+      <input type="hidden" id="mp-member-id" />
+      <label>Adhérent</label>
+      <select id="mp-member"></select>
+      <label>Année de cotisation *</label>
+      <select id="mp-year"></select>
+      <label>Montant (€) *</label>
+      <input type="number" id="mp-amount" step="0.01" min="0" placeholder="Ex: 30.00" />
+      <label>Date *</label>
+      <input type="date" id="mp-date" />
+      <label>Mode de paiement *</label>
+      <select id="mp-method">
+        <option value="cash">Espèces</option>
+        <option value="cheque">Chèque</option>
+        <option value="virement">Virement bancaire</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label>Note (optionnel)</label>
+      <input type="text" id="mp-note" placeholder="Ex: Cotisation 2025-2026" />
+      <div id="modal-mp-error" class="alert alert-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-membership-payment')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveMembershipPayment()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cotisation → voir Modal Transaction Trésorerie avec category=cotisation -->
+
+<!-- Modal Transaction Trésorerie -->
+<div class="modal-overlay" id="modal-treasury">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-treasury-title">Ajouter une transaction</h3>
+      <button class="modal-close" onclick="closeModal('modal-treasury')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="trs-id" />
+      <label>Direction *</label>
+      <select id="trs-direction">
+        <option value="IN">📥 Entrée (recette)</option>
+        <option value="OUT">📤 Sortie (dépense)</option>
+      </select>
+      <label>Catégorie *</label>
+      <select id="trs-category" onchange="_onTrsCategoryChange()">
+        <option value="don">Don / Sadaqa</option>
+        <option value="loyer">Loyer</option>
+        <option value="salaire">Salaire / Honoraires</option>
+        <option value="facture">Facture / Charges</option>
+        <option value="ecole">École coranique</option>
+        <option value="cotisation">Cotisation adhérent</option>
+        <option value="projet">Projet / Travaux</option>
+        <option value="subvention">Subvention</option>
+        <option value="autre">Autre</option>
+      </select>
+
+      <!-- Bloc école (affiché si category=ecole) -->
+      <div id="trs-school-block" class="hidden">
+        <label>Famille <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+        <select id="trs-family"><option value="">— Famille —</option></select>
+        <label>Année scolaire <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+        <select id="trs-school-year"><option value="">— Année scolaire —</option></select>
+      </div>
+
+      <!-- Bloc cotisation (affiché si category=cotisation) -->
+      <div id="trs-member-block" class="hidden">
+        <label>Adhérent <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+        <select id="trs-member"><option value="">— Adhérent —</option></select>
+        <label>Année de cotisation <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+        <select id="trs-membership-year"><option value="">— Année —</option></select>
+      </div>
+      <label>Libellé *</label>
+      <input type="text" id="trs-label" placeholder="Ex: Don vendredi 14 mars" />
+      <label>Date *</label>
+      <input type="date" id="trs-date" />
+      <label>Montant (€) *</label>
+      <input type="number" id="trs-amount" placeholder="500" min="0" step="0.01" />
+      <label>Mode de paiement</label>
+      <select id="trs-method">
+        <option value="cash">Espèces</option>
+        <option value="cheque">Chèque</option>
+        <option value="virement">Virement</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label>Note</label>
+      <textarea id="trs-note" placeholder="(optionnel)"></textarea>
+      <label>Régime fiscal <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+      <select id="trs-regime">
+        <option value="">— Non précisé —</option>
+        <option value="1901">🔵 Loi 1901 — Association</option>
+        <option value="1905">🟣 Loi 1905 — Culte</option>
+      </select>
+      <label>Compte bancaire <span style="color:var(--muted);font-size:0.8rem;">optionnel — remplit le régime automatiquement</span></label>
+      <select id="trs-bank-account" onchange="_onTrsBankChange()">
+        <option value="">— Aucun compte —</option>
+      </select>
+      <label>Cagnotte liée <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+      <select id="trs-campaign"><option value="">— Aucune cagnotte —</option></select>
+      <div id="modal-trs-error" class="alert alert-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-treasury')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveTreasuryTransaction()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Utilisateur -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="user-modal-title">Créer un utilisateur</h3>
+      <button class="modal-close" onclick="closeModal('modal-user')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="user-modal-id" />
+      <div id="user-modal-username-row">
+        <label>Nom d'utilisateur *</label>
+        <input type="text" id="user-modal-username" placeholder="Ex: tresorier1" autocomplete="off" />
+      </div>
+      <label>Email *</label>
+      <input type="email" id="user-modal-email" placeholder="utilisateur@mosquee.fr" />
+      <label>Prénom</label>
+      <input type="text" id="user-modal-firstname" placeholder="(optionnel)" />
+      <label>Nom</label>
+      <input type="text" id="user-modal-lastname" placeholder="(optionnel)" />
+      <label>Mot de passe <span id="user-modal-pw-hint" style="color:var(--muted);font-size:0.78em;font-weight:400;"></span></label>
+      <input type="password" id="user-modal-password" placeholder="••••••••" autocomplete="new-password" />
+      <label>Rôle *</label>
+      <select id="user-modal-role" onchange="onUserRoleChange()">
+        <option value="ADMIN">🔑 Admin (accès complet)</option>
+        <option value="TRESORIER">💼 Trésorier</option>
+        <option value="ECOLE_MANAGER">🎓 École Manager</option>
+        <option value="TEACHER">📖 Professeur</option>
+        <option value="SECRETARY">📝 Secrétaire</option>
+        <option value="VIEWER">👁️ Lecture seule</option>
+      </select>
+      <div id="user-modal-perms-section" style="margin-top:16px;">
+        <label style="font-weight:600;font-size:0.85rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;">Accès par module</label>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">Cochez les droits accordés à cet utilisateur.</div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;">Module</th>
+              <th style="text-align:center;padding:6px 4px;color:var(--muted);font-weight:500;">👁 Voir</th>
+              <th style="text-align:center;padding:6px 4px;color:var(--muted);font-weight:500;">✏️ Modifier</th>
+              <th style="text-align:center;padding:6px 4px;color:var(--muted);font-weight:500;">🗑 Supprimer</th>
+            </tr>
+          </thead>
+          <tbody id="user-modal-perms-body"></tbody>
+        </table>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;margin-top:12px;">
+        <input type="checkbox" id="user-modal-active" checked style="width:auto;margin:0;" />
+        Compte actif
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-user')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveUser()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Reçu annuel -->
+<div class="modal-overlay" id="modal-annual-receipt">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h3>📊 Bilan financier annuel</h3>
+      <button class="modal-close" onclick="closeModal('modal-annual-receipt')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+        Génère un PDF avec le bilan complet de l'année : KPIs, synthèse par catégorie et journal des transactions.
+      </p>
+      <label>Année *</label>
+      <input type="number" id="annual-receipt-year" min="2020" max="2099" />
+      <label>Catégorie <span style="color:var(--muted);font-size:0.8rem;">optionnel — toutes si vide</span></label>
+      <select id="annual-receipt-cat">
+        <option value="">Toutes les catégories</option>
+        <option value="don">Don / Sadaqa</option>
+        <option value="cotisation">Cotisation adhérent</option>
+        <option value="ecole">École coranique</option>
+        <option value="subvention">Subvention</option>
+        <option value="facture">Facture / Dépense</option>
+        <option value="autre">Autre</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-annual-receipt')">Annuler</button>
+      <button class="btn btn-primary" onclick="downloadAnnualReceipt()">⬇ Générer PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cagnotte -->
+<div class="modal-overlay" id="modal-campaign">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="modal-campaign-title">Nouvelle cagnotte</h3>
+      <button class="modal-close" onclick="closeModal('modal-campaign')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="campaign-id" />
+      <div id="modal-campaign-error" class="alert alert-error hidden"></div>
+      <div style="display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:end;">
+        <div>
+          <label>Icône</label>
+          <input type="text" id="campaign-icon" value="🎯" maxlength="4" style="font-size:1.4rem;text-align:center;padding:8px;" />
+        </div>
+        <div>
+          <label>Nom de la cagnotte *</label>
+          <input type="text" id="campaign-name" placeholder="Ex: Cagnotte Ramadan 2026" />
+        </div>
+      </div>
+      <label>Description</label>
+      <textarea id="campaign-description" rows="2" placeholder="Objectif, contexte…" style="width:100%;resize:vertical;"></textarea>
+      <label>Objectif (€) <span style="color:var(--muted);font-size:0.8rem;">optionnel</span></label>
+      <input type="number" id="campaign-goal" min="0" step="0.01" placeholder="5000" />
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label>Date de début</label>
+          <input type="date" id="campaign-start" />
+        </div>
+        <div>
+          <label>Date de fin</label>
+          <input type="date" id="campaign-end" />
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+        <div>
+          <label>Statut</label>
+          <select id="campaign-status">
+            <option value="active">✅ Active</option>
+            <option value="closed">🔒 Clôturée</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding-top:26px;">
+          <input type="checkbox" id="campaign-show-kpi" checked style="width:auto;margin:0;" />
+          <label for="campaign-show-kpi" style="margin:0;cursor:pointer;font-size:0.85rem;">Visible sur KPI</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-campaign')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveCampaign()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Résultat Notifications -->
+<div class="modal-overlay" id="modal-notif-result">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="notif-result-title">Résultat de l'envoi</h3>
+      <button class="modal-close" onclick="closeModal('modal-notif-result')">✕</button>
+    </div>
+    <div class="modal-body" id="notif-result-body" style="max-height:420px;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('modal-notif-result')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCRIPTS (ordre de dépendance) ══════════════════════════════════════ -->
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/school.js"></script>
+<script src="js/membership.js"></script>
+<script src="js/campaigns.js"></script>
+<script src="js/treasury.js"></script>
+<script src="js/users.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/export.js"></script>
+<script src="js/audit.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/import.js"></script>
+<script src="js/bulk.js"></script>
+<script src="js/plan.js"></script>
+<script src="js/auth.js"></script><!-- DOIT être chargé EN DERNIER -->
+
+<!-- ══ MODAL : Import bancaire CSV ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-bank-import">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3>🏦 Import relevé bancaire</h3>
+      <button class="modal-close" onclick="closeModal('modal-bank-import')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.84rem;color:var(--muted);margin-bottom:18px;line-height:1.6;">
+        Importez un relevé CSV de votre banque (Banque Populaire, CIC, etc.).<br>
+        Le numéro de compte sera détecté automatiquement si possible.
+      </p>
+      <label>Compte bancaire <span style="color:var(--muted);font-size:.8rem;">(optionnel — détecté depuis le CSV)</span></label>
+      <select id="bank-import-account" style="margin-bottom:16px;">
+        <option value="">-- Détection automatique --</option>
+      </select>
+      <label>Fichier CSV <span style="color:var(--danger);">*</span></label>
+      <input type="file" id="bank-import-file" accept=".csv" style="margin-bottom:16px;" />
+      <div id="bank-import-result" style="margin-top:8px;font-size:.84rem;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-bank-import')">Annuler</button>
+      <button class="btn btn-primary" onclick="runBankImport()">📥 Importer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL : Compte bancaire ══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-bank-account">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="modal-ba-title">Ajouter un compte bancaire</h3>
+      <button class="modal-close" onclick="closeModal('modal-bank-account')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ba-id" />
+      <label>Libellé <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="ba-label" placeholder="Ex: Compte courant 1901" />
+      <label>Nom de la banque</label>
+      <input type="text" id="ba-bank-name" placeholder="Ex: Banque Populaire" />
+      <label>Numéro de compte <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="ba-account-number" placeholder="Ex: 08004714327" />
+      <label>Régime</label>
+      <select id="ba-regime">
+        <option value="1901">Loi 1901</option>
+        <option value="1905">Loi 1905</option>
+        <option value="autre">Autre</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;margin-top:8px;">
+        <input type="checkbox" id="ba-is-active" style="width:auto;margin:0;accent-color:var(--accent);" checked />
+        Compte actif
+      </label>
+      <div id="modal-ba-error" class="alert alert-error hidden" style="margin-top:12px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-bank-account')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveBankAccount()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL : Règle de dispatch ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-dispatch-rule">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h3 id="modal-dr-title">Ajouter une règle de dispatch</h3>
+      <button class="modal-close" onclick="closeModal('modal-dispatch-rule')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dr-id" />
+      <label>Mot-clé <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="dr-keyword" placeholder="Ex: LOYER, SALAIRE, EDF..." />
+      <p style="font-size:.78rem;color:var(--muted);margin-top:-10px;margin-bottom:14px;">
+        La recherche est insensible à la casse. Utilisez un mot partiel pour plus de souplesse.
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label>Chercher dans</label>
+          <select id="dr-field">
+            <option value="both">Libellé ou Détail</option>
+            <option value="label">Libellé uniquement</option>
+            <option value="detail">Détail uniquement</option>
+          </select>
+        </div>
+        <div>
+          <label>Direction</label>
+          <select id="dr-direction">
+            <option value="auto">Auto (débit/crédit)</option>
+            <option value="IN">Entrée uniquement</option>
+            <option value="OUT">Sortie uniquement</option>
+          </select>
+        </div>
+      </div>
+      <label>Catégorie attribuée</label>
+      <select id="dr-category">
+                <option value="">-- Sélectionner --</option>
+                <option value="don">Don / Sadaqa</option>
+                <option value="loyer">Loyer</option>
+                <option value="salaire">Salaire / Honoraires</option>
+                <option value="facture">Facture / Charges</option>
+                <option value="ecole">École coranique</option>
+                <option value="cotisation">Cotisation adhérent</option>
+                <option value="projet">Projet / Travaux</option>
+                <option value="subvention">Subvention</option>
+                <option value="autre">Autre</option>
+      </select>
+      <label style="margin-top:12px;">Priorité <span style="color:var(--muted);font-size:.78rem;">(1 = plus haute)</span></label>
+      <input type="number" id="dr-priority" placeholder="10" min="1" max="999" value="10" />
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;margin-top:8px;">
+        <input type="checkbox" id="dr-is-active" style="width:auto;margin:0;accent-color:var(--accent);" checked />
+        Règle active
+      </label>
+      <div id="modal-dr-error" class="alert alert-error hidden" style="margin-top:12px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-dispatch-rule')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveDispatchRule()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Modal : Nouveau pointage / Modifier pointage de caisse ── -->
+<div class="modal-overlay" id="modal-cash-count">
+  <div class="modal" style="max-width:560px;max-height:90vh;overflow-y:auto;">
+    <div class="modal-header">
+      <h3 id="cash-count-modal-title">💵 Nouveau pointage de caisse</h3>
+      <button class="modal-close" onclick="closeModal('modal-cash-count')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" id="cash-count-date" class="input">
+      </div>
+      <div class="form-group">
+        <label>Note (optionnel)</label>
+        <input type="text" id="cash-count-note" class="input" placeholder="ex: après prière du vendredi">
+      </div>
+      <hr style="margin:16px 0">
+      <p style="font-weight:600;margin-bottom:12px;">Coupures :</p>
+      <div id="cash-denominations-grid" style="display:flex;flex-direction:column;gap:8px;">
+        <!-- rempli par JS -->
+      </div>
+      <div style="margin-top:16px;padding:12px;background:var(--bg-alt,#f5f5f5);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+        <strong>Total :</strong>
+        <span id="cash-count-total-preview" style="font-size:1.3rem;font-weight:700;color:var(--primary)">0,00 €</span>
+      </div>
+      <p id="cash-count-error" class="form-error"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-cash-count')">Annuler</button>
+      <button id="cash-count-save-btn" class="btn btn-primary" onclick="saveCashCount()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ====== MODAL STAFF ====================================================== -->
+<div class="modal-overlay" id="modal-staff">
+  <div class="modal" style="max-width:520px;width:96%;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="staff-modal-title">&#128100; Nouveau membre du personnel</h3>
+      <button class="modal-close" onclick="closeModal('modal-staff')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="staff-id">
+      <p id="staff-error" class="form-error"></p>
+      <div class="form-group">
+        <label class="form-label">Nom complet *</label>
+        <input class="form-control" id="staff-full-name" type="text" placeholder="Ex : Abdallah Benali">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rôle *</label>
+        <select class="form-control" id="staff-role">
+          <option value="enseignant">&#128218; Enseignant</option>
+          <option value="imam">&#128332; Imam</option>
+          <option value="entretien">&#129529; Entretien</option>
+          <option value="comptable">&#128202; Comptable</option>
+          <option value="gardien">&#128273; Gardien</option>
+          <option value="autre">&#128100; Autre</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Salaire mensuel (&#8364;)</label>
+          <input class="form-control" id="staff-salary" type="number" step="0.01" min="0" placeholder="Ex : 800.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">IBAN (partiel)</label>
+          <input class="form-control" id="staff-iban" type="text" placeholder="Ex : FR76 1234 …">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mot-clé CSV <span style="font-size:.75rem;color:var(--muted);">(auto-catégoriser les virements salaire)</span></label>
+        <input class="form-control" id="staff-name-keyword" type="text" placeholder="Ex : BENALI ABDALLAH">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Téléphone</label>
+          <input class="form-control" id="staff-phone" type="text" placeholder="06 …">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-control" id="staff-email" type="email" placeholder="adresse@email.fr">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Date début</label>
+          <input class="form-control" id="staff-start-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date fin</label>
+          <input class="form-control" id="staff-end-date" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" id="staff-note" rows="2" placeholder="Informations supplémentaires…"></textarea>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="staff-is-active" checked style="width:18px;height:18px;cursor:pointer;">
+        <label for="staff-is-active" style="cursor:pointer;margin:0;">Actif</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-staff')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveStaff()">&#128190; Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL STAFF HISTORY ============================================== -->
+<div class="modal-overlay" id="modal-staff-history">
+  <div class="modal" style="max-width:620px;width:96%;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="staff-history-title">&#128220; Historique des salaires</h3>
+      <button class="modal-close" onclick="closeModal('modal-staff-history')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div id="staff-history-kpi" style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;"></div>
+      <div class="card table-wrapper" style="margin:0;">
+        <table>
+          <thead><tr><th>Date</th><th>Libellé</th><th>Montant</th><th>Méthode</th><th>Note</th></tr></thead>
+          <tbody id="staff-history-table"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-staff-history')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Récap mensuel trésorerie -->
+<div class="modal-overlay" id="modal-monthly-recap">
+  <div class="modal" style="max-width:720px;width:96%;">
+    <div class="modal-header">
+      <h3 id="monthly-recap-title">📅 Récapitulatif mensuel</h3>
+      <button class="modal-close" onclick="closeModal('modal-monthly-recap')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+        <label style="margin:0;font-weight:600;">Mois :</label>
+        <input type="month" id="monthly-recap-month" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;" />
+        <button class="btn btn-primary btn-sm" onclick="loadMonthlyRecap()">Afficher</button>
+        <button class="btn btn-sm" onclick="printMonthlyRecap()" title="Imprimer">🖨️ Imprimer</button>
+      </div>
+      <div id="monthly-recap-content">
+        <p style="color:var(--muted);text-align:center;">Sélectionnez un mois et cliquez sur Afficher.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-monthly-recap')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
