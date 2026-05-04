@@ -190,8 +190,8 @@ class Command(BaseCommand):
         bank_acc = None
         if hasattr(TreasuryTransaction, "bank_account"):
             bank_acc, _ = BankAccount.objects.get_or_create(
-                mosque=mosque, name="Compte principal (1901)",
-                defaults={"iban": "FR76 1234 5678 9012 3456 7890 123", "regime": "1901"}
+                mosque=mosque, label="Compte principal (1901)",
+                defaults={"account_number": "FR76 1234 5678 9012 3456 7890 123", "regime": "1901"}
             )
 
         # ── 6. Transactions trésorerie ───────────────────────────────────────
