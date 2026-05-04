@@ -175,7 +175,9 @@ class SettingsStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        mosque = get_mosque(request)
+        # Essayer request.mosque (injecté par HasMosquePermission)
+        # Sinon fallback sur request.user.mosque directement
+        mosque = get_mosque(request) or getattr(request.user, "mosque", None)
         if mosque is None:
             return Response({
                 "configured": False,

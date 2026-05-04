@@ -61,12 +61,8 @@ async function login() {
 async function logout() {
   await apiFetch('/auth/logout/', 'POST', { refresh: refreshToken }).catch(() => {});
   localStorage.clear();
-  const hn = location.hostname;
-  if (hn.endsWith('.nidham.local'))     location.href = 'http://nidham.local:8080/';
-  else if (hn.endsWith('.nidham.fr'))   location.href = 'https://nidham.fr/';
-  else if (/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(hn))
-                                        location.href = 'http://' + hn + ':8080/';
-  else                                  location.reload();
+  // Toujours rester sur la même URL (écran de login de la mosquée)
+  location.reload();
 }
 
 // ── Afficher app, masquer login ───────────────────────────────────────────────
