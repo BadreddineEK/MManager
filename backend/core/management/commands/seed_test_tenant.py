@@ -336,18 +336,24 @@ class Command(BaseCommand):
 
 
 def _user(User, email, password, role, full_name, mosque):
-    """Crée ou met à jour un utilisateur dans le tenant courant."""
+    """Crée ou met à jour un utilisateur dans le tenant courant.
+    Le username est préfixé avec le schema (ex: mosquee-test__admin@test.mosquee)
+    car le serializer JWT ajoute ce préfixe automatiquement à la connexion.
+    """
+    from django.db import connection as _conn
+    schema = _conn.schema_name  # ex: "mosquee-test"
+    username = f"{schema}__{email}"
     parts = full_name.split(" ", 1)
     first = parts[0]
     last  = parts[1] if len(parts) > 1 else ""
     u, created = User.objects.get_or_create(
-        username=email,
+        username=username,
         defaults={
             "email": email, "first_name": first, "last_name": last,
             "role": role, "mosque": mosque, "is_active": True,
         }
     )
-    if created or not u.has_usable_password():
-        u.set_password(password)
-        u.save()
+    # Toujours forcer le mot de passe (même si user déjà existant)
+    u.set_password(password)
+    u.save()
     return u
