@@ -86,6 +86,34 @@ class MosqueSettings(models.Model):
         default="annual",
         verbose_name="Mode tarif école",
     )
+    # ── Barème progressif école (par nombre d'enfants) ─────────────────────
+    # Format : {"1": 300, "2": 400, "3": 450, "4+": 500}
+    # Si vide → utilise school_fee_default pour tous
+    school_fee_tiers = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Barème école par nombre d'enfants",
+        help_text='Ex: {"1": 300, "2": 400, "3": 450, "4+": 500}',
+    )
+    # ── Règle cotisation / école ────────────────────────────────────────────
+    MEMBERSHIP_SCHOOL_RULE_CHOICES = [
+        ("separate",  "Séparé — cotisation toujours due"),
+        ("included",  "Incluse — cotisation offerte si inscrit à l'école"),
+        ("discount",  "Réduction — montant fixe déduit si inscrit à l'école"),
+    ]
+    membership_school_rule = models.CharField(
+        max_length=20,
+        choices=MEMBERSHIP_SCHOOL_RULE_CHOICES,
+        default="separate",
+        verbose_name="Règle cotisation / école",
+    )
+    membership_school_discount = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        verbose_name="Réduction cotisation si inscrit à l'école (€)",
+        help_text="Utilisé uniquement si règle = 'discount'",
+    )
     # Cotisations
     membership_fee_amount = models.DecimalField(
         max_digits=10,
@@ -694,3 +722,126 @@ class Subscription(models.Model):
     @property
     def is_active(self):
         return self.status in ("trialing", "trial", "active")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Profil d'import bancaire — mapping CSV configurable par mosquée
+# ─────────────────────────────────────────────────────────────────────────────
+
+class BankImportProfile(models.Model):
+    """
+    Profil de mapping CSV bancaire.
+
+    Chaque mosquée peut avoir plusieurs profils (un par compte/banque).
+    Permet d'importer n'importe quel export CSV bancaire sans hardcoder les colonnes.
+
+    Exemple pour Banque Populaire :
+      separator       = ";"
+      date_column     = "Date comptable"
+      label_column    = "Libelle simplifie"
+      detail_column   = "Informations complementaires"
+      debit_column    = "Debit"
+      credit_column   = "Credit"
+      type_column     = "Type operation"
+      reference_column= "Reference"
+      date_format     = "%d/%m/%Y"
+      decimal_sep     = ","
+    """
+
+    DECIMAL_SEP_CHOICES = [
+        (",", "Virgule (France)"),
+        (".", "Point (international)"),
+    ]
+
+    mosque = models.ForeignKey(
+        Mosque,
+        on_delete=models.CASCADE,
+        related_name="bank_import_profiles",
+        verbose_name="Mosquée",
+    )
+    label = models.CharField(
+        max_length=100,
+        verbose_name="Nom du profil",
+        help_text='Ex: "Banque Populaire — Compte 1901"',
+    )
+    is_default = models.BooleanField(
+        default=False,
+        verbose_name="Profil par défaut",
+        help_text="Si activé, ce profil est pré-sélectionné à l'import",
+    )
+    # ── Format du fichier ───────────────────────────────────────────────────
+    separator = models.CharField(
+        max_length=5, default=";",
+        verbose_name="Séparateur CSV",
+        help_text="Généralement ';' pour les banques françaises",
+    )
+    encoding = models.CharField(
+        max_length=20, default="utf-8-sig",
+        verbose_name="Encodage",
+        help_text="utf-8-sig, latin-1, utf-8",
+    )
+    date_format = models.CharField(
+        max_length=30, default="%d/%m/%Y",
+        verbose_name="Format de date",
+        help_text="Ex: %d/%m/%Y pour 23/04/2026",
+    )
+    decimal_sep = models.CharField(
+        max_length=1, choices=DECIMAL_SEP_CHOICES, default=",",
+        verbose_name="Séparateur décimal",
+    )
+    skip_rows = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name="Lignes à ignorer en début de fichier",
+        help_text="0 = première ligne = en-têtes (cas standard)",
+    )
+    # ── Colonnes ────────────────────────────────────────────────────────────
+    date_column = models.CharField(
+        max_length=100, default="date",
+        verbose_name="Colonne date",
+    )
+    label_column = models.CharField(
+        max_length=100, default="libelle",
+        verbose_name="Colonne libellé",
+    )
+    detail_column = models.CharField(
+        max_length=100, blank=True, default="",
+        verbose_name="Colonne détail / informations complémentaires",
+        help_text="Optionnel — utilisé pour enrichir le label",
+    )
+    debit_column = models.CharField(
+        max_length=100, blank=True, default="",
+        verbose_name="Colonne débit (sortie)",
+        help_text="Laisser vide si un seul champ montant avec signe",
+    )
+    credit_column = models.CharField(
+        max_length=100, blank=True, default="",
+        verbose_name="Colonne crédit (entrée)",
+        help_text="Laisser vide si un seul champ montant avec signe",
+    )
+    amount_column = models.CharField(
+        max_length=100, blank=True, default="",
+        verbose_name="Colonne montant unique (avec signe)",
+        help_text="Utilisé si la banque met tout dans une seule colonne avec +/-",
+    )
+    type_column = models.CharField(
+        max_length=100, blank=True, default="",
+        verbose_name="Colonne type opération",
+        help_text="Optionnel — Ex: 'Type operation' pour catégorisation auto",
+    )
+    reference_column = models.CharField(
+        max_length=100, blank=True, default="",
+        verbose_name="Colonne référence / ID opération",
+        help_text="Sert à détecter les doublons lors de ré-imports",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "core_bankimportprofile"
+        ordering = ["-is_default", "label"]
+        verbose_name = "Profil d'import bancaire"
+        verbose_name_plural = "Profils d'import bancaire"
+
+    def __str__(self) -> str:
+        default_marker = " ★" if self.is_default else ""
+        return f"{self.label}{default_marker} — {self.mosque.name}"

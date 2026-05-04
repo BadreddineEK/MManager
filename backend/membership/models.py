@@ -40,6 +40,14 @@ class MembershipYear(models.Model):
 class Member(models.Model):
     """Adherent de la mosquee."""
 
+    FREQUENCY_CHOICES = [
+        ("once",      "En une fois"),
+        ("monthly",   "Mensuel"),
+        ("quarterly", "Trimestriel"),
+        ("biannual",  "Semestriel"),
+        ("annual",    "Annuel"),
+    ]
+
     mosque = models.ForeignKey(
         Mosque,
         on_delete=models.CASCADE,
@@ -50,6 +58,19 @@ class Member(models.Model):
     email = models.EmailField(blank=True, default="", verbose_name="Email")
     phone = models.CharField(max_length=50, blank=True, default="", verbose_name="Telephone")
     address = models.TextField(blank=True, default="", verbose_name="Adresse")
+    payment_frequency = models.CharField(
+        max_length=20,
+        choices=FREQUENCY_CHOICES,
+        default="annual",
+        verbose_name="Périodicité de paiement",
+        help_text="Fréquence attendue pour détecter les retards automatiquement",
+    )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=[("cash","Espèces"),("cheque","Chèque"),("virement","Virement"),("autre","Autre")],
+        default="virement",
+        verbose_name="Moyen de paiement préféré",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

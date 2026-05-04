@@ -76,6 +76,14 @@ class TreasuryTransaction(models.Model):
     )
     # ── Liens optionnels vers les ressources humaines ──────────────────────
     # Remplis automatiquement lors de la saisie d'un paiement école ou cotisation
+    staff = models.ForeignKey(
+        "core.Staff",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="transactions",
+        verbose_name="Personnel lié",
+        help_text="Rempli automatiquement si le libellé correspond au name_keyword d'un membre du personnel",
+    )
     family = models.ForeignKey(
         "school.Family",
         on_delete=models.SET_NULL,
