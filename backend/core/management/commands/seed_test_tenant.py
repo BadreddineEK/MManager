@@ -294,9 +294,8 @@ class Command(BaseCommand):
                     "category":       tx_data["category"],
                     "direction":      tx_data["direction"],
                     "amount":         tx_data["amount"],
-                    "payment_method": tx_data.get("method", "virement"),
+                    "method":         tx_data.get("method", "virement"),
                     "regime_fiscal":  tx_data.get("regime_fiscal", "1901"),
-                    "is_validated":   True,
                 }
             )
 
