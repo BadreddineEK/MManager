@@ -95,10 +95,11 @@ class Command(BaseCommand):
         settings.save()
 
         # ── 2. Utilisateurs ──────────────────────────────────────────────────
+        # username court (ex: "admin") → le serializer JWT ajoute schema__ au login
         self.stdout.write("  2/7 · Utilisateurs…")
-        _user(User, "admin@test.mosquee", "Admin123!", "ADMIN",     "Kenza Admin",     mosque)
-        _user(User, "tresor@test.mosquee", "Admin123!", "TRESORIER", "Bilal Trésorier", mosque)
-        _user(User, "ecole@test.mosquee",  "Admin123!", "ECOLE_MANAGER", "Fatima École", mosque)
+        _user(User, "admin",   "admin@test.mosquee",   "Admin123!", "ADMIN",          "Kenza Admin",     mosque)
+        _user(User, "tresor",  "tresor@test.mosquee",  "Admin123!", "TRESORIER",      "Bilal Trésorier", mosque)
+        _user(User, "ecole",   "ecole@test.mosquee",   "Admin123!", "ECOLE_MANAGER",  "Fatima École",    mosque)
 
         # ── 3. Année scolaire ────────────────────────────────────────────────
         self.stdout.write("  3/7 · École (familles, enfants, paiements)…")
@@ -335,25 +336,25 @@ class Command(BaseCommand):
         ))
 
 
-def _user(User, email, password, role, full_name, mosque):
+def _user(User, username, email, password, role, full_name, mosque):
     """Crée ou met à jour un utilisateur dans le tenant courant.
-    Le username est préfixé avec le schema (ex: mosquee-test__admin@test.mosquee)
-    car le serializer JWT ajoute ce préfixe automatiquement à la connexion.
+    username = identifiant court (ex: "admin") — le serializer JWT ajoute
+    automatiquement le préfixe schema__ au moment du login.
     """
     from django.db import connection as _conn
-    schema = _conn.schema_name  # ex: "mosquee-test"
-    username = f"{schema}__{email}"
+    schema = _conn.schema_name          # ex: "mosquee-test"
+    full_username = f"{schema}__{username}"   # stocké en DB
     parts = full_name.split(" ", 1)
     first = parts[0]
     last  = parts[1] if len(parts) > 1 else ""
-    u, created = User.objects.get_or_create(
-        username=username,
+    u, _ = User.objects.get_or_create(
+        username=full_username,
         defaults={
             "email": email, "first_name": first, "last_name": last,
             "role": role, "mosque": mosque, "is_active": True,
         }
     )
-    # Toujours forcer le mot de passe (même si user déjà existant)
+    # Toujours forcer le mot de passe
     u.set_password(password)
     u.save()
     return u
