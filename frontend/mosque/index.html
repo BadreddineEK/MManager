@@ -1814,6 +1814,178 @@
   </div>
 </div>
 
+<!-- ══ MODAL Import Bancaire (Wizard 3 étapes) ══════════════════════════════ -->
+<div class="modal-overlay" id="modal-bank-import">
+  <div class="modal" style="max-width:720px;width:95%;">
+    <div class="modal-header">
+      <h3>🏦 Import relevé bancaire</h3>
+      <button class="modal-close" onclick="closeModal('modal-bank-import')">✕</button>
+    </div>
+
+    <!-- Barre de progression -->
+    <div style="display:flex;align-items:center;gap:0;padding:16px 24px 0;user-select:none;">
+      <div id="bk-dot1" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:.2s;background:var(--accent);color:#fff;font-weight:700;">1</div>
+      <div style="flex:1;height:3px;background:var(--border);margin:0 4px;"></div>
+      <div id="bk-dot2" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:.2s;background:var(--border);color:var(--muted);">2</div>
+      <div style="flex:1;height:3px;background:var(--border);margin:0 4px;"></div>
+      <div id="bk-dot3" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:.2s;background:var(--border);color:var(--muted);">3</div>
+      <div style="margin-left:12px;font-size:.8rem;color:var(--muted);" id="bk-step-label"></div>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- ═══ Étape 1 : Fichier + paramètres ═══ -->
+      <div id="bk-step1">
+        <p style="font-size:.83rem;color:var(--muted);margin-bottom:16px;">
+          Importez le relevé CSV de votre banque. Le wizard détectera automatiquement les colonnes.
+        </p>
+
+        <!-- Profil sauvegardé -->
+        <label>Profil sauvegardé <span style="color:var(--muted);font-size:.8rem;">optionnel</span></label>
+        <select id="bk-profile-select" onchange="onBankProfileChange()">
+          <option value="">— Nouveau mapping —</option>
+        </select>
+
+        <label style="margin-top:12px;">Fichier CSV *</label>
+        <input type="file" id="bk-file" accept=".csv,.txt,.xls,.xlsx" style="padding:6px;" />
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;">
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">Séparateur</label>
+            <select id="bk-separator">
+              <option value=";">; (point-virgule)</option>
+              <option value=",">, (virgule)</option>
+              <option value="&#9;">↹ (tabulation)</option>
+              <option value="|">| (pipe)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">Encodage</label>
+            <select id="bk-encoding">
+              <option value="utf-8-sig">UTF-8 (avec BOM)</option>
+              <option value="utf-8">UTF-8</option>
+              <option value="latin-1">Latin-1 / ISO-8859-1</option>
+              <option value="windows-1252">Windows-1252</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">Lignes à ignorer (en-tête)</label>
+            <input type="number" id="bk-skip-rows" value="0" min="0" max="20" />
+          </div>
+        </div>
+
+        <div id="bk-step1-error" class="alert alert-error" style="margin-top:12px;display:block;min-height:0;"></div>
+      </div>
+
+      <!-- ═══ Étape 2 : Mapping colonnes ═══ -->
+      <div id="bk-step2" class="hidden">
+        <div id="bk-step2-info" style="font-size:.8rem;color:var(--muted);margin-bottom:12px;"></div>
+
+        <!-- Aperçu des données -->
+        <div style="overflow-x:auto;max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:16px;" id="bk-preview-table"></div>
+
+        <p style="font-size:.82rem;font-weight:600;margin-bottom:10px;">Associer les colonnes aux champs :</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">📅 Date *</label>
+            <select id="bk-map-date"></select>
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">📝 Libellé *</label>
+            <select id="bk-map-label"></select>
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">ℹ️ Détail / Complément</label>
+            <select id="bk-map-detail"></select>
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">📤 Colonne Débit (sorties)</label>
+            <select id="bk-map-debit"></select>
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">📥 Colonne Crédit (entrées)</label>
+            <select id="bk-map-credit"></select>
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">💶 Colonne Montant unique</label>
+            <select id="bk-map-amount"></select>
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">🏷 Type d'opération</label>
+            <select id="bk-map-type"></select>
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">🔗 Référence</label>
+            <select id="bk-map-ref"></select>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">Format de date</label>
+            <select id="bk-date-format">
+              <option value="%d/%m/%Y">JJ/MM/AAAA (ex: 14/03/2025)</option>
+              <option value="%d-%m-%Y">JJ-MM-AAAA</option>
+              <option value="%Y-%m-%d">AAAA-MM-JJ (ISO)</option>
+              <option value="%d/%m/%y">JJ/MM/AA</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.8rem;color:var(--muted);">Séparateur décimal</label>
+            <select id="bk-decimal-sep">
+              <option value=",">, (virgule)</option>
+              <option value=".">. (point)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Sauvegarder le profil -->
+        <div style="margin-top:16px;padding:12px;background:var(--bg-hover);border-radius:8px;border:1px solid var(--border);">
+          <label style="display:flex;align-items:center;gap:10px;font-weight:500;cursor:pointer;font-size:.88rem;">
+            <input type="checkbox" id="bk-save-profile" onchange="onBankSaveProfileToggle()" style="width:auto;margin:0;" />
+            💾 Sauvegarder ce mapping comme profil réutilisable
+          </label>
+          <div id="bk-profile-name-row" class="hidden" style="margin-top:10px;">
+            <label style="font-size:.8rem;color:var(--muted);">Nom du profil</label>
+            <input type="text" id="bk-profile-name" placeholder="Ex: Banque Populaire CA" />
+          </div>
+        </div>
+
+        <div id="bk-step2-error" class="alert alert-error" style="margin-top:12px;display:block;min-height:0;"></div>
+      </div>
+
+      <!-- ═══ Étape 3 : Résultat ═══ -->
+      <div id="bk-step3" class="hidden">
+        <div id="bk-step3-result">
+          <div style="text-align:center;padding:40px;color:var(--muted);">
+            <div style="font-size:2rem;margin-bottom:12px;">⏳</div>
+            Import en cours…
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end modal-body -->
+
+    <div class="modal-footer">
+      <!-- Étape 1 -->
+      <div id="bk-footer1">
+        <button class="btn btn-sm" onclick="closeModal('modal-bank-import')">Annuler</button>
+        <button class="btn btn-primary" id="bk-btn-preview" onclick="bankImportPreview()">→ Analyser le fichier</button>
+      </div>
+      <!-- Étape 2 -->
+      <div id="bk-footer2" class="hidden">
+        <button class="btn btn-sm" onclick="_bankWizardStep(1);document.getElementById('bk-footer1').classList.remove('hidden');document.getElementById('bk-footer2').classList.add('hidden');">← Retour</button>
+        <button class="btn btn-primary" id="bk-btn-import" onclick="bankImportRun()">✅ Importer</button>
+      </div>
+      <!-- Étape 3 -->
+      <div id="bk-footer3" class="hidden">
+        <button class="btn btn-sm" onclick="closeModal('modal-bank-import')">Fermer</button>
+        <button class="btn btn-primary" onclick="openBankImportModal()">🔄 Nouvel import</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SCRIPTS (ordre de dépendance) ══════════════════════════════════════ -->
 <script src="js/api.js"></script>
 <script src="js/ui.js"></script>
@@ -1823,6 +1995,7 @@
 <script src="js/membership.js"></script>
 <script src="js/campaigns.js"></script>
 <script src="js/treasury.js"></script>
+<script src="js/bank-import.js"></script>
 <script src="js/users.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/export.js"></script>
