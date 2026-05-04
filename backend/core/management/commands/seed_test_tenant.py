@@ -336,9 +336,15 @@ class Command(BaseCommand):
 
 def _user(User, email, password, role, full_name, mosque):
     """Crée ou met à jour un utilisateur dans le tenant courant."""
+    parts = full_name.split(" ", 1)
+    first = parts[0]
+    last  = parts[1] if len(parts) > 1 else ""
     u, created = User.objects.get_or_create(
-        email=email,
-        defaults={"full_name": full_name, "role": role, "is_active": True}
+        username=email,
+        defaults={
+            "email": email, "first_name": first, "last_name": last,
+            "role": role, "mosque": mosque, "is_active": True,
+        }
     )
     if created or not u.has_usable_password():
         u.set_password(password)
