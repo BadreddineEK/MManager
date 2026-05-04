@@ -103,7 +103,7 @@ class Command(BaseCommand):
         # ── 3. Année scolaire ────────────────────────────────────────────────
         self.stdout.write("  3/7 · École (familles, enfants, paiements)…")
         year, _ = SchoolYear.objects.get_or_create(
-            label="2025-2026",
+            mosque=mosque, label="2025-2026",
             defaults={"start_date": date(2025, 9, 1), "end_date": date(2026, 6, 30), "is_active": True}
         )
 
@@ -123,13 +123,13 @@ class Command(BaseCommand):
         family_objs = []
         for (fname, contact, phone, email, addr, children_names) in FAMILLES:
             fam, _ = Family.objects.get_or_create(
-                primary_contact_name=contact,
+                mosque=mosque, primary_contact_name=contact,
                 defaults={"phone1": phone, "email": email, "address": addr}
             )
             family_objs.append((fam, len(children_names)))
             for cname in children_names:
                 child, _ = Child.objects.get_or_create(
-                    first_name=cname, family=fam,
+                    mosque=mosque, first_name=cname, family=fam,
                     defaults={"birth_date": date(2015, random.randint(1,12), random.randint(1,28)),
                               "level": LEVELS[level_idx % len(LEVELS)]}
                 )
@@ -137,7 +137,7 @@ class Command(BaseCommand):
                 # Paiement école (70% payés)
                 if random.random() < 0.70:
                     SchoolPayment.objects.get_or_create(
-                        school_year=year, family=fam, child=child,
+                        mosque=mosque, school_year=year, family=fam, child=child,
                         defaults={
                             "date":   date(2025, random.randint(9,12), random.randint(1,28)),
                             "amount": Decimal(str(settings.school_fee_default)),
@@ -162,12 +162,13 @@ class Command(BaseCommand):
             ("Aicha Tounsi",             "06 23 45 67 89", "atounsi@mail.fr",     "biannual",  "cheque",     True),
         ]
         mship_year, _ = MembershipYear.objects.get_or_create(
-            year=2025, defaults={"amount_expected": Decimal("100.00")}
+            mosque=mosque, year=2025,
+            defaults={"amount_expected": Decimal("100.00")}
         )
         member_objs = []
         for (name, phone, email, freq, method, paid) in MEMBRES:
             m, _ = Member.objects.get_or_create(
-                full_name=name,
+                mosque=mosque, full_name=name,
                 defaults={
                     "phone": phone, "email": email,
                     "payment_frequency": freq, "payment_method": method,
@@ -176,7 +177,7 @@ class Command(BaseCommand):
             member_objs.append(m)
             if paid:
                 MembershipPayment.objects.get_or_create(
-                    member=m, membership_year=mship_year,
+                    mosque=mosque, member=m, membership_year=mship_year,
                     defaults={
                         "date":   date(2025, random.randint(1, 6), random.randint(1, 28)),
                         "amount": Decimal("100.00"),
@@ -189,7 +190,7 @@ class Command(BaseCommand):
         bank_acc = None
         if hasattr(TreasuryTransaction, "bank_account"):
             bank_acc, _ = BankAccount.objects.get_or_create(
-                name="Compte principal (1901)",
+                mosque=mosque, name="Compte principal (1901)",
                 defaults={"iban": "FR76 1234 5678 9012 3456 7890 123", "regime": "1901"}
             )
 
@@ -286,6 +287,7 @@ class Command(BaseCommand):
 
         for tx_data in TRANSACTIONS:
             TreasuryTransaction.objects.get_or_create(
+                mosque=mosque,
                 date=tx_data["date"],
                 label=tx_data["label"],
                 defaults={
