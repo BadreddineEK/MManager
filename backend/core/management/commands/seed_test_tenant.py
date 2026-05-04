@@ -323,6 +323,41 @@ class Command(BaseCommand):
         else:
             self.stdout.write("  7/7 · Cagnottes (module non disponible, ignoré)")
 
+        # ── 8. Plan Pro (accès complet à tous les modules) ───────────────────
+        # Le seed tourne dans schema_context → Plan/Subscription sont dans public
+        from django.utils import timezone as tz
+        import datetime as dt
+        from django.db import connection as _conn
+        _prev_schema = _conn.schema_name
+        from django_tenants.utils import schema_context as _sc
+        with _sc("public"):
+            from core.models import Plan, Subscription
+            plan, _ = Plan.objects.get_or_create(
+                name="pro_cloud",
+                defaults={
+                    "display_name": "Nidham Pro",
+                    "price_monthly": Decimal("49.00"),
+                    "price_yearly": Decimal("490.00"),
+                    "max_families": 0, "max_users": 0, "max_sms_month": 0,
+                    "modules": ["core", "school_full", "treasury_full",
+                                "membership", "campaigns", "public_portal", "audit", "import"],
+                }
+            )
+            sub = Subscription.objects.filter(mosque=mosque).first()
+            if sub:
+                sub.plan = plan; sub.status = "active"
+                sub.current_period_start = tz.now()
+                sub.current_period_end = tz.now() + dt.timedelta(days=365)
+                sub.save()
+            else:
+                Subscription.objects.create(
+                    mosque=mosque, plan=plan, status="active",
+                    billing_cycle="yearly",
+                    current_period_start=tz.now(),
+                    current_period_end=tz.now() + dt.timedelta(days=365),
+                )
+            self.stdout.write("  Plan Pro activé ✓")
+
         # Résumé
         from school.models import Family as F, Child as C, SchoolPayment as SP
         from membership.models import Member as Me, MembershipPayment as MP
