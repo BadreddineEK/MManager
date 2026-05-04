@@ -28,16 +28,19 @@ function renderMembers(members) {
     });
     return;
   }
+  const freqLabel = { annual:'Annuel', biannual:'Semestriel', quarterly:'Trimestriel', monthly:'Mensuel', once:'En une fois' };
   tbody.innerHTML = members.map((m, i) => {
     const badge = m.is_current_year_paid
       ? '<span class="badge badge-green">✅ À jour</span>'
       : '<span class="badge badge-red">❌ Non cotisant</span>';
+    const freqBadge = `<span class="badge badge-gray">${freqLabel[m.payment_frequency] || m.payment_frequency || '—'}</span>`;
     return `
     <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td><strong>${esc(m.full_name)}</strong></td>
       <td>${esc(m.phone)  || '<span class="text-muted">—</span>'}</td>
       <td>${esc(m.email)  || '<span class="text-muted">—</span>'}</td>
       <td>${badge}</td>
+      <td>${freqBadge}</td>
       <td><span class="badge badge-gray">${parseFloat(m.total_paid || 0).toFixed(2)} €</span></td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editMember(${m.id})" title="Modifier">✏️</button>
@@ -52,11 +55,13 @@ function renderMembers(members) {
 function searchMembers() { loadMembers(); }
 
 function openMemberModal() {
-  document.getElementById('member-id').value       = '';
-  document.getElementById('member-fullname').value = '';
-  document.getElementById('member-phone').value    = '';
-  document.getElementById('member-email').value    = '';
-  document.getElementById('member-address').value  = '';
+  document.getElementById('member-id').value              = '';
+  document.getElementById('member-fullname').value        = '';
+  document.getElementById('member-phone').value           = '';
+  document.getElementById('member-email').value           = '';
+  document.getElementById('member-address').value         = '';
+  document.getElementById('member-frequency').value       = 'annual';
+  document.getElementById('member-payment-method').value  = 'virement';
   document.getElementById('modal-member-title').textContent = 'Ajouter un adhérent';
   document.getElementById('modal-member-error').classList.add('hidden');
   openModal('modal-member');
@@ -71,6 +76,8 @@ async function editMember(id) {
   document.getElementById('member-phone').value    = m.phone   || '';
   document.getElementById('member-email').value    = m.email   || '';
   document.getElementById('member-address').value  = m.address || '';
+  document.getElementById('member-frequency').value      = m.payment_frequency  || 'annual';
+  document.getElementById('member-payment-method').value = m.payment_method     || 'virement';
   document.getElementById('modal-member-title').textContent = "Modifier l'adhérent";
   document.getElementById('modal-member-error').classList.add('hidden');
   openModal('modal-member');
@@ -79,10 +86,12 @@ async function editMember(id) {
 async function saveMember() {
   const id   = document.getElementById('member-id').value;
   const body = {
-    full_name: document.getElementById('member-fullname').value.trim(),
-    phone:     document.getElementById('member-phone').value.trim(),
-    email:     document.getElementById('member-email').value.trim(),
-    address:   document.getElementById('member-address').value.trim(),
+    full_name:        document.getElementById('member-fullname').value.trim(),
+    phone:            document.getElementById('member-phone').value.trim(),
+    email:            document.getElementById('member-email').value.trim(),
+    address:          document.getElementById('member-address').value.trim(),
+    payment_frequency: document.getElementById('member-frequency').value,
+    payment_method:   document.getElementById('member-payment-method').value,
   };
   const errEl = document.getElementById('modal-member-error');
   if (!body.full_name) {

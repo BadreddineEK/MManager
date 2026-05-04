@@ -477,7 +477,7 @@
         <div id="members-alert"></div>
         <div class="card table-wrapper">
           <table>
-            <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Cotisation annuelle</th><th>Total payé</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Cotisation</th><th>Périodicité</th><th>Total payé</th><th>Actions</th></tr></thead>
             <tbody id="members-table"></tbody>
           </table>
         </div>
@@ -918,6 +918,14 @@
             </select>
             <label>Niveaux scolaires (séparés par des virgules)</label>
             <input type="text" id="s-school-levels" placeholder="NP,N1,N2,N3,N4,N5,N6" />
+            <label style="margin-top:16px;">Barème progressif (par nombre d'enfants)</label>
+            <p style="font-size:0.8rem;color:var(--muted);margin:4px 0 10px;">Laissez vide pour utiliser le tarif par défaut.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div><label style="font-size:0.8rem;color:var(--muted);">1 enfant (€)</label><input type="number" id="s-fee-tier-1" placeholder="ex: 300" min="0" step="0.01" /></div>
+              <div><label style="font-size:0.8rem;color:var(--muted);">2 enfants (€)</label><input type="number" id="s-fee-tier-2" placeholder="ex: 400" min="0" step="0.01" /></div>
+              <div><label style="font-size:0.8rem;color:var(--muted);">3 enfants (€)</label><input type="number" id="s-fee-tier-3" placeholder="ex: 450" min="0" step="0.01" /></div>
+              <div><label style="font-size:0.8rem;color:var(--muted);">4+ enfants (€)</label><input type="number" id="s-fee-tier-4plus" placeholder="ex: 500" min="0" step="0.01" /></div>
+            </div>
           </div>
           <div class="settings-section">
             <h3>🤝 Adhésion</h3>
@@ -928,6 +936,16 @@
               <option value="per_person">Par personne</option>
               <option value="per_family">Par famille</option>
             </select>
+            <label style="margin-top:16px;">Règle cotisation + école</label>
+            <select id="s-membership-school-rule" onchange="onMembershipSchoolRuleChange()">
+              <option value="separate">Séparé (deux paiements distincts)</option>
+              <option value="included">École incluse dans la cotisation</option>
+              <option value="discount">Réduction école pour les adhérents</option>
+            </select>
+            <div id="s-membership-school-discount-block" class="hidden" style="margin-top:8px;">
+              <label style="font-size:0.8rem;color:var(--muted);">Montant de la réduction (€)</label>
+              <input type="number" id="s-membership-school-discount" placeholder="0" min="0" step="0.01" />
+            </div>
           </div>
         </div>
 
@@ -1449,6 +1467,28 @@
       <input type="email" id="member-email" placeholder="(optionnel)" />
       <label>Adresse</label>
       <textarea id="member-address" placeholder="(optionnel)"></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+        <div>
+          <label>Périodicité de paiement</label>
+          <select id="member-frequency">
+            <option value="annual">Annuel</option>
+            <option value="biannual">Semestriel</option>
+            <option value="quarterly">Trimestriel</option>
+            <option value="monthly">Mensuel</option>
+            <option value="once">En une fois</option>
+          </select>
+        </div>
+        <div>
+          <label>Moyen de paiement préféré</label>
+          <select id="member-payment-method">
+            <option value="virement">Virement</option>
+            <option value="cash">Espèces</option>
+            <option value="cheque">Chèque</option>
+            <option value="prelevement">Prélèvement</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+      </div>
       <div id="modal-member-error" class="alert alert-error hidden"></div>
     </div>
     <div class="modal-footer">

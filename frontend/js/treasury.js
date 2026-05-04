@@ -117,6 +117,26 @@ async function loadTreasury() {
   } catch (e) { /* ignore */ }
 }
 
+function _trsCategorySelectHTML(txId, currentCategory) {
+  const opts = [
+    ['don','Don / Sadaqa'], ['loyer','Loyer'], ['salaire','Salaire / Honoraires'],
+    ['facture','Facture / Charges'], ['ecole','École coranique'],
+    ['cotisation','Cotisation adhérent'], ['projet','Projet / Travaux'],
+    ['subvention','Subvention'], ['autre','Autre'],
+  ];
+  const options = opts.map(([v, l]) =>
+    `<option value="${v}"${v === currentCategory ? ' selected' : ''}>${l}</option>`
+  ).join('');
+  return `<select class="inline-select" style="font-size:0.78rem;padding:2px 4px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);cursor:pointer;"
+    onchange="patchTxCategory(${txId}, this.value)">${options}</select>`;
+}
+
+async function patchTxCategory(id, category) {
+  const res = await apiFetch(`/treasury/transactions/${id}/`, 'PATCH', { category });
+  if (!res || !res.ok) { toast('Erreur mise à jour catégorie', 'error'); return; }
+  toast('Catégorie mise à jour ✓', 'success', 1800);
+}
+
 function renderTreasury(txs) {
   const tbody = document.getElementById('treasury-table');
   if (!txs.length) {
@@ -141,7 +161,7 @@ function renderTreasury(txs) {
     <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td>${tx.date}</td>
       <td><strong>${esc(tx.label)}</strong></td>
-      <td><span class="badge badge-gray">${esc(tx.category_display)}</span></td>
+      <td>${_trsCategorySelectHTML(tx.id, tx.category)}</td>
       <td>${dirBadge}</td>
       <td style="font-weight:700;" class="${isIn ? 'text-green' : 'text-red'}">${parseFloat(tx.amount).toFixed(2)} €</td>
       <td><span class="badge badge-blue">${esc(tx.method_display)}</span></td>

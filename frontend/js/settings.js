@@ -1,6 +1,13 @@
 /* ═══════════════════════════════════════════════════════════
    settings.js — Paramètres de la mosquée, KPI screen
 ═══════════════════════════════════════════════════════════ */
+
+function onMembershipSchoolRuleChange() {
+  const rule = document.getElementById('s-membership-school-rule').value;
+  document.getElementById('s-membership-school-discount-block')
+    .classList.toggle('hidden', rule !== 'discount');
+}
+
 function switchSettingsTab(tab) {
   const tabs = ['general', 'finance', 'receipts', 'kpi', 'smtp', 'bank', 'backup'];
   tabs.forEach(t => {
@@ -45,6 +52,17 @@ async function loadSettings() {
   document.getElementById('s-school-levels').value      = levels;
   document.getElementById('s-membership-fee').value     = data.membership_fee_amount || 0;
   document.getElementById('s-membership-mode').value    = data.membership_fee_mode   || 'per_person';
+  // Règle cotisation/école
+  const schoolRule = data.membership_school_rule || 'separate';
+  document.getElementById('s-membership-school-rule').value = schoolRule;
+  document.getElementById('s-membership-school-discount').value = data.membership_school_discount || 0;
+  document.getElementById('s-membership-school-discount-block').classList.toggle('hidden', schoolRule !== 'discount');
+  // Barème progressif école
+  const tiers = data.school_fee_tiers || {};
+  document.getElementById('s-fee-tier-1').value     = tiers['1']    || '';
+  document.getElementById('s-fee-tier-2').value     = tiers['2']    || '';
+  document.getElementById('s-fee-tier-3').value     = tiers['3']    || '';
+  document.getElementById('s-fee-tier-4plus').value = tiers['4+']   || '';
   document.getElementById('s-receipt-logo').value       = data.receipt_logo_url      || '';
   document.getElementById('s-receipt-address').value    = data.receipt_address        || '';
   document.getElementById('s-receipt-phone').value      = data.receipt_phone          || '';
@@ -79,6 +97,14 @@ async function saveSettings() {
     school_levels:            levels,
     membership_fee_amount:    parseFloat(document.getElementById('s-membership-fee').value) || 0,
     membership_fee_mode:      document.getElementById('s-membership-mode').value,
+    membership_school_rule:   document.getElementById('s-membership-school-rule').value,
+    membership_school_discount: parseFloat(document.getElementById('s-membership-school-discount').value) || 0,
+    school_fee_tiers: {
+      '1':   parseFloat(document.getElementById('s-fee-tier-1').value)    || null,
+      '2':   parseFloat(document.getElementById('s-fee-tier-2').value)    || null,
+      '3':   parseFloat(document.getElementById('s-fee-tier-3').value)    || null,
+      '4+':  parseFloat(document.getElementById('s-fee-tier-4plus').value)|| null,
+    },
     receipt_logo_url:         document.getElementById('s-receipt-logo').value.trim(),
     receipt_address:          document.getElementById('s-receipt-address').value.trim(),
     receipt_phone:            document.getElementById('s-receipt-phone').value.trim(),
