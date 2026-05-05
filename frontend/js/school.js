@@ -54,9 +54,134 @@ function openFamilyModal(id = null) {
   document.getElementById('family-phone2').value  = '';
   document.getElementById('family-email').value   = '';
   document.getElementById('family-address').value = '';
+  _familyChildRows = [];
+  _renderFamilyChildRows();
   document.getElementById('modal-family-title').textContent = id ? 'Modifier la famille' : 'Ajouter une famille';
   document.getElementById('modal-family-error').classList.add('hidden');
   openModal('modal-family');
+}
+
+// ── Enfants inline dans la modale famille ────────────────────────────────────
+let _familyChildRows = []; // [{id, first_name, level, birth_date, _delete}]
+
+const SCHOOL_LEVELS = ['NP', 'N1', 'N2', 'N3', 'N4', 'CORAN', 'ADULTE'];
+
+function _renderFamilyChildRows() {
+  const container = document.getElementById('family-children-list');
+  if (!container) return;
+  if (_familyChildRows.filter(r => !r._delete).length === 0) {
+    container.innerHTML = '<p style="font-size:.82rem;color:var(--muted);text-align:center;padding:8px 0;">Aucun enfant — cliquez sur "+ Ajouter un enfant"</p>';
+    return;
+  }
+  container.innerHTML = _familyChildRows.map((row, idx) => {
+    if (row._delete) return '';
+    const levelOpts = SCHOOL_LEVELS.map(l =>
+      `<option value="${l}"${row.level === l ? ' selected' : ''}>${l}</option>`
+    ).join('');
+    return `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center;background:var(--bg-secondary);padding:8px 10px;border-radius:8px;border:1px solid var(--border);">
+      <input type="text" placeholder="Prénom *" value="${esc(row.first_name || '')}"
+        oninput="_updateChildRow(${idx},'first_name',this.value)"
+        style="margin:0;padding:6px 10px;font-size:.85rem;" />
+      <select onchange="_updateChildRow(${idx},'level',this.value)"
+        style="margin:0;padding:6px 10px;font-size:.85rem;">
+        <option value="">Niveau *</option>${levelOpts}
+      </select>
+      <input type="date" placeholder="Naissance" value="${row.birth_date || ''}"
+        oninput="_updateChildRow(${idx},'birth_date',this.value)"
+        style="margin:0;padding:6px 10px;font-size:.85rem;" />
+      <button type="button" onclick="_removeFamilyChildRow(${idx})" title="Retirer"
+        style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--danger);">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function _updateChildRow(idx, field, value) {
+  if (_familyChildRows[idx]) _familyChildRows[idx][field] = value;
+}
+
+function addFamilyChildRow() {
+  _familyChildRows.push({ id: null, first_name: '', level: '', birth_date: '', _delete: false });
+  _renderFamilyChildRows();
+}
+
+function _removeFamilyChildRow(idx) {
+  if (_familyChildRows[idx].id) {
+    _familyChildRows[idx]._delete = true; // suppression côté API
+  } else {
+    _familyChildRows.splice(idx, 1);
+  }
+  _renderFamilyChildRows();
+}
+
+// ── Reconduction scolaire ────────────────────────────────────────────────────
+async function openReenrollModal() {
+  if (!schoolYears.length) await loadSchoolYears();
+  const srcSel = document.getElementById('reenroll-source');
+  const tgtSel = document.getElementById('reenroll-target');
+  const opts = schoolYears.map(y =>
+    `<option value="${y.id}">${y.label}${y.is_active ? ' (active)' : ''}</option>`
+  ).join('');
+  srcSel.innerHTML = opts;
+  tgtSel.innerHTML = opts;
+  // Pré-sélectionner : source = année active, cible = autre
+  const activeIdx = schoolYears.findIndex(y => y.is_active);
+  if (activeIdx >= 0) {
+    srcSel.value = schoolYears[activeIdx].id;
+    const nextIdx = activeIdx + 1 < schoolYears.length ? activeIdx + 1 : activeIdx - 1;
+    if (nextIdx >= 0) tgtSel.value = schoolYears[nextIdx].id;
+  }
+  document.getElementById('modal-reenroll-result').classList.add('hidden');
+  document.getElementById('modal-reenroll-error').classList.add('hidden');
+  openModal('modal-reenroll');
+}
+
+async function doReenroll() {
+  const sourceId = document.getElementById('reenroll-source').value;
+  const targetId = document.getElementById('reenroll-target').value;
+  const autoLvl  = document.getElementById('reenroll-level-up').checked;
+  const errEl    = document.getElementById('modal-reenroll-error');
+  const resEl    = document.getElementById('modal-reenroll-result');
+  errEl.classList.add('hidden');
+  resEl.classList.add('hidden');
+
+  if (!sourceId || !targetId) {
+    errEl.textContent = 'Sélectionnez les deux années.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (sourceId === targetId) {
+    errEl.textContent = "L'année source et l'année cible doivent être différentes.";
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const btn = document.querySelector('#modal-reenroll .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ En cours…'; }
+
+  const res = await apiFetch(`/school/years/${sourceId}/reenroll/`, 'POST', {
+    target_year_id: parseInt(targetId),
+    auto_level_up: autoLvl,
+  });
+
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Reconduire'; }
+
+  if (!res || !res.ok) {
+    const err = await res.json().catch(() => ({}));
+    errEl.textContent = err.detail || 'Erreur lors de la reconduction.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  const data = await res.json();
+  resEl.innerHTML = `
+    <strong>✅ Reconduction terminée</strong><br>
+    <span class="badge badge-green">${data.enrolled} inscrit(s)</span>
+    <span class="badge badge-gray" style="margin-left:4px;">${data.skipped} ignoré(s) (déjà inscrits)</span>
+    ${data.errors && data.errors.length ? `<br><span style="color:var(--danger);font-size:.8rem;">${data.errors.length} erreur(s)</span>` : ''}
+  `;
+  resEl.classList.remove('hidden');
+  toast(`${data.enrolled} enfant(s) reconduit(s) ✓`, 'success');
+  loadFamilies();
 }
 
 async function editFamily(id) {
@@ -69,6 +194,15 @@ async function editFamily(id) {
   document.getElementById('family-phone2').value  = f.phone2 || '';
   document.getElementById('family-email').value   = f.email  || '';
   document.getElementById('family-address').value = f.address || '';
+  // Charger les enfants existants
+  _familyChildRows = (f.children || []).map(c => ({
+    id: c.id,
+    first_name: c.first_name,
+    level: c.level,
+    birth_date: c.birth_date || '',
+    _delete: false,
+  }));
+  _renderFamilyChildRows();
   document.getElementById('modal-family-title').textContent = 'Modifier la famille';
   document.getElementById('modal-family-error').classList.add('hidden');
   openModal('modal-family');
@@ -89,6 +223,18 @@ async function saveFamily() {
     errEl.classList.remove('hidden');
     return;
   }
+
+  // Valider enfants : chaque ligne doit avoir prénom + niveau
+  const childErrors = _familyChildRows
+    .filter(r => !r._delete)
+    .filter(r => !r.first_name.trim() || !r.level);
+  if (childErrors.length) {
+    errEl.textContent = 'Chaque enfant doit avoir un prénom et un niveau.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  // 1. Sauvegarder la famille
   const res = await apiFetch(
     id ? `/school/families/${id}/` : '/school/families/',
     id ? 'PUT' : 'POST',
@@ -100,7 +246,34 @@ async function saveFamily() {
     errEl.classList.remove('hidden');
     return;
   }
+  const family = await res.json();
+  const familyId = family.id;
+
+  // 2. Sauvegarder enfants : créations + suppressions
+  const childOps = _familyChildRows.map(async (row) => {
+    if (row._delete && row.id) {
+      return apiFetch(`/school/children/${row.id}/`, 'DELETE');
+    } else if (!row._delete && row.id) {
+      // Mise à jour
+      return apiFetch(`/school/children/${row.id}/`, 'PATCH', {
+        first_name: row.first_name.trim(),
+        level: row.level,
+        birth_date: row.birth_date || null,
+      });
+    } else if (!row._delete && !row.id && row.first_name.trim()) {
+      // Création
+      return apiFetch('/school/children/', 'POST', {
+        first_name: row.first_name.trim(),
+        level: row.level,
+        birth_date: row.birth_date || null,
+        family: familyId,
+      });
+    }
+  });
+  await Promise.all(childOps);
+
   closeModal('modal-family');
+  _familyChildRows = [];
   toast(id ? 'Famille mise à jour ✓' : 'Famille ajoutée ✓');
   loadFamilies();
 }

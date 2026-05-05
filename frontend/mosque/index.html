@@ -332,8 +332,8 @@
         <div class="page-header-actions">
           <button class="btn btn-success btn-sm" onclick="exportFile('families','excel')">⬇ Excel</button>
           <button class="btn btn-purple-soft btn-sm" onclick="exportFile('families','pdf')">⬇ PDF</button>
-
           <button id="btn-bulk-school" class="btn btn-sm" onclick="openBulkModal('families')" title="Saisir plusieurs familles d'un coup">✏️ Saisie multiple</button>
+          <button class="btn btn-sm" onclick="openReenrollModal()" title="Reconduire tous les enfants d'une année vers une autre">🔄 Reconduire</button>
           <button class="btn btn-sm" onclick="addSchoolPayment()" title="Enregistrer un paiement école dans la trésorerie">💳 Paiement école</button>
           <button id="btn-add-school" class="btn btn-primary" onclick="openFamilyModal()">+ Famille</button>
         </div>
@@ -1399,28 +1399,77 @@
 
 <!-- Modal Famille -->
 <div class="modal-overlay" id="modal-family">
-  <div class="modal">
+  <div class="modal" style="max-width:640px;">
     <div class="modal-header">
       <h3 id="modal-family-title">Ajouter une famille</h3>
       <button class="modal-close" onclick="closeModal('modal-family')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="family-id" />
-      <label>Nom du contact principal *</label>
-      <input type="text" id="family-name" placeholder="Ex: Ahmed Benali" />
-      <label>Téléphone principal *</label>
-      <input type="text" id="family-phone1" placeholder="06 12 34 56 78" />
-      <label>Téléphone secondaire</label>
-      <input type="text" id="family-phone2" placeholder="(optionnel)" />
-      <label>Email</label>
-      <input type="email" id="family-email" placeholder="famille@email.com" />
-      <label>Adresse</label>
-      <textarea id="family-address" placeholder="(optionnel)"></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label>Nom du contact principal *</label>
+          <input type="text" id="family-name" placeholder="Ex: Ahmed Benali" />
+        </div>
+        <div>
+          <label>Email</label>
+          <input type="email" id="family-email" placeholder="famille@email.com" />
+        </div>
+        <div>
+          <label>Téléphone principal *</label>
+          <input type="text" id="family-phone1" placeholder="06 12 34 56 78" />
+        </div>
+        <div>
+          <label>Téléphone secondaire</label>
+          <input type="text" id="family-phone2" placeholder="(optionnel)" />
+        </div>
+      </div>
+      <label style="margin-top:8px;">Adresse</label>
+      <textarea id="family-address" placeholder="(optionnel)" style="height:56px;"></textarea>
+
+      <!-- Section enfants inline -->
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <strong style="font-size:.9rem;">🧒 Enfants</strong>
+          <button type="button" class="btn btn-sm" onclick="addFamilyChildRow()">+ Ajouter un enfant</button>
+        </div>
+        <div id="family-children-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
       <div id="modal-family-error" class="alert alert-error hidden"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-family')">Annuler</button>
       <button class="btn btn-primary" onclick="saveFamily()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Reconduction scolaire -->
+<div class="modal-overlay" id="modal-reenroll">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3>🔄 Reconduction scolaire</h3>
+      <button class="modal-close" onclick="closeModal('modal-reenroll')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:14px;">
+        Reconduit tous les enfants inscrits d'une année vers une nouvelle année, avec montée de niveau automatique.
+      </p>
+      <label>Année source (à reconduire depuis) *</label>
+      <select id="reenroll-source" style="width:100%;"></select>
+      <label style="margin-top:10px;">Année cible (destination) *</label>
+      <select id="reenroll-target" style="width:100%;"></select>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="reenroll-level-up" checked style="width:auto;margin:0;" />
+        <label for="reenroll-level-up" style="margin:0;font-size:.88rem;">Montée automatique de niveau</label>
+      </div>
+      <div id="modal-reenroll-result" class="hidden" style="margin-top:12px;padding:10px;background:var(--bg-secondary);border-radius:8px;font-size:.85rem;"></div>
+      <div id="modal-reenroll-error" class="alert alert-error hidden" style="margin-top:10px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-reenroll')">Annuler</button>
+      <button class="btn btn-primary" onclick="doReenroll()">🔄 Reconduire</button>
     </div>
   </div>
 </div>
