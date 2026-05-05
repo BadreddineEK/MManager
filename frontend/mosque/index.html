@@ -432,8 +432,8 @@
           <div class="breadcrumb">École coranique · Suivi des impayés</div>
         </div>
         <div class="page-header-actions">
-          <button id="btn-send-arrears-notif" class="btn btn-sm" onclick="sendArrearsNotifs()" title="Envoyer un email de rappel à chaque famille avec un email renseigné">
-            📧 Envoyer rappels
+          <button id="btn-send-arrears-notif" class="btn btn-sm" disabled style="opacity:0.45;cursor:not-allowed;" title="Bientôt disponible — Notifications email">
+            📧 Rappels email <span style="font-size:0.6rem;background:var(--border);color:var(--muted);border-radius:4px;padding:1px 5px;margin-left:4px;">Bientôt</span>
           </button>
         </div>
       </div>
@@ -532,8 +532,8 @@
           <div class="breadcrumb">Adhésion · Adhérents sans cotisation active</div>
         </div>
         <div class="page-header-actions">
-          <button id="btn-send-unpaid-notif" class="btn btn-sm" onclick="sendUnpaidMembersNotifs()" title="Envoyer un email de rappel à chaque adhérent non cotisant avec un email renseigné">
-            📧 Envoyer rappels
+          <button id="btn-send-unpaid-notif" class="btn btn-sm" disabled style="opacity:0.45;cursor:not-allowed;" title="Bientôt disponible — Notifications email">
+            📧 Rappels email <span style="font-size:0.6rem;background:var(--border);color:var(--muted);border-radius:4px;padding:1px 5px;margin-left:4px;">Bientôt</span>
           </button>
         </div>
       </div>
@@ -885,9 +885,9 @@
           <button class="btn btn-sm"             id="stab-finance"  onclick="switchSettingsTab('finance')"  style="border-radius:8px 8px 0 0;margin-bottom:-2px;">💰 Finances</button>
           <button class="btn btn-sm"             id="stab-receipts" onclick="switchSettingsTab('receipts')" style="border-radius:8px 8px 0 0;margin-bottom:-2px;">🧾 Reçus PDF</button>
           <button class="btn btn-sm"             id="stab-kpi"      onclick="switchSettingsTab('kpi')"      style="border-radius:8px 8px 0 0;margin-bottom:-2px;">📺 KPI public</button>
-          <button class="btn btn-sm"             id="stab-smtp"     onclick="switchSettingsTab('smtp')"     style="border-radius:8px 8px 0 0;margin-bottom:-2px;">✉️ Emails</button>
+          <button class="btn btn-sm"             id="stab-smtp"     onclick="switchSettingsTab('smtp')"     style="border-radius:8px 8px 0 0;margin-bottom:-2px;opacity:0.5;cursor:not-allowed;" disabled title="Bientôt disponible">✉️ Emails <span style="font-size:0.6rem;background:var(--border);color:var(--muted);border-radius:4px;padding:1px 5px;margin-left:4px;">Bientôt</span></button>
           <button class="btn btn-sm"             id="stab-bank"     onclick="switchSettingsTab('bank')"     style="border-radius:8px 8px 0 0;margin-bottom:-2px;">🏦 Banque</button>
-          <button class="btn btn-sm"             id="stab-backup"   onclick="switchSettingsTab('backup')"   style="border-radius:8px 8px 0 0;margin-bottom:-2px;">💾 Sauvegarde</button>
+          <button class="btn btn-sm"             id="stab-backup"   onclick="switchSettingsTab('backup')"   style="border-radius:8px 8px 0 0;margin-bottom:-2px;opacity:0.5;cursor:not-allowed;" disabled title="Bientôt disponible">💾 Sauvegarde <span style="font-size:0.6rem;background:var(--border);color:var(--muted);border-radius:4px;padding:1px 5px;margin-left:4px;">Bientôt</span></button>
         </div>
 
         <!-- ── Onglet Général ── -->

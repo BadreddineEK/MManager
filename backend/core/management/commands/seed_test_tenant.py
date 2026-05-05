@@ -164,8 +164,11 @@ class Command(BaseCommand):
         ]
         mship_year, _ = MembershipYear.objects.get_or_create(
             mosque=mosque, year=2025,
-            defaults={"amount_expected": Decimal("100.00")}
+            defaults={"amount_expected": Decimal("100.00"), "is_active": True}
         )
+        if not mship_year.is_active:
+            mship_year.is_active = True
+            mship_year.save()
         member_objs = []
         for (name, phone, email, freq, method, paid) in MEMBRES:
             m, _ = Member.objects.get_or_create(
