@@ -93,6 +93,7 @@ tbody tr:hover td { background: #faf8ff; }
 .badge-purple { background: var(--accent-soft); color: var(--accent); }
 .badge-blue   { background: var(--blue-soft);  color: #1e40af; }
 .badge-orange { background: #fff7ed;           color: #c2410c; }
+.badge-yellow { background: #fef9c3;           color: #854d0e; }
 .badge-1901   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
 .badge-1905   { background: #faf5ff; color: #7c3aed; border: 1px solid #ddd6fe; }
 

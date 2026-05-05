@@ -131,6 +131,7 @@ async function saveSettings() {
     return;
   }
   toast('Paramètres enregistrés ✓');
+  invalidateMosqueSettings();
 }
 
 function openKPIScreen() {

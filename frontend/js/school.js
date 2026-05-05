@@ -83,15 +83,21 @@ function openFamilyModal(id = null) {
 // ── Enfants inline dans la modale famille ────────────────────────────────────
 let _familyChildRows = []; // [{id, first_name, level, birth_date, _delete}]
 
-const SCHOOL_LEVELS = ['NP', 'N1', 'N2', 'N3', 'N4', 'CORAN', 'ADULTE'];
+const SCHOOL_LEVELS_FALLBACK = ['NP', 'N1', 'N2', 'N3', 'N4', 'CORAN', 'ADULTE'];
 
-function _renderFamilyChildRows() {
+async function getSchoolLevels() {
+  const s = await getMosqueSettings();
+  return (s.school_levels && s.school_levels.length) ? s.school_levels : SCHOOL_LEVELS_FALLBACK;
+}
+
+async function _renderFamilyChildRows() {
   const container = document.getElementById('family-children-list');
   if (!container) return;
   if (_familyChildRows.filter(r => !r._delete).length === 0) {
     container.innerHTML = '<p style="font-size:.82rem;color:var(--muted);text-align:center;padding:8px 0;">Aucun enfant — cliquez sur "+ Ajouter un enfant"</p>';
     return;
   }
+  const SCHOOL_LEVELS = await getSchoolLevels();
   container.innerHTML = _familyChildRows.map((row, idx) => {
     if (row._delete) return '';
     const levelOpts = SCHOOL_LEVELS.map(l =>
@@ -454,14 +460,10 @@ async function addSchoolPayment(familyId = null, familyName = '') {
 async function _spSuggestAmount(familyId) {
   const amountEl = document.getElementById('sp-amount');
   if (!amountEl) return;
-  // Récupérer le tarif depuis les settings
   try {
-    const settingsRes = await apiFetch('/settings/');
-    if (!settingsRes || !settingsRes.ok) return;
-    const s = await settingsRes.json();
+    const s = await getMosqueSettings();
     const fee = parseFloat(s.school_fee_default) || 0;
     if (!fee) return;
-    // Nb d'enfants de la famille
     let nbChildren = 1;
     if (familyId) {
       const fam = allFamilies.find(f => String(f.id) === String(familyId));

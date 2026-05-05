@@ -91,10 +91,20 @@ class FamilySerializer(serializers.ModelSerializer):
         return float(total)
 
     def get_current_year_due(self, obj) -> float:
-        """Montant dû pour l'année active = tarif × nombre d'enfants."""
-        fee = self._get_fee_default(obj)
+        """Montant dû pour l'année active : tiers configurés ou tarif × nb enfants."""
         n = obj.children.count()
-        return float(fee * n) if fee and n else 0.0
+        if not n:
+            return 0.0
+        try:
+            tiers = getattr(obj.mosque.settings, 'school_fee_tiers', None) or {}
+            if tiers:
+                key = str(n) if str(n) in tiers else ('4+' if n >= 4 else None)
+                if key and tiers.get(key):
+                    return float(tiers[key])
+        except Exception:
+            pass
+        fee = self._get_fee_default(obj)
+        return float(fee * n) if fee else 0.0
 
     def get_payment_status(self, obj) -> str:
         """'paid' | 'partial' | 'unpaid'"""

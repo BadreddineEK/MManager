@@ -87,6 +87,7 @@ async function saveSetupForm() {
   document.getElementById('onboarding-welcome-banner')?.classList.add('hidden');
   localStorage.setItem('onboarding_banner_dismissed', '1');
   toast('Paramètres enregistrés ✓', 'success');
+  invalidateMosqueSettings();
 
   // Mettre à jour le nom affiché dans la sidebar
   const nameEl = document.getElementById('sidebar-mosque-name') || document.getElementById('dashboard-mosque-name');

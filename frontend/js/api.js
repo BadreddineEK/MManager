@@ -20,6 +20,24 @@ let allMembers     = [];
 let membershipYears = [];
 let allCampaigns   = [];
 
+// ── Cache settings mosquée (évite N appels réseau) ───────────────────────────
+let _mosqueSettings = null;
+
+async function getMosqueSettings() {
+  if (_mosqueSettings) return _mosqueSettings;
+  try {
+    const res = await apiFetch('/settings/');
+    if (res && res.ok) {
+      _mosqueSettings = await res.json();
+    }
+  } catch (e) { /* silencieux */ }
+  return _mosqueSettings || {};
+}
+
+function invalidateMosqueSettings() {
+  _mosqueSettings = null;
+}
+
 // ── Progress bar ──────────────────────────────────────────────────────────────
 let _progressTimer = null;
 
