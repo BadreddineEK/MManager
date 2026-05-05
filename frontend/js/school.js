@@ -27,20 +27,39 @@ function renderFamilies(families) {
     });
     return;
   }
-  tbody.innerHTML = families.map((f, i) => `
+  tbody.innerHTML = families.map((f, i) => {
+    const paid   = parseFloat(f.current_year_paid || 0);
+    const due    = parseFloat(f.current_year_due  || 0);
+    const reste  = Math.max(0, due - paid);
+    const status = f.payment_status || 'unpaid';
+    const statusBadge = status === 'paid'
+      ? '<span class="badge badge-green">✅ Soldé</span>'
+      : status === 'partial'
+        ? `<span class="badge badge-yellow">⚠️ Partiel</span>`
+        : due > 0 ? '<span class="badge badge-red">❌ Impayé</span>'
+                  : '<span class="badge badge-gray">—</span>';
+    const resteDisplay = due > 0
+      ? `<span class="${reste > 0 ? 'text-red' : 'text-green'}" style="font-weight:600;">${reste > 0 ? '-' : ''}${reste.toFixed(2)} €</span>`
+      : '<span class="text-muted">—</span>';
+    return `
     <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td><strong>${esc(f.primary_contact_name)}</strong></td>
       <td>${esc(f.phone1)}</td>
       <td>${esc(f.email) || '<span class="text-muted">—</span>'}</td>
       <td><span class="badge badge-gray">${f.children_count} enfant(s)</span></td>
-      <td><span class="badge badge-green">${f.total_paid.toFixed(2)} €</span></td>
+      <td>${statusBadge}</td>
+      <td style="white-space:nowrap;">
+        <span class="badge badge-green">${paid.toFixed(2)} €</span>
+        ${due > 0 ? `<span class="text-muted" style="font-size:.78rem;">/ ${due.toFixed(2)} €</span>` : ''}
+      </td>
+      <td>${resteDisplay}</td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editFamily(${f.id})" title="Modifier">✏️</button>
         <button class="btn btn-sm btn-icon" onclick="addSchoolPayment(${f.id}, '${esc(f.primary_contact_name).replace(/'/g, "\\'")}')" title="Enregistrer un paiement">💳</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteFamily(${f.id})" title="Supprimer">🗑</button>
       </div></td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 function searchFamilies() {
@@ -420,14 +439,39 @@ async function addSchoolPayment(familyId = null, familyName = '') {
   }
 
   document.getElementById('sp-id').value     = '';
-  document.getElementById('sp-amount').value = '';
   document.getElementById('sp-date').value   = new Date().toISOString().split('T')[0];
   document.getElementById('sp-method').value = 'cash';
   document.getElementById('sp-note').value   = '';
   document.getElementById('modal-sp-title').textContent = '💳 Enregistrer un paiement école';
   document.getElementById('modal-sp-error').classList.add('hidden');
+
+  // Pré-remplir le montant avec le tarif configuré × nb enfants de la famille
+  await _spSuggestAmount(familyId);
+
   openModal('modal-school-payment');
 }
+
+async function _spSuggestAmount(familyId) {
+  const amountEl = document.getElementById('sp-amount');
+  if (!amountEl) return;
+  // Récupérer le tarif depuis les settings
+  try {
+    const settingsRes = await apiFetch('/settings/');
+    if (!settingsRes || !settingsRes.ok) return;
+    const s = await settingsRes.json();
+    const fee = parseFloat(s.school_fee_default) || 0;
+    if (!fee) return;
+    // Nb d'enfants de la famille
+    let nbChildren = 1;
+    if (familyId) {
+      const fam = allFamilies.find(f => String(f.id) === String(familyId));
+      nbChildren = fam ? (fam.children_count || 1) : 1;
+    }
+    amountEl.value = (fee * nbChildren).toFixed(2);
+    amountEl.title = `Tarif configuré : ${fee} € × ${nbChildren} enfant(s)`;
+  } catch (e) { /* silencieux */ }
+}
+
 
 async function editSchoolPayment(id) {
   const res = await apiFetch(`/school/payments/${id}/`);

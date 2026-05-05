@@ -150,10 +150,24 @@ class FamilyViewSet(PlanLimitMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         mosque = get_mosque(self.request)
-        qs = Family.objects.prefetch_related("children")
+        qs = Family.objects.prefetch_related("children", "payments")
         if mosque is None:
             return qs.none()
         return qs.filter(mosque=mosque)
+
+    def get_serializer_context(self):
+        """Passe l'année active et le tarif dans le contexte du serializer (évite N+1)."""
+        ctx = super().get_serializer_context()
+        mosque = get_mosque(self.request)
+        if mosque:
+            ctx["active_school_year"] = SchoolYear.objects.filter(
+                mosque=mosque, is_active=True
+            ).first()
+            try:
+                ctx["school_fee_default"] = float(mosque.settings.school_fee_default or 0)
+            except Exception:
+                ctx["school_fee_default"] = 0.0
+        return ctx
 
     def perform_create(self, serializer):
         obj = serializer.save(mosque=get_mosque(self.request))
