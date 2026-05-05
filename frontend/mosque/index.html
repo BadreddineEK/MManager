@@ -605,6 +605,13 @@
             <div class="lbl">Solde 1905</div>
           </div>
         </div>
+        <!-- Filtre source : Tout / Espèces / Banque -->
+        <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center;">
+          <span style="font-size:.8rem;color:var(--muted);margin-right:4px;">Source :</span>
+          <button id="trs-src-all"    class="btn btn-primary btn-sm" onclick="setTrsSourceFilter('')">📋 Tout</button>
+          <button id="trs-src-manual" class="btn btn-sm"             onclick="setTrsSourceFilter('manual')">💵 Espèces / Manuel</button>
+          <button id="trs-src-import" class="btn btn-sm"             onclick="setTrsSourceFilter('import')">🏦 Banque (import)</button>
+        </div>
         <div class="toolbar">
           <select id="trs-direction-filter" onchange="loadTreasury()" style="width:auto;margin:0;">
             <option value="">Entrées + Sorties</option>
@@ -640,7 +647,7 @@
         <div id="treasury-alert"></div>
         <div class="card table-wrapper">
           <table>
-            <thead><tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Direction</th><th>Montant</th><th>Mode</th><th>Régime</th><th>Note</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Direction</th><th>Montant</th><th>Mode</th><th>Régime</th><th>Cagnotte</th><th>Note</th><th>Actions</th></tr></thead>
             <tbody id="treasury-table"></tbody>
           </table>
         </div><!-- end .card.table-wrapper -->

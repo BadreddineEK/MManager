@@ -2,6 +2,20 @@
    treasury.js — Transactions, reçus fiscaux PDF
 ═══════════════════════════════════════════════════════════ */
 
+// ── Filtre source (Tout / Espèces / Banque) ───────────────────────────────────
+let _trsSourceFilter = '';
+
+function setTrsSourceFilter(src) {
+  _trsSourceFilter = src;
+  ['all', 'manual', 'import'].forEach(s => {
+    const el = document.getElementById('trs-src-' + s);
+    if (!el) return;
+    const active = s === (src || 'all');
+    el.className = 'btn btn-sm' + (active ? ' btn-primary' : '');
+  });
+  loadTreasury();
+}
+
 function toggleTreasuryFilters() {
   const panel = document.getElementById('trs-advanced-filters');
   const btn   = document.getElementById('trs-filter-toggle');
@@ -19,7 +33,7 @@ function resetTreasuryFilters() {
   if (panel) panel.classList.add('hidden');
   const btn = document.getElementById('trs-filter-toggle');
   if (btn) btn.classList.remove('btn-primary');
-  loadTreasury();
+  setTrsSourceFilter('');
 }
 
 
@@ -64,6 +78,7 @@ async function loadTreasury() {
   if (month)     url += `&month=${month}`;
   else if (year) url += `&year=${year}`;
   if (search)    url += `&search=${encodeURIComponent(search)}`;
+  if (_trsSourceFilter) url += `&source_type=${_trsSourceFilter}`;
 
   const res = await apiFetch(url);
   if (!res || !res.ok) return;
@@ -157,6 +172,9 @@ function renderTreasury(txs) {
       : tx.regime_fiscal === '1905'
         ? '<span class="badge badge-1905">1905</span>'
         : '<span style="color:var(--muted);font-size:.8rem;">—</span>';
+    const campaignBadge = tx.campaign_name
+      ? `<span class="badge badge-purple" style="font-size:.72rem;" title="Cagnotte liée">🎯 ${esc(tx.campaign_name)}</span>`
+      : '<span style="color:var(--muted);font-size:.8rem;">—</span>';
     return `
     <tr class="fade-in" style="animation-delay:${i * 30}ms">
       <td>${tx.date}</td>
@@ -166,7 +184,8 @@ function renderTreasury(txs) {
       <td style="font-weight:700;" class="${isIn ? 'text-green' : 'text-red'}">${parseFloat(tx.amount).toFixed(2)} €</td>
       <td><span class="badge badge-blue">${esc(tx.method_display)}</span></td>
       <td>${regimeBadge}</td>
-      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(tx.note)||''}">${esc(tx.note) || '<span class="text-muted">—</span>'}</td>
+      <td>${campaignBadge}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(tx.note)||''}">${esc(tx.note) || '<span class="text-muted">—</span>'}</td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-icon" onclick="editTreasuryTransaction(${tx.id})" title="Modifier">✏️</button>
         <button class="btn btn-sm btn-icon" onclick="downloadTxReceipt(${tx.id}, '${esc(tx.label).replace(/'/g, "\\'")}', '${tx.category}')" title="Reçu PDF">🧾</button>

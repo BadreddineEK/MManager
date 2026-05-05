@@ -140,6 +140,13 @@ class TreasuryTransactionViewSet(viewsets.ModelViewSet):
             except ValueError:
                 pass
 
+        # Filtre source : "manual" = espèces/saisie, "import" = banque
+        source_filter = self.request.query_params.get("source_type")
+        if source_filter == "manual":
+            qs = qs.exclude(source="import")
+        elif source_filter == "import":
+            qs = qs.filter(source="import")
+
         return qs
 
     def perform_create(self, serializer):
