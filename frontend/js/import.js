@@ -76,6 +76,12 @@ async function saveSetupForm() {
     errEl.classList.remove('hidden');
     return;
   }
+  okEl.innerHTML = `
+    ✅ Paramètres enregistrés !
+    ${body.active_school_year_label ? `<br>🏫 Année scolaire <strong>${body.active_school_year_label}</strong> créée/activée.` : ''}
+    ${body.membership_fee_amount > 0 ? `<br>🤝 Année de cotisation <strong>${new Date().getFullYear()}</strong> créée/activée (${body.membership_fee_amount} €).` : ''}
+    <br><span style="font-size:.8rem;color:var(--muted);">Vous pouvez maintenant importer vos données ou commencer la saisie.</span>
+  `;
   okEl.classList.remove('hidden');
   // Masquer la bannière si présente
   document.getElementById('onboarding-welcome-banner')?.classList.add('hidden');

@@ -21,6 +21,51 @@ from .models import Mosque, MosqueSettings
 from .settings_serializer import MosqueSettingsSerializer, OnboardingSerializer
 
 
+def _sync_school_and_membership_years(mosque, settings_data):
+    """
+    Après un PUT /settings/ ou un onboarding, s'assurer que :
+    - La SchoolYear correspondant à active_school_year_label existe
+    - La MembershipYear correspondant à l'année en cours existe si fee > 0
+    Idempotent (get_or_create).
+    """
+    from school.models import SchoolYear
+    from membership.models import MembershipYear
+    from datetime import date
+
+    label = settings_data.get("active_school_year_label", "")
+    if label:
+        sy, created = SchoolYear.objects.get_or_create(
+            mosque=mosque,
+            label=label,
+            defaults={
+                "is_active": True,
+                "start_date": None,
+                "end_date": None,
+            },
+        )
+        if not created and not sy.is_active:
+            # Désactiver les autres et activer celle-ci
+            SchoolYear.objects.filter(mosque=mosque).exclude(pk=sy.pk).update(is_active=False)
+            sy.is_active = True
+            sy.save(update_fields=["is_active"])
+
+    membership_fee = settings_data.get("membership_fee_amount", 0)
+    if membership_fee and float(membership_fee) > 0:
+        current_year = date.today().year
+        my, created = MembershipYear.objects.get_or_create(
+            mosque=mosque,
+            year=current_year,
+            defaults={
+                "is_active": True,
+                "amount_expected": float(membership_fee),
+            },
+        )
+        if not created and not my.is_active:
+            my.is_active = True
+            my.amount_expected = float(membership_fee)
+            my.save(update_fields=["is_active", "amount_expected"])
+
+
 class SettingsView(APIView):
     """
     GET  /api/settings/  -> retourne MosqueSettings de la mosquee courante
@@ -90,6 +135,9 @@ class SettingsView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
 
+        # Synchroniser SchoolYear et MembershipYear
+        _sync_school_and_membership_years(mosque, request.data)
+
         # Recharger pour avoir les champs mosque_* a jour
         settings_obj.refresh_from_db()
         return Response(MosqueSettingsSerializer(settings_obj).data)
@@ -146,17 +194,21 @@ class OnboardingView(APIView):
             mosque.save(update_fields=["name", "timezone"])
 
         # Creer ou mettre a jour les settings
+        settings_defaults = {
+            "school_levels": data.get("school_levels", ["NP", "N1", "N2", "N3", "N4", "N5", "N6"]),
+            "school_fee_default": data.get("school_fee_default", 0),
+            "school_fee_mode": data.get("school_fee_mode", "annual"),
+            "membership_fee_amount": data.get("membership_fee_amount", 0),
+            "membership_fee_mode": data.get("membership_fee_mode", "per_person"),
+            "active_school_year_label": data.get("active_school_year_label", ""),
+        }
         MosqueSettings.objects.update_or_create(
             mosque=mosque,
-            defaults={
-                "school_levels": data.get("school_levels", ["NP", "N1", "N2", "N3", "N4", "N5", "N6"]),
-                "school_fee_default": data.get("school_fee_default", 0),
-                "school_fee_mode": data.get("school_fee_mode", "annual"),
-                "membership_fee_amount": data.get("membership_fee_amount", 0),
-                "membership_fee_mode": data.get("membership_fee_mode", "per_person"),
-                "active_school_year_label": data.get("active_school_year_label", ""),
-            },
+            defaults=settings_defaults,
         )
+
+        # Synchroniser SchoolYear et MembershipYear
+        _sync_school_and_membership_years(mosque, data)
 
         settings_obj = MosqueSettings.objects.get(mosque=mosque)
         return Response(

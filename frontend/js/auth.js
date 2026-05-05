@@ -141,17 +141,20 @@ function _showOnboardingBanner() {
       display: flex; align-items: flex-start; gap: 16px;
     ">
       <span style="font-size:2rem;flex-shrink:0;">🎉</span>
-      <div>
+      <div style="flex:1;">
         <div style="font-weight:800;font-size:1.05rem;margin-bottom:6px;">Bienvenue sur Nidham Manager !</div>
-        <div style="font-size:.88rem;color:var(--muted);line-height:1.6;">
-          Avant de commencer, configurez votre mosquée en 2 minutes :<br>
-          <strong>1.</strong> Remplissez les paramètres ci-dessous (nom, année scolaire, tarifs)<br>
-          <strong>2.</strong> Importez vos données existantes si besoin (adhérents, familles, trésorerie)
+        <div style="font-size:.88rem;color:var(--muted);line-height:1.7;">
+          Configurez votre mosquée en <strong>2 minutes</strong> pour débloquer toutes les fonctionnalités :<br>
+          <strong>1.</strong> Saisissez le nom, l'année scolaire et les tarifs ci-dessous<br>
+          <strong>2.</strong> Cliquez sur <em>💾 Enregistrer les paramètres</em> → les sections École et Cotisations seront activées automatiquement<br>
+          <strong>3.</strong> Importez vos données existantes si besoin
         </div>
-        <button onclick="document.getElementById('onboarding-welcome-banner').classList.add('hidden');localStorage.setItem('onboarding_banner_dismissed','1');"
-          style="margin-top:10px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 12px;font-size:.8rem;cursor:pointer;color:var(--muted);">
-          Fermer
-        </button>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="document.getElementById('onboarding-welcome-banner').classList.add('hidden');localStorage.setItem('onboarding_banner_dismissed','1');"
+            style="background:none;border:1px solid var(--border);border-radius:8px;padding:4px 12px;font-size:.8rem;cursor:pointer;color:var(--muted);">
+            Fermer
+          </button>
+        </div>
       </div>
     </div>`;
   const section = document.getElementById('section-import');
