@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nidham — Accès à votre espace mosquée</title>
-  <meta name="description" content="Connectez-vous à votre espace mosquée Nidham ou créez un nouvel espace gratuit en 30 secondes." />
+  <title>Nidham — Votre espace mosquée</title>
+  <meta name="description" content="Créez votre espace mosquée en 30 secondes ou connectez-vous à votre espace existant." />
   <link rel="canonical" href="https://app.nidham.fr/" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231B4332'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-size='36' fill='%23C9A84C'%3E%D9%86%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -19,14 +19,14 @@
       --dark:#0D1B12;--text:#1A2E1F;--muted:#5A7A63;
       --bg:#F7FAF8;--white:#FFFFFF;--border:#D4E8DB;
       --radius:12px;--radius-lg:20px;
-      --shadow:0 4px 24px rgba(27,67,50,.10);
-      --shadow-lg:0 8px 48px rgba(27,67,50,.16);
+      --shadow-lg:0 12px 60px rgba(0,0,0,.35);
     }
     html{scroll-behavior:smooth}
     body{
       font-family:'Inter',sans-serif;
       background:linear-gradient(155deg,#0A1A0F 0%,#1B4332 55%,#2D6A4F 100%);
       min-height:100vh;color:var(--text);overflow-x:hidden;
+      display:flex;flex-direction:column;
     }
     body::before{
       content:'نِظَام';font-family:'Amiri',serif;
@@ -34,16 +34,6 @@
       top:50%;left:50%;transform:translate(-50%,-50%);
       pointer-events:none;line-height:1;user-select:none;z-index:0;
     }
-
-    /* Toast */
-    #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px}
-    .toast{padding:12px 20px;border-radius:10px;font-size:.9rem;font-weight:500;box-shadow:var(--shadow-lg);animation:slideUp .3s ease;max-width:320px}
-    .toast-success{background:#1B4332;color:#fff}
-    .toast-error{background:#7C1D1D;color:#fff}
-    .toast-info{background:#1a3a5c;color:#fff}
-    @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
-
-    /* Nav */
     nav{
       position:fixed;top:0;left:0;right:0;z-index:100;
       display:flex;align-items:center;justify-content:space-between;
@@ -53,392 +43,135 @@
     }
     .nav-logo{display:flex;align-items:center;gap:10px;font-size:1.35rem;font-weight:700;color:var(--white);text-decoration:none}
     .nav-logo .arabic{font-family:'Amiri',serif;font-size:1.25rem;color:var(--gold)}
-    .nav-back{font-size:.85rem;color:rgba(255,255,255,.5);text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .2s}
+    .nav-back{font-size:.85rem;color:rgba(255,255,255,.5);text-decoration:none;transition:color .2s}
     .nav-back:hover{color:rgba(255,255,255,.85)}
-
-    /* Page wrapper */
     .page-wrapper{
-      position:relative;z-index:1;
-      min-height:100vh;
-      display:flex;flex-direction:column;align-items:center;
-      justify-content:center;padding:100px 5% 60px;
+      position:relative;z-index:1;flex:1;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:96px 5% 56px;
     }
-
-    /* Hero */
-    .hero-head{text-align:center;margin-bottom:48px}
-    .hero-badge{
-      display:inline-flex;align-items:center;gap:8px;
-      background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);
-      color:var(--gold-light);padding:6px 18px;border-radius:100px;
-      font-size:.8rem;font-weight:500;letter-spacing:.04em;margin-bottom:22px;
-    }
-    .hero-badge .dot{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:pulse 2s infinite}
+    .center-logo{text-align:center;margin-bottom:44px}
+    .arabic-big{font-family:'Amiri',serif;font-size:5rem;color:var(--gold);display:block;line-height:1;margin-bottom:8px}
+    .center-logo h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;color:var(--white);letter-spacing:-.02em;margin-bottom:10px}
+    .center-logo p{font-size:.95rem;color:rgba(255,255,255,.55);font-weight:300;line-height:1.7;max-width:400px;margin:0 auto}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);color:var(--gold-light);padding:5px 16px;border-radius:100px;font-size:.78rem;font-weight:500;letter-spacing:.04em;margin-bottom:24px}
+    .dot{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
     @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
-    .hero-head h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;color:var(--white);line-height:1.1;letter-spacing:-.025em;margin-bottom:14px}
-    .hero-head h1 span{color:var(--gold-light)}
-    .hero-head p{font-size:1rem;color:rgba(255,255,255,.6);font-weight:300;line-height:1.7;max-width:480px;margin:0 auto}
-
-    /* Portal grid */
-    .portal-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;max-width:900px}
-
-    /* Cards */
-    .card{background:var(--white);border-radius:var(--radius-lg);box-shadow:0 12px 60px rgba(0,0,0,.35);overflow:hidden}
-    .card-header{padding:28px 28px 0}
-    .card-header h2{font-size:1.15rem;font-weight:700;color:var(--dark);margin-bottom:6px}
-    .card-header p{font-size:.85rem;color:var(--muted);line-height:1.5}
-    .card-body{padding:22px 28px 28px;display:flex;flex-direction:column;gap:14px}
-    .card-divider{height:1px;background:var(--border);margin:18px 0 0}
-
-    .trial-badge{display:inline-flex;align-items:center;gap:6px;background:var(--gold-pale);border:1px solid #E8C96A;color:#8B6914;padding:5px 12px;border-radius:100px;font-size:.75rem;font-weight:700;margin-bottom:14px}
-    .trial-perks{display:flex;flex-direction:column;gap:5px;margin-top:10px}
-    .trial-perk{font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:7px}
-    .trial-perk .ck{color:var(--green);font-weight:700;font-size:.85rem}
-
-    /* Fields */
-    .field-group{display:flex;flex-direction:column;gap:6px}
-    .field-group label{font-size:.82rem;font-weight:600;color:var(--text)}
-    .field-group input{padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:.9rem;font-family:'Inter',sans-serif;color:var(--text);background:var(--white);transition:border-color .2s,box-shadow .2s;outline:none}
-    .field-group input:focus{border-color:var(--green-light);box-shadow:0 0 0 3px rgba(64,145,108,.12)}
-    .domain-preview{font-size:.78rem;color:var(--muted);padding:6px 10px;background:var(--bg);border-radius:7px;border:1px solid var(--border);margin-top:2px}
-    .field-hint{font-size:.76rem;color:var(--muted);margin-top:2px}
-    .field-ok{font-size:.76rem;color:var(--green);font-weight:600;margin-top:2px}
-    .field-error{font-size:.76rem;color:#b91c1c;font-weight:600;margin-top:2px}
-
-    /* Buttons */
-    .btn-submit{width:100%;padding:13px 20px;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Inter',sans-serif}
-    .btn-submit-green{background:var(--green);color:var(--white)}
-    .btn-submit-green:hover{background:var(--green-mid);transform:translateY(-1px);box-shadow:0 6px 20px rgba(27,67,50,.3)}
-    .btn-submit-gray{background:#374151;color:var(--white)}
-    .btn-submit-gray:hover{background:#1f2937;transform:translateY(-1px)}
-    .btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none!important}
-    .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* Error */
-    .error-box{background:#FEF2F2;border:1px solid #FCA5A5;color:#7F1D1D;padding:10px 14px;border-radius:9px;font-size:.82rem;line-height:1.5}
-    .hidden{display:none!important}
-    .card-footer-note{font-size:.74rem;color:var(--muted);text-align:center;line-height:1.5}
-
-    /* Success */
-    #success-screen{width:100%;max-width:560px}
-    .success-card{background:var(--white);border-radius:var(--radius-lg);padding:48px 40px;text-align:center;box-shadow:0 12px 60px rgba(0,0,0,.35)}
-    .success-icon{font-size:3.5rem;margin-bottom:20px}
-    .success-card h2{font-size:1.6rem;font-weight:800;color:var(--dark);margin-bottom:12px}
-    .success-card>p{font-size:.95rem;color:var(--muted);margin-bottom:28px;line-height:1.65}
-    .success-info{background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);padding:16px 20px;margin-bottom:24px;text-align:left}
-    .success-info-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:.88rem}
-    .success-info-row:last-child{border-bottom:none;padding-bottom:0}
-    .success-info-row .lbl{color:var(--muted);font-weight:500}
-    .success-info-row .val{color:var(--dark);font-weight:600;font-family:monospace;font-size:.82rem}
-    .btn-success{background:var(--green);color:var(--white);padding:14px 32px;border-radius:10px;font-weight:700;font-size:1rem;border:none;cursor:pointer;display:inline-block;transition:background .2s,transform .15s;text-decoration:none;margin-bottom:28px}
-    .btn-success:hover{background:var(--green-mid);transform:translateY(-2px)}
-    .success-steps{text-align:left;border-top:1px solid var(--border);padding-top:20px}
-    .success-steps h3{font-size:.9rem;font-weight:700;color:var(--dark);margin-bottom:14px}
-    .success-step-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
-    .ssi-num{width:24px;height:24px;background:var(--green-pale);color:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;margin-top:1px}
-    .ssi-text{font-size:.84rem;color:var(--muted);line-height:1.5}
-
-    /* KPI modal */
-    #kpi-modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center}
-    #kpi-modal-overlay.open{display:flex}
-    #kpi-modal{background:var(--white);border-radius:var(--radius-lg);padding:36px 32px;max-width:420px;width:90%;box-shadow:var(--shadow-lg)}
-    #kpi-modal h3{font-size:1.1rem;font-weight:700;color:var(--dark);margin-bottom:8px}
-    #kpi-modal p{font-size:.87rem;color:var(--muted);margin-bottom:18px;line-height:1.6}
-    #kpi-slug-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:.95rem;outline:none;margin-bottom:14px;font-family:'Inter',sans-serif;color:var(--text)}
-    #kpi-slug-input:focus{border-color:var(--green-light);box-shadow:0 0 0 3px rgba(64,145,108,.12)}
-    #kpi-modal-actions{display:flex;gap:10px;justify-content:flex-end}
-    .kpi-modal-cancel{background:none;border:1.5px solid var(--border);color:var(--muted);padding:9px 18px;border-radius:8px;font-size:.88rem;cursor:pointer;font-family:'Inter',sans-serif}
-    .kpi-modal-confirm{background:var(--green);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
-
-    /* Footer */
-    .page-footer{position:relative;z-index:1;text-align:center;padding:0 5% 32px;color:rgba(255,255,255,.3);font-size:.78rem}
-    .page-footer a{color:rgba(255,255,255,.35);text-decoration:none;transition:color .2s}
-    .page-footer a:hover{color:rgba(255,255,255,.75)}
-    .page-footer button{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.35);font-size:.78rem;font-family:'Inter',sans-serif;transition:color .2s}
-    .page-footer button:hover{color:rgba(255,255,255,.75)}
-
-    /* Responsive */
-    @media(max-width:720px){
-      .portal-grid{grid-template-columns:1fr}
-      .page-wrapper{padding:88px 4% 48px}
-      .card-header,.card-body{padding-left:20px;padding-right:20px}
-      .hero-head h1{font-size:1.9rem}
-      .success-card{padding:36px 22px}
+    .choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;max-width:720px}
+    .choice-card{background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:36px 32px 32px;display:flex;flex-direction:column;align-items:flex-start;text-decoration:none;transition:transform .2s,box-shadow .2s;border:2px solid transparent}
+    .choice-card:hover{transform:translateY(-4px);box-shadow:0 20px 80px rgba(0,0,0,.45)}
+    .choice-card.primary{background:var(--green);border-color:rgba(255,255,255,.1)}
+    .choice-card.primary:hover{background:var(--green-mid)}
+    .choice-icon{font-size:2.4rem;margin-bottom:16px;display:block}
+    .choice-card h2{font-size:1.1rem;font-weight:800;margin-bottom:8px;line-height:1.2}
+    .choice-card.primary h2{color:var(--white)}
+    .choice-card.secondary h2{color:var(--dark)}
+    .choice-card p{font-size:.85rem;line-height:1.6;margin-bottom:20px}
+    .choice-card.primary p{color:rgba(255,255,255,.65)}
+    .choice-card.secondary p{color:var(--muted)}
+    .choice-perks{display:flex;flex-direction:column;gap:6px;margin-bottom:24px;width:100%}
+    .perk{font-size:.8rem;display:flex;align-items:center;gap:8px}
+    .choice-card.primary .perk{color:rgba(255,255,255,.75)}
+    .choice-card.secondary .perk{color:var(--muted)}
+    .perk-ck{font-weight:700;flex-shrink:0}
+    .choice-card.primary .perk-ck{color:var(--gold-light)}
+    .choice-card.secondary .perk-ck{color:var(--green)}
+    .choice-btn{width:100%;padding:13px 20px;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Inter',sans-serif;text-decoration:none;transition:background .15s,opacity .15s;margin-top:auto}
+    .choice-card.primary .choice-btn{background:var(--gold);color:var(--dark)}
+    .choice-card.primary .choice-btn:hover{background:var(--gold-light)}
+    .choice-card.secondary .choice-btn{background:var(--dark);color:var(--white)}
+    .choice-card.secondary .choice-btn:hover{background:#1a2e1f}
+    .kpi-link-row{margin-top:28px;text-align:center}
+    .kpi-link{display:inline-flex;align-items:center;gap:7px;color:rgba(255,255,255,.35);font-size:.8rem;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:100px;padding:6px 16px;transition:all .2s}
+    .kpi-link:hover{color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.05)}
+    footer{position:relative;z-index:1;text-align:center;padding:0 5% 28px;color:rgba(255,255,255,.28);font-size:.76rem}
+    footer a{color:rgba(255,255,255,.32);text-decoration:none;transition:color .2s}
+    footer a:hover{color:rgba(255,255,255,.7)}
+    @media(max-width:620px){
+      .choice-grid{grid-template-columns:1fr}
+      .choice-card{padding:28px 24px 24px}
+      .arabic-big{font-size:3.5rem}
     }
   </style>
 </head>
 <body>
-
-<div id="toast-container"></div>
-
-<!-- KPI Modal -->
-<div id="kpi-modal-overlay" onclick="closeKpiModal(event)">
-  <div id="kpi-modal">
-    <h3>📺 Tableau de bord KPI</h3>
-    <p>Saisissez le slug de votre mosquée pour accéder aux indicateurs en temps réel (lecture seule, aucune donnée personnelle).</p>
-    <input type="text" id="kpi-slug-input" placeholder="Ex: mosquee-alpha" autocomplete="off" />
-    <div id="kpi-modal-actions">
-      <button class="kpi-modal-cancel" onclick="closeKpiModal()">Annuler</button>
-      <button class="kpi-modal-confirm" onclick="goToKpi()">Afficher les KPI →</button>
-    </div>
-  </div>
-</div>
-
-<!-- NAV -->
 <nav>
-  <a href="https://nidham.fr" class="nav-logo">
-    <span class="arabic">نِظَام</span> Nidham
-  </a>
+  <a href="https://nidham.fr" class="nav-logo"><span class="arabic">نِظَام</span> Nidham</a>
   <a href="https://nidham.fr" class="nav-back">← Découvrir Nidham</a>
 </nav>
 
-<!-- MAIN -->
 <div class="page-wrapper">
-
-  <div class="hero-head">
+  <div class="center-logo">
     <div class="hero-badge"><span class="dot"></span>✨ Essai gratuit 14 jours — sans carte bancaire</div>
-    <h1>Votre espace<br><span>mosquée</span></h1>
-    <p>Connexion à un espace existant ou création de votre espace Nidham en 30 secondes.</p>
+    <span class="arabic-big">نِظَام</span>
+    <h1>Bienvenue sur Nidham</h1>
+    <p>L'outil de gestion tout-en-un pour les mosquées françaises.</p>
   </div>
 
-  <div id="portal">
-    <div class="portal-grid">
-
-      <!-- LOGIN -->
-      <div class="card" id="login-card">
-        <div class="card-header">
-          <h2>🔐 Se connecter</h2>
-          <p>Accédez à l'espace de gestion de votre mosquée</p>
-          <div class="card-divider"></div>
-        </div>
-        <div class="card-body">
-          <div class="error-box hidden" id="login-error"></div>
-          <div class="field-group">
-            <label for="login-slug">Identifiant de votre mosquée</label>
-            <input type="text" id="login-slug" placeholder="ex: lyonlpa" oninput="updateLoginDomain()" autocomplete="off">
-            <div class="domain-preview">🌐 <strong id="login-domain-text">votre-mosquee.nidham.fr</strong></div>
-          </div>
-          <div class="field-group">
-            <label for="login-username">Identifiant utilisateur</label>
-            <input type="text" id="login-username" placeholder="Votre nom d'utilisateur" autocomplete="username">
-          </div>
-          <div class="field-group">
-            <label for="login-password">Mot de passe</label>
-            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
-          </div>
-          <button class="btn-submit btn-submit-gray" id="login-btn" onclick="doLogin()">Se connecter</button>
-          <p class="card-footer-note">Mot de passe oublié ? Contactez votre administrateur</p>
-        </div>
+  <div class="choice-grid">
+    <a href="register.html" class="choice-card primary">
+      <span class="choice-icon">🕌</span>
+      <h2>Créer mon espace mosquée</h2>
+      <p>Votre espace est prêt en 30 secondes. Essai 14 jours gratuit, sans engagement.</p>
+      <div class="choice-perks">
+        <div class="perk"><span class="perk-ck">✓</span>Accès complet à tous les modules 14j</div>
+        <div class="perk"><span class="perk-ck">✓</span>Sous-domaine dédié slug.nidham.fr</div>
+        <div class="perk"><span class="perk-ck">✓</span>Aucune carte bancaire requise</div>
       </div>
+      <span class="choice-btn">🚀 Créer mon espace gratuitement</span>
+    </a>
 
-      <!-- REGISTER -->
-      <div class="card" id="register-card">
-        <div class="card-header">
-          <div class="trial-badge">⭐ 14 jours gratuits — sans carte bancaire</div>
-          <h2>🕌 Créer mon espace mosquée</h2>
-          <p>Votre espace est prêt en 30 secondes</p>
-          <div class="trial-perks">
-            <div class="trial-perk"><span class="ck">✓</span>Accès à tous les modules pendant 14j</div>
-            <div class="trial-perk"><span class="ck">✓</span>Aucune carte bancaire requise</div>
-            <div class="trial-perk"><span class="ck">✓</span>Votre sous-domaine dédié (slug.nidham.fr)</div>
-          </div>
-          <div class="card-divider"></div>
-        </div>
-        <div class="card-body">
-          <div class="error-box hidden" id="register-error"></div>
-          <div class="field-group">
-            <label for="reg-mosque-name">Nom de votre mosquée</label>
-            <input type="text" id="reg-mosque-name" placeholder="ex: Mosquée Al-Badr de Lyon" oninput="autoSlug()" autocomplete="off">
-          </div>
-          <div class="field-group">
-            <label for="reg-slug">Identifiant unique (slug)</label>
-            <input type="text" id="reg-slug" placeholder="ex: al-badr-lyon" oninput="onSlugInput()" autocomplete="off">
-            <div class="domain-preview">🌐 <strong id="reg-domain-preview">votre-id.nidham.fr</strong></div>
-            <div class="field-hint" id="slug-status">Choisissez un identifiant unique</div>
-          </div>
-          <div class="field-group">
-            <label for="reg-username">Identifiant administrateur</label>
-            <input type="text" id="reg-username" placeholder="ex: admin" autocomplete="off">
-          </div>
-          <div class="field-group">
-            <label for="reg-password">Mot de passe (min. 8 caractères)</label>
-            <input type="password" id="reg-password" placeholder="••••••••" autocomplete="new-password" onkeydown="if(event.key==='Enter') doRegister()">
-          </div>
-          <button class="btn-submit btn-submit-green" id="register-btn" onclick="doRegister()">🚀 Créer mon espace gratuitement</button>
-          <p class="card-footer-note">En créant un compte vous acceptez nos <a href="https://nidham.fr" style="color:var(--green)">CGU</a>. Aucun engagement.</p>
-        </div>
+    <a href="login.html" class="choice-card secondary">
+      <span class="choice-icon">🔐</span>
+      <h2>Accéder à mon espace existant</h2>
+      <p>Vous avez déjà un espace Nidham ? Connectez-vous ici.</p>
+      <div class="choice-perks">
+        <div class="perk"><span class="perk-ck">→</span>Entrez l'identifiant de votre mosquée</div>
+        <div class="perk"><span class="perk-ck">→</span>Identifiant utilisateur + mot de passe</div>
+        <div class="perk"><span class="perk-ck">→</span>Redirection vers votre espace</div>
       </div>
-
-    </div>
+      <span class="choice-btn">Se connecter →</span>
+    </a>
   </div>
 
-  <!-- SUCCESS -->
-  <div id="success-screen" class="hidden">
-    <div class="success-card">
-      <div class="success-icon">🎉</div>
-      <h2>Bienvenue sur Nidham !</h2>
-      <p>Votre espace <strong id="success-mosque-name"></strong> a été créé avec succès. Votre essai gratuit de 14 jours commence maintenant.</p>
-      <div class="success-info">
-        <div class="success-info-row"><span class="lbl">Domaine</span><span class="val" id="success-domain"></span></div>
-        <div class="success-info-row"><span class="lbl">Identifiant admin</span><span class="val" id="success-username"></span></div>
-        <div class="success-info-row"><span class="lbl">Essai gratuit</span><span class="val" style="color:var(--green);font-family:'Inter',sans-serif">14 jours ✓</span></div>
-      </div>
-      <a id="success-link" href="#"><button class="btn-success">Accéder à mon espace →</button></a>
-      <div class="success-steps">
-        <h3>📋 Prochaines étapes</h3>
-        <div class="success-step-item"><div class="ssi-num">1</div><div class="ssi-text">Connectez-vous avec votre identifiant administrateur</div></div>
-        <div class="success-step-item"><div class="ssi-num">2</div><div class="ssi-text">Configurez les paramètres de votre mosquée</div></div>
-        <div class="success-step-item"><div class="ssi-num">3</div><div class="ssi-text">Ajoutez vos premiers élèves ou adhérents</div></div>
-        <div class="success-step-item"><div class="ssi-num">4</div><div class="ssi-text">Invitez votre équipe (trésorier, enseignants…)</div></div>
-      </div>
-    </div>
+  <div class="kpi-link-row">
+    <a href="#" class="kpi-link" onclick="openKpiModal();return false">📺 Voir les KPI publics d'une mosquée</a>
   </div>
-
 </div>
 
-<footer class="page-footer">
+<footer>
   <span>© 2026 <a href="https://nidham.fr">Nidham</a> · Waqf numérique 🤲 · <a href="https://github.com/BadreddineEK/MManager" target="_blank" rel="noopener">Open source</a></span>
-  &nbsp;·&nbsp;
-  <button onclick="openKpiFromPortal()">📺 KPI publics</button>
 </footer>
 
-<script>
-function _isDevEnv() {
-  const h = location.hostname;
-  return h === 'localhost'
-    || h.endsWith('.local')
-    || /^192\.168\./.test(h)
-    || /^10\./.test(h)
-    || /^172\.(1[6-9]|2[0-9]|3[01])\./.test(h);
-}
-const BASE_DOMAIN = _isDevEnv() ? 'nidham.local' : 'nidham.fr';
-const API_BASE    = _isDevEnv() ? 'http://nidham.local:8080/api' : 'https://nidham.fr/api';
+<!-- KPI Modal -->
+<div id="kpi-overlay" onclick="if(event.target===this)closeKpiModal()" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:20px;padding:36px 32px;max-width:400px;width:90%;box-shadow:0 8px 48px rgba(0,0,0,.3)">
+    <h3 style="font-size:1.1rem;font-weight:700;color:#0D1B12;margin-bottom:8px">📺 KPI publics d'une mosquée</h3>
+    <p style="font-size:.87rem;color:#5A7A63;margin-bottom:18px;line-height:1.6">Saisissez l'identifiant de la mosquée pour accéder à ses indicateurs publics (lecture seule).</p>
+    <input type="text" id="kpi-slug" placeholder="ex: mosquee-alpha" autocomplete="off"
+      style="width:100%;padding:11px 14px;border:1.5px solid #D4E8DB;border-radius:9px;font-size:.95rem;outline:none;margin-bottom:14px;font-family:'Inter',sans-serif;color:#1A2E1F" />
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeKpiModal()" style="background:none;border:1.5px solid #D4E8DB;color:#5A7A63;padding:9px 18px;border-radius:8px;font-size:.88rem;cursor:pointer;font-family:'Inter',sans-serif">Annuler</button>
+      <button onclick="goToKpi()" style="background:#1B4332;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Afficher →</button>
+    </div>
+  </div>
+</div>
 
-function toast(msg, type='info', duration=4000) {
-  const el = document.createElement('div');
-  el.className = 'toast toast-' + type; el.textContent = msg;
-  document.getElementById('toast-container').appendChild(el);
-  setTimeout(() => el.remove(), duration);
-}
-function updateLoginDomain() {
-  const slug = document.getElementById('login-slug').value.trim().toLowerCase();
-  document.getElementById('login-domain-text').textContent = (slug||'votre-mosquee') + '.' + BASE_DOMAIN;
-}
-function autoSlug() {
-  const name = document.getElementById('reg-mosque-name').value;
-  const slug = name.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').substring(0,30);
-  document.getElementById('reg-slug').value = slug;
-  onSlugInput();
-}
-let _slugTimer = null;
-function onSlugInput() {
-  const input = document.getElementById('reg-slug');
-  const p = input.selectionStart;
-  input.value = input.value.toLowerCase().replace(/[^a-z0-9-]/g,'');
-  try { input.setSelectionRange(p,p); } catch(e){}
-  const slug = input.value.trim();
-  document.getElementById('reg-domain-preview').textContent = (slug||'votre-id') + '.' + BASE_DOMAIN;
-  clearTimeout(_slugTimer);
-  const s = document.getElementById('slug-status');
-  if (!slug) { s.className='field-hint'; s.textContent='Choisissez un identifiant unique'; return; }
-  if (slug.length < 3) { s.className='field-error'; s.textContent='Minimum 3 caractères'; return; }
-  s.className='field-hint'; s.textContent='Vérification...';
-  _slugTimer = setTimeout(() => checkSlug(slug), 500);
-}
-async function checkSlug(slug) {
-  try {
-    const r = await fetch(API_BASE + '/onboarding/check-slug/?slug=' + encodeURIComponent(slug));
-    const d = await r.json();
-    const el = document.getElementById('slug-status');
-    if (d.available) { el.className='field-ok'; el.textContent='✓ Disponible'; }
-    else { el.className='field-error'; el.textContent='✗ Déjà pris, essayez un autre'; }
-  } catch(e) {
-    const s2 = document.getElementById('slug-status');
-    if(s2){s2.className='field-hint';s2.textContent='Vérification impossible (réessayez)';}
-  }
-}
-async function doLogin() {
-  const slug = document.getElementById('login-slug').value.trim().toLowerCase();
-  const username = document.getElementById('login-username').value.trim();
-  const password = document.getElementById('login-password').value;
-  const errEl = document.getElementById('login-error');
-  const btn = document.getElementById('login-btn');
-  errEl.classList.add('hidden');
-  if (!slug) { errEl.textContent='Entrez le sous-domaine de votre mosquée'; errEl.classList.remove('hidden'); return; }
-  if (!username) { errEl.textContent='Entrez votre identifiant'; errEl.classList.remove('hidden'); return; }
-  if (!password) { errEl.textContent='Entrez votre mot de passe'; errEl.classList.remove('hidden'); return; }
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Connexion...';
-  try {
-    const base = _isDevEnv() ? 'http://'+slug+'.nidham.local:8080' : 'https://'+slug+'.nidham.fr';
-    const res = await fetch(base+'/api/auth/login/', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
-    if (!res.ok) { const d=await res.json().catch(()=>({})); throw new Error(d.detail||'Identifiants incorrects'); }
-    const data = await res.json();
-    const appUrl = _isDevEnv()
-      ? 'http://'+slug+'.nidham.local:8080/#access='+data.access+'&refresh='+data.refresh
-      : 'https://'+slug+'.nidham.fr/#access='+data.access+'&refresh='+data.refresh;
-    toast('Connexion réussie, redirection...','success',2000);
-    setTimeout(() => { location.href=appUrl; }, 800);
-  } catch(e) {
-    errEl.textContent=e.message; errEl.classList.remove('hidden');
-    btn.disabled=false; btn.textContent='Se connecter';
-  }
-}
-async function doRegister() {
-  const mosqueName = document.getElementById('reg-mosque-name').value.trim();
-  const slug = document.getElementById('reg-slug').value.trim().toLowerCase();
-  const username = document.getElementById('reg-username').value.trim();
-  const password = document.getElementById('reg-password').value;
-  const errEl = document.getElementById('register-error');
-  const btn = document.getElementById('register-btn');
-  errEl.classList.add('hidden');
-  const errors = [];
-  if (!mosqueName) errors.push('Entrez le nom de votre mosquée');
-  if (!slug||slug.length<3) errors.push("L'identifiant doit faire au moins 3 caractères");
-  if (!username) errors.push('Entrez un identifiant administrateur');
-  if (!password||password.length<8) errors.push('Le mot de passe doit faire au moins 8 caractères');
-  if (errors.length) { errEl.innerHTML=errors.join('<br>'); errEl.classList.remove('hidden'); return; }
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Création en cours...';
-  try {
-    const res = await fetch(API_BASE+'/onboarding/register/', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mosque_name:mosqueName,slug,admin_username:username,admin_password:password,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Paris',base_domain:BASE_DOMAIN})
-    });
-    const data = await res.json();
-    if (!res.ok) { throw new Error(Object.values(data).flat().join(' · ')||'Erreur lors de la création'); }
-    document.getElementById('portal').style.display='none';
-    document.getElementById('success-screen').classList.remove('hidden');
-    document.getElementById('success-mosque-name').textContent=mosqueName;
-    document.getElementById('success-domain').textContent=data.domain;
-    const loginUsername = data.admin_username || username;
-    document.getElementById('success-username').textContent=loginUsername;
-    const appUrl = _isDevEnv() ? 'http://'+data.domain+':8080/' : 'https://'+data.domain+'/';
-    document.getElementById('success-link').href=appUrl;
-    document.getElementById('success-screen').scrollIntoView({behavior:'smooth'});
-    toast('🎉 Mosquée créée avec succès !','success',6000);
-  } catch(e) {
-    errEl.textContent=e.message; errEl.classList.remove('hidden');
-    btn.disabled=false; btn.innerHTML='🚀 Créer mon espace gratuitement';
-  }
-}
-function openKpiFromPortal() {
-  document.getElementById('kpi-modal-overlay').classList.add('open');
-  setTimeout(() => document.getElementById('kpi-slug-input').focus(), 100);
-}
-function closeKpiModal(e) {
-  if (!e || e.target === document.getElementById('kpi-modal-overlay')) {
-    document.getElementById('kpi-modal-overlay').classList.remove('open');
-  }
-}
-function goToKpi() {
-  const slug = document.getElementById('kpi-slug-input').value.trim();
-  if (!slug) { document.getElementById('kpi-slug-input').focus(); return; }
-  const base = _isDevEnv() ? `http://${slug}.nidham.local:8080` : `https://${slug}.nidham.fr`;
-  window.open(`${base}/kpi.html?slug=${encodeURIComponent(slug)}&from=portal`, '_blank', 'noopener');
+<script>
+function _isDevEnv(){const h=location.hostname;return h==='localhost'||h.endsWith('.local')||/^192\.168\./.test(h)||/^10\./.test(h)||/^172\.(1[6-9]|2[0-9]|3[01])\./.test(h);}
+const BASE_DOMAIN=_isDevEnv()?'nidham.local':'nidham.fr';
+function openKpiModal(){const o=document.getElementById('kpi-overlay');o.style.display='flex';setTimeout(()=>document.getElementById('kpi-slug').focus(),80);}
+function closeKpiModal(){document.getElementById('kpi-overlay').style.display='none';}
+function goToKpi(){
+  const slug=document.getElementById('kpi-slug').value.trim();
+  if(!slug){document.getElementById('kpi-slug').focus();return;}
+  const base=_isDevEnv()?`http://${slug}.nidham.local:8080`:`https://${slug}.nidham.fr`;
+  window.open(`${base}/kpi.html?slug=${encodeURIComponent(slug)}&from=portal`,'_blank','noopener');
   closeKpiModal();
 }
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeKpiModal();
-  if (e.key === 'Enter' && document.getElementById('kpi-modal-overlay').classList.contains('open')) goToKpi();
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeKpiModal();
+  if(e.key==='Enter'&&document.getElementById('kpi-overlay').style.display==='flex')goToKpi();
 });
 </script>
 </body>

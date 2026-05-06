@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nidham — Connexion</title>
+  <meta name="description" content="Connectez-vous à votre espace de gestion Nidham." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231B4332'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-size='36' fill='%23C9A84C'%3E%D9%86%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --green:#1B4332;--green-mid:#2D6A4F;--green-light:#40916C;
+      --green-pale:#D8F3DC;
+      --gold:#C9A84C;--gold-light:#F0D080;
+      --dark:#0D1B12;--text:#1A2E1F;--muted:#5A7A63;
+      --bg:#F7FAF8;--white:#FFFFFF;--border:#D4E8DB;
+      --radius:12px;--radius-lg:20px;
+      --shadow-lg:0 12px 60px rgba(0,0,0,.35);
+    }
+    body{
+      font-family:'Inter',sans-serif;
+      background:linear-gradient(155deg,#0A1A0F 0%,#1B4332 55%,#2D6A4F 100%);
+      min-height:100vh;overflow-x:hidden;
+      display:flex;flex-direction:column;
+    }
+    body::before{
+      content:'نِظَام';font-family:'Amiri',serif;
+      position:fixed;font-size:55vw;color:rgba(255,255,255,.018);
+      top:50%;left:50%;transform:translate(-50%,-50%);
+      pointer-events:none;line-height:1;user-select:none;z-index:0;
+    }
+    nav{
+      position:fixed;top:0;left:0;right:0;z-index:100;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 5%;height:64px;
+      background:rgba(10,26,15,.75);backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .nav-logo{display:flex;align-items:center;gap:10px;font-size:1.35rem;font-weight:700;color:#fff;text-decoration:none}
+    .nav-logo .arabic{font-family:'Amiri',serif;font-size:1.25rem;color:var(--gold)}
+    .nav-back{font-size:.85rem;color:rgba(255,255,255,.5);text-decoration:none;transition:color .2s;display:flex;align-items:center;gap:5px}
+    .nav-back:hover{color:rgba(255,255,255,.85)}
+    .page-wrapper{
+      position:relative;z-index:1;flex:1;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:88px 5% 56px;
+    }
+    .login-wrap{width:100%;max-width:420px}
+    .login-header{text-align:center;margin-bottom:32px}
+    .login-header .icon{font-size:2.8rem;margin-bottom:12px;display:block}
+    .login-header h1{font-size:1.7rem;font-weight:800;color:#fff;letter-spacing:-.02em;margin-bottom:8px}
+    .login-header p{font-size:.9rem;color:rgba(255,255,255,.55);line-height:1.6}
+    .card{background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);overflow:hidden}
+    .card-body{padding:32px 32px 28px;display:flex;flex-direction:column;gap:18px}
+    .field-group{display:flex;flex-direction:column;gap:6px}
+    .field-group label{font-size:.82rem;font-weight:600;color:var(--text)}
+    .field-group input{padding:12px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:.92rem;font-family:'Inter',sans-serif;color:var(--text);background:var(--white);transition:border-color .2s,box-shadow .2s;outline:none}
+    .field-group input:focus{border-color:var(--green-light);box-shadow:0 0 0 3px rgba(64,145,108,.12)}
+    .domain-preview{font-size:.78rem;color:var(--muted);padding:6px 10px;background:var(--bg);border-radius:7px;border:1px solid var(--border);margin-top:4px}
+    .error-box{background:#FEF2F2;border:1px solid #FCA5A5;color:#7F1D1D;padding:10px 14px;border-radius:9px;font-size:.82rem;line-height:1.5;display:none}
+    .btn-submit{width:100%;padding:14px 20px;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Inter',sans-serif;background:var(--green);color:#fff}
+    .btn-submit:hover{background:var(--green-mid);transform:translateY(-1px);box-shadow:0 6px 20px rgba(27,67,50,.3)}
+    .btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none!important}
+    .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .card-footer-note{font-size:.76rem;color:var(--muted);text-align:center;line-height:1.5;padding:0 4px 4px}
+    .card-divider{height:1px;background:var(--border)}
+    .no-account-bar{text-align:center;margin-top:20px}
+    .no-account-bar a{color:rgba(255,255,255,.5);font-size:.85rem;text-decoration:none;transition:color .2s}
+    .no-account-bar a:hover{color:rgba(255,255,255,.85)}
+    .no-account-bar strong{color:var(--gold-light)}
+    #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+    .toast{padding:12px 20px;border-radius:10px;font-size:.9rem;font-weight:500;box-shadow:var(--shadow-lg);animation:slideUp .3s ease;max-width:320px}
+    .toast-success{background:#1B4332;color:#fff}
+    .toast-error{background:#7C1D1D;color:#fff}
+    @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+    footer{position:relative;z-index:1;text-align:center;padding:0 5% 28px;color:rgba(255,255,255,.28);font-size:.76rem}
+    footer a{color:rgba(255,255,255,.32);text-decoration:none;transition:color .2s}
+    footer a:hover{color:rgba(255,255,255,.7)}
+    @media(max-width:480px){.card-body{padding:24px 20px 20px}}
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<nav>
+  <a href="https://nidham.fr" class="nav-logo"><span class="arabic">نِظَام</span> Nidham</a>
+  <a href="index.html" class="nav-back">← Retour</a>
+</nav>
+
+<div class="page-wrapper">
+  <div class="login-wrap">
+    <div class="login-header">
+      <span class="icon">🔐</span>
+      <h1>Connexion</h1>
+      <p>Accédez à l'espace de gestion de votre mosquée</p>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="error-box" id="login-error"></div>
+
+        <div class="field-group">
+          <label for="login-slug">Identifiant mosquée (slug)</label>
+          <input type="text" id="login-slug" placeholder="ex: lyonlpa" oninput="updateDomain()" autocomplete="off" autofocus>
+          <div class="domain-preview">🌐 <strong id="domain-text">votre-mosquee.nidham.fr</strong></div>
+        </div>
+
+        <div class="field-group">
+          <label for="login-username">Identifiant utilisateur</label>
+          <input type="text" id="login-username" placeholder="Votre nom d'utilisateur" autocomplete="username">
+        </div>
+
+        <div class="field-group">
+          <label for="login-password">Mot de passe</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+
+        <button class="btn-submit" id="login-btn" onclick="doLogin()">
+          Se connecter →
+        </button>
+
+        <div class="card-divider"></div>
+        <p class="card-footer-note">Mot de passe oublié ? Contactez votre administrateur de mosquée.</p>
+      </div>
+    </div>
+
+    <div class="no-account-bar">
+      <a href="register.html">Pas encore de compte ? <strong>Créer mon espace gratuitement →</strong></a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>© 2026 <a href="https://nidham.fr">Nidham</a> · Waqf numérique 🤲</span>
+</footer>
+
+<script>
+function _isDevEnv(){const h=location.hostname;return h==='localhost'||h.endsWith('.local')||/^192\.168\./.test(h)||/^10\./.test(h)||/^172\.(1[6-9]|2[0-9]|3[01])\./.test(h);}
+const BASE_DOMAIN=_isDevEnv()?'nidham.local':'nidham.fr';
+const API_BASE=_isDevEnv()?'http://nidham.local:8080/api':'https://nidham.fr/api';
+
+function toast(msg,type='info',duration=4000){
+  const el=document.createElement('div');
+  el.className='toast toast-'+type;el.textContent=msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),duration);
+}
+function updateDomain(){
+  const slug=document.getElementById('login-slug').value.trim().toLowerCase();
+  document.getElementById('domain-text').textContent=(slug||'votre-mosquee')+'.'+BASE_DOMAIN;
+}
+async function doLogin(){
+  const slug=document.getElementById('login-slug').value.trim().toLowerCase();
+  const username=document.getElementById('login-username').value.trim();
+  const password=document.getElementById('login-password').value;
+  const errEl=document.getElementById('login-error');
+  const btn=document.getElementById('login-btn');
+  errEl.style.display='none';
+  if(!slug){errEl.textContent='Entrez le sous-domaine de votre mosquée';errEl.style.display='block';return;}
+  if(!username){errEl.textContent='Entrez votre identifiant';errEl.style.display='block';return;}
+  if(!password){errEl.textContent='Entrez votre mot de passe';errEl.style.display='block';return;}
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Connexion...';
+  try{
+    const base=_isDevEnv()?'http://'+slug+'.nidham.local:8080':'https://'+slug+'.nidham.fr';
+    const res=await fetch(base+'/api/auth/login/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    if(!res.ok){const d=await res.json().catch(()=>({}));throw new Error(d.detail||'Identifiants incorrects');}
+    const data=await res.json();
+    const appUrl=_isDevEnv()?'http://'+slug+'.nidham.local:8080/#access='+data.access+'&refresh='+data.refresh:'https://'+slug+'.nidham.fr/#access='+data.access+'&refresh='+data.refresh;
+    toast('Connexion réussie, redirection...','success',2000);
+    setTimeout(()=>{location.href=appUrl;},800);
+  }catch(e){
+    errEl.textContent=e.message;errEl.style.display='block';
+    btn.disabled=false;btn.textContent='Se connecter →';
+  }
+}
+</script>
+</body>
+</html>
