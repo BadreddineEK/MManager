@@ -1,5 +1,6 @@
 """Configuration des URLs principales — Mosquée Manager."""
 from django.contrib import admin
+from django.conf import settings
 from django.db import connection, OperationalError
 from django.http import JsonResponse
 from django.urls import include, path
@@ -27,8 +28,8 @@ def health_check(request: "django.http.HttpRequest") -> JsonResponse:
 
 
 urlpatterns = [
-    # Admin Django
-    path("admin/", admin.site.urls),
+    # Admin Django (URL obfusquée via DJANGO_ADMIN_URL)
+    path(settings.ADMIN_URL, admin.site.urls),
     # Health check (aucune auth requise)
     path("health/", health_check, name="health_check"),
     # Auth JWT

@@ -23,6 +23,7 @@ env = environ.Env(
     DJANGO_DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
     TIMEZONE=(str, "Europe/Paris"),
+    DJANGO_ADMIN_URL=(str, "nidham-secure-admin-8f3k/"),
 )
 
 # Lecture du fichier .env si présent (dev local sans Docker)
@@ -35,6 +36,7 @@ if _env_file.exists():
 SECRET_KEY: str = env("DJANGO_SECRET_KEY")
 DEBUG: bool = env("DJANGO_DEBUG")
 ALLOWED_HOSTS: list[str] = env("ALLOWED_HOSTS")
+ADMIN_URL: str = env("DJANGO_ADMIN_URL")
 
 # Origines de confiance pour CSRF (Django Admin + Cloudflare Tunnel)
 # En dev : vide (DEBUG=True → CSRF moins strict)

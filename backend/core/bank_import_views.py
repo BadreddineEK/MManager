@@ -43,7 +43,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.models import BankImportProfile, Staff
-from core.permissions import IsAdminRole as IsAdmin
+from core.permissions import HasMosquePermission, IsAdminRole as IsAdmin
 from core.utils import get_mosque, log_action
 from treasury.models import TreasuryTransaction
 
@@ -224,7 +224,7 @@ class BankImportPreviewView(APIView):
       preview     — 5 premières lignes brutes
       profiles    — profils sauvegardés pour cette mosquée
     """
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, HasMosquePermission, IsAdmin]
     parser_classes = [MultiPartParser]
 
     def post(self, request: Request) -> Response:
@@ -279,7 +279,7 @@ class BankImportView(APIView):
       + tous les champs de mapping (voir _profile_from_request)
         OU profile_id pour utiliser un profil existant
     """
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, HasMosquePermission, IsAdmin]
     parser_classes = [MultiPartParser]
 
     def post(self, request: Request) -> Response:

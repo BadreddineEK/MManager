@@ -813,7 +813,7 @@ async function doRegister() {
   try {
     const res = await fetch(API_BASE+'/onboarding/register/', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mosque_name:mosqueName,slug,admin_username:username,admin_password:password,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Paris'})
+      body:JSON.stringify({mosque_name:mosqueName,slug,admin_username:username,admin_password:password,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Paris',base_domain:BASE_DOMAIN})
     });
     const data = await res.json();
     if (!res.ok) { throw new Error(Object.values(data).flat().join(' \u00b7 ')||'Erreur lors de la cr\u00e9ation'); }
