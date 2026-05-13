@@ -176,7 +176,7 @@
       <h2>Votre espace est prêt !</h2>
       <p class="success-sub">L'espace <strong id="success-url-text"></strong> a été créé.<br>Vous pouvez maintenant vous connecter et commencer à gérer votre mosquée.</p>
       <div class="success-steps">
-        <div class="step"><div class="step-num">1</div><div class="step-text">Connectez-vous avec les identifiants que vous venez de choisir</div></div>
+        <div class="step"><div class="step-num">1</div><div class="step-text">Connectez-vous avec l'identifiant : <strong id="success-login-info" style="color:var(--green);font-family:monospace"></strong></div></div>
         <div class="step"><div class="step-num">2</div><div class="step-text">Renseignez le profil de votre mosquée (nom, adresse, description)</div></div>
         <div class="step"><div class="step-num">3</div><div class="step-text">Invitez votre équipe — <strong>jusqu'à 1 utilisateur</strong> en plan Gratuit</div></div>
         <div class="step"><div class="step-num">4</div><div class="step-text">Explorez les modules : caisse, familles, portail public</div></div>
@@ -238,7 +238,7 @@ async function checkSlug(slug){
     inp.className='invalid';slugValid=false;return;
   }
   try{
-    const res=await fetch(API_BASE+'/tenants/check-slug/?slug='+encodeURIComponent(slug));
+    const res=await fetch(API_BASE+'/onboarding/check-slug/?slug='+encodeURIComponent(slug));
     const data=await res.json();
     if(data.available){
       st.innerHTML='✓ '+slug+'.'+BASE_DOMAIN+' est disponible';
@@ -266,20 +266,25 @@ async function doRegister(){
   if(password.length<8){errEl.textContent='Le mot de passe doit faire au moins 8 caractères';errEl.style.display='block';return;}
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Création en cours...';
   try{
-    const res=await fetch(API_BASE+'/tenants/register/',{
+    const res=await fetch(API_BASE+'/onboarding/register/',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mosque_name:name,slug,username,password,base_domain:BASE_DOMAIN,plan:'free_cloud'})
+      body:JSON.stringify({mosque_name:name,slug,admin_username:username,admin_password:password,base_domain:BASE_DOMAIN})
     });
     if(!res.ok){
       const d=await res.json().catch(()=>({}));
-      const msg=d.detail||d.slug?.[0]||d.username?.[0]||JSON.stringify(d)||'Erreur lors de la création';
+      const msg=d.detail||d.slug?.[0]||d.admin_username?.[0]||d.admin_password?.[0]||JSON.stringify(d)||'Erreur lors de la création';
       throw new Error(msg);
     }
-    // Succès
+    const data=await res.json();
+    // Récupérer le login_username retourné par le backend (format: schema__username)
+    const loginUsername=data.login_username||username;
     const appUrl=(BASE_DOMAIN==='nidham.fr'?'https://':'http://')+slug+'.'+BASE_DOMAIN+API_PORT+'/';
     document.getElementById('success-url-text').textContent=slug+'.'+BASE_DOMAIN;
     document.getElementById('success-go-btn').href=appUrl;
+    // Afficher le vrai identifiant de connexion
+    const loginInfo=document.getElementById('success-login-info');
+    if(loginInfo)loginInfo.textContent=loginUsername;
     document.getElementById('reg-form-wrap').style.display='none';
     document.getElementById('success-screen').style.display='block';
     window.scrollTo({top:0,behavior:'smooth'});

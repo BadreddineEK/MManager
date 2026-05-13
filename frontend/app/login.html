@@ -110,7 +110,8 @@
 
         <div class="field-group">
           <label for="login-username">Identifiant utilisateur</label>
-          <input type="text" id="login-username" placeholder="Votre nom d'utilisateur" autocomplete="username">
+          <input type="text" id="login-username" placeholder="Votre nom d'utilisateur" autocomplete="username" oninput="updateUsernamePreview()">
+          <div class="domain-preview" id="username-preview" style="display:none">🔑 Identifiant complet : <strong id="username-full-text"></strong></div>
         </div>
 
         <div class="field-group">
@@ -152,17 +153,33 @@ function toast(msg,type='info',duration=4000){
 function updateDomain(){
   const slug=document.getElementById('login-slug').value.trim().toLowerCase();
   document.getElementById('domain-text').textContent=(slug||'votre-mosquee')+'.'+BASE_DOMAIN;
+  updateUsernamePreview();
+}
+function updateUsernamePreview(){
+  const slug=document.getElementById('login-slug').value.trim().toLowerCase().replace(/-/g,'_');
+  const uname=document.getElementById('login-username').value.trim();
+  const prev=document.getElementById('username-preview');
+  const full=document.getElementById('username-full-text');
+  if(slug&&uname){
+    full.textContent=slug+'__'+uname;
+    prev.style.display='block';
+  }else{
+    prev.style.display='none';
+  }
 }
 async function doLogin(){
   const slug=document.getElementById('login-slug').value.trim().toLowerCase();
-  const username=document.getElementById('login-username').value.trim();
+  const usernameRaw=document.getElementById('login-username').value.trim();
   const password=document.getElementById('login-password').value;
   const errEl=document.getElementById('login-error');
   const btn=document.getElementById('login-btn');
   errEl.style.display='none';
   if(!slug){errEl.textContent='Entrez le sous-domaine de votre mosquée';errEl.style.display='block';return;}
-  if(!username){errEl.textContent='Entrez votre identifiant';errEl.style.display='block';return;}
+  if(!usernameRaw){errEl.textContent='Entrez votre identifiant';errEl.style.display='block';return;}
   if(!password){errEl.textContent='Entrez votre mot de passe';errEl.style.display='block';return;}
+  // Le backend stocke les users avec le préfixe schema : slug_avec_underscore__username
+  const schema=slug.replace(/-/g,'_');
+  const username=usernameRaw.includes('__')?usernameRaw:schema+'__'+usernameRaw;
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Connexion...';
   try{
     const base=_isDevEnv()?'http://'+slug+'.nidham.local:8080':'https://'+slug+'.nidham.fr';
