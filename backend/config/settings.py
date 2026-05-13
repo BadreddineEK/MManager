@@ -199,8 +199,13 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS: bool = DEBUG
 CORS_ALLOW_CREDENTIALS = True
 # En prod (DEBUG=False), définir CORS_ALLOWED_ORIGINS dans .env :
-# CORS_ALLOWED_ORIGINS=https://mosque.votredomaine.com
+# CORS_ALLOWED_ORIGINS=https://nidham.fr,https://app.nidham.fr
 CORS_ALLOWED_ORIGINS: list[str] = env.list("CORS_ALLOWED_ORIGINS", default=[])
+# Regex pour couvrir tous les sous-domaines tenant (ex: lyonlpa.nidham.fr)
+CORS_ALLOWED_ORIGIN_REGEXES: list[str] = [
+    r"^https://[a-z0-9\-]+\.nidham\.fr$",
+    r"^http://[a-z0-9\-]+\.nidham\.local(:\d+)?$",
+]
 
 # ── Sécurité (prod derrière Cloudflare Tunnel / Nginx) ────────────────────────
 # _https=True quand HTTPS_ENABLED=true dans .env (passage VPS + Cloudflare)
