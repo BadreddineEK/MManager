@@ -195,7 +195,9 @@
 function _isDevEnv(){const h=location.hostname;return h==='localhost'||h.endsWith('.local')||/^192\.168\./.test(h)||/^10\./.test(h)||/^172\.(1[6-9]|2[0-9]|3[01])\./.test(h);}
 const BASE_DOMAIN=_isDevEnv()?'nidham.local':'nidham.fr';
 const API_PORT=_isDevEnv()?':8080':'';
-const API_BASE=_isDevEnv()?'http://nidham.local:8080/api':'https://nidham.fr/api';
+// Les appels API passent par app.nidham.fr (qui proxifie vers Django)
+// nidham.fr = landing statique seulement, pas de /api/ dessus
+const API_BASE=_isDevEnv()?'http://nidham.local:8080/api':'https://app.nidham.fr/api';
 
 document.getElementById('slug-suffix').textContent='.'+BASE_DOMAIN;
 
