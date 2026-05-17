@@ -238,20 +238,25 @@ def _import_paiements_ecole(mosque, rows, family_map, child_map):
                 school_year = school_year_cache[annee_label]
 
                 try:
-                    _, created = SchoolPayment.objects.get_or_create(
+                    existing = SchoolPayment.objects.filter(
                         mosque=mosque,
                         family=famille,
                         child=child,
                         date=date_val,
                         amount=montant,
-                        defaults={
-                            "school_year": school_year,
-                            "method":  _parse_method(row.get("mode_paiement")),
-                            "status":  _parse_status(row.get("statut")),
-                            "note":    (row.get("note") or "").strip(),
-                        },
-                    )
-                    if created:
+                    ).first()
+                    if existing is None:
+                        SchoolPayment.objects.create(
+                            mosque=mosque,
+                            family=famille,
+                            child=child,
+                            date=date_val,
+                            amount=montant,
+                            school_year=school_year,
+                            method= _parse_method(row.get("mode_paiement")),
+                            status= _parse_status(row.get("statut")),
+                            note=   (row.get("note") or "").strip(),
+                        )
                         inserted += 1
                 except Exception as e:
                     errors.append({"entite": "paiements_ecole", "ligne": i,
@@ -346,19 +351,24 @@ def _import_cotisations(mosque, rows, member_map):
                 membership_year = membership_year_cache[year_int]
 
                 try:
-                    _, created = MembershipPayment.objects.get_or_create(
+                    existing = MembershipPayment.objects.filter(
                         mosque=mosque,
                         member=member,
                         membership_year=membership_year,
                         date=date_val,
                         amount=montant,
-                        defaults={
-                            "method": _parse_method(row.get("mode_paiement")),
-                            "status": _parse_status(row.get("statut")),
-                            "note":   (row.get("note") or "").strip(),
-                        },
-                    )
-                    if created:
+                    ).first()
+                    if existing is None:
+                        MembershipPayment.objects.create(
+                            mosque=mosque,
+                            member=member,
+                            membership_year=membership_year,
+                            date=date_val,
+                            amount=montant,
+                            method=_parse_method(row.get("mode_paiement")),
+                            status=_parse_status(row.get("statut")),
+                            note=  (row.get("note") or "").strip(),
+                        )
                         inserted += 1
                 except Exception as e:
                     errors.append({"entite": "cotisations", "ligne": i,
