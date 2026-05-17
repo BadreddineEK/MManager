@@ -97,18 +97,19 @@ def _import_familles(mosque, rows):
                                    "raison": "Champ 'nom' manquant"})
                     continue
                 try:
-                    obj, created = Family.objects.get_or_create(
+                    obj = Family.objects.filter(
                         mosque=mosque,
                         primary_contact_name__iexact=nom,
-                        defaults={
-                            "primary_contact_name": nom,
-                            "phone1":   (row.get("telephone") or "").strip(),
-                            "phone2":   (row.get("telephone2") or "").strip(),
-                            "email":    (row.get("email") or "").strip(),
-                            "address":  (row.get("adresse") or "").strip(),
-                        },
-                    )
-                    if created:
+                    ).first()
+                    if obj is None:
+                        obj = Family.objects.create(
+                            mosque=mosque,
+                            primary_contact_name=nom,
+                            phone1=  (row.get("telephone") or "").strip(),
+                            phone2=  (row.get("telephone2") or "").strip(),
+                            email=   (row.get("email") or "").strip(),
+                            address= (row.get("adresse") or "").strip(),
+                        )
                         inserted += 1
                     family_map[_norm(nom)] = obj
                 except Exception as e:
@@ -150,17 +151,19 @@ def _import_enfants(mosque, rows, family_map):
                 niveau = (row.get("niveau") or "").strip()
 
                 try:
-                    obj, created = Child.objects.get_or_create(
+                    obj = Child.objects.filter(
                         mosque=mosque,
                         family=famille,
                         first_name__iexact=prenom,
-                        defaults={
-                            "first_name": prenom,
-                            "birth_date": birth_date,
-                            "level": niveau,
-                        },
-                    )
-                    if created:
+                    ).first()
+                    if obj is None:
+                        obj = Child.objects.create(
+                            mosque=mosque,
+                            family=famille,
+                            first_name=prenom,
+                            birth_date=birth_date,
+                            level=niveau,
+                        )
                         inserted += 1
                     child_map[(_norm(nom_famille), _norm(prenom))] = obj
                 except Exception as e:
@@ -278,17 +281,18 @@ def _import_adherents(mosque, rows):
                 full_name = f"{nom} {prenom}".strip() if prenom else nom
 
                 try:
-                    obj, created = Member.objects.get_or_create(
+                    obj = Member.objects.filter(
                         mosque=mosque,
                         full_name__iexact=full_name,
-                        defaults={
-                            "full_name": full_name,
-                            "phone":    (row.get("telephone") or "").strip(),
-                            "email":    (row.get("email") or "").strip(),
-                            "address":  (row.get("adresse") or "").strip(),
-                        },
-                    )
-                    if created:
+                    ).first()
+                    if obj is None:
+                        obj = Member.objects.create(
+                            mosque=mosque,
+                            full_name=full_name,
+                            phone=   (row.get("telephone") or "").strip(),
+                            email=   (row.get("email") or "").strip(),
+                            address= (row.get("adresse") or "").strip(),
+                        )
                         inserted += 1
                     member_map[_norm(full_name)] = obj
                 except Exception as e:
@@ -424,22 +428,27 @@ def _import_transactions(mosque, rows):
                 categorie = CATEGORY_MAP.get(categorie_raw, "autre")
 
                 try:
-                    _, created = TreasuryTransaction.objects.get_or_create(
+                    existing = TreasuryTransaction.objects.filter(
                         mosque=mosque,
                         date=date_val,
                         label=libelle,
                         amount=montant,
                         direction=direction,
-                        defaults={
-                            "category":      categorie,
-                            "method":        _parse_method(row.get("mode_paiement")),
-                            "regime_fiscal": regime,
-                            "bank_account":  bank_account,
-                            "note":          (row.get("note") or "").strip(),
-                            "source":        "import",
-                        },
-                    )
-                    if created:
+                    ).first()
+                    if existing is None:
+                        TreasuryTransaction.objects.create(
+                            mosque=mosque,
+                            date=date_val,
+                            label=libelle,
+                            amount=montant,
+                            direction=direction,
+                            category=      categorie,
+                            method=        _parse_method(row.get("mode_paiement")),
+                            regime_fiscal= regime,
+                            bank_account=  bank_account,
+                            note=          (row.get("note") or "").strip(),
+                            source=        "import",
+                        )
                         inserted += 1
                 except Exception as e:
                     errors.append({"entite": "transactions", "ligne": i,
