@@ -719,3 +719,139 @@ async function deleteSchoolPayment(id) {
   if (!res || res.ok) { toast('Paiement supprimé', 'info'); loadSchoolPaymentsList(); }
   else toast('Erreur suppression', 'error');
 }
+
+// ── Import CSV Paiements École ────────────────────────────────────────────────
+
+let _csvParsedRows = [];
+
+function openCsvImportModal() {
+  document.getElementById('csv-import-file').value = '';
+  document.getElementById('csv-preview').classList.add('hidden');
+  document.getElementById('csv-import-error').classList.add('hidden');
+  document.getElementById('csv-import-result').classList.add('hidden');
+  document.getElementById('csv-import-btn').disabled = true;
+  _csvParsedRows = [];
+  openModal('modal-csv-import');
+}
+
+function previewCsvImport(input) {
+  const errEl = document.getElementById('csv-import-error');
+  const previewEl = document.getElementById('csv-preview');
+  errEl.classList.add('hidden');
+  previewEl.classList.add('hidden');
+  document.getElementById('csv-import-btn').disabled = true;
+  _csvParsedRows = [];
+
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) {
+      errEl.textContent = 'Le fichier CSV doit contenir au moins une ligne de données.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    // Parser header
+    const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const idx = {
+      famille: header.indexOf('famille'),
+      enfant:  header.indexOf('enfant'),
+      montant: header.indexOf('montant'),
+      date:    header.indexOf('date'),
+      mode:    header.indexOf('mode'),
+      note:    header.indexOf('note'),
+    };
+    if (idx.famille === -1 || idx.montant === -1 || idx.date === -1) {
+      errEl.textContent = 'Colonnes requises manquantes : famille, montant, date';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    const rows = [];
+    const parseErrors = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',');
+      const famille = (cols[idx.famille] || '').trim();
+      const enfant  = idx.enfant  >= 0 ? (cols[idx.enfant]  || '').trim() : '';
+      const montant = (cols[idx.montant] || '').trim();
+      const date    = (cols[idx.date]    || '').trim();
+      const mode    = idx.mode >= 0 ? (cols[idx.mode] || '').trim() : '';
+      const note    = idx.note >= 0 ? (cols[idx.note] || '').trim() : '';
+      if (!famille && !montant && !date) continue; // ligne vide
+      if (!famille) { parseErrors.push(`Ligne ${i+1} : famille manquante`); continue; }
+      rows.push({ famille, enfant, montant, date, mode, note });
+    }
+
+    if (!rows.length) {
+      errEl.textContent = 'Aucune ligne valide trouvée dans le fichier.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    _csvParsedRows = rows;
+
+    // Afficher preview
+    const tbody = document.getElementById('csv-preview-table');
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td style="padding:5px 10px;">${esc(r.famille)}</td>
+        <td>${esc(r.enfant || '—')}</td>
+        <td><strong>${esc(r.montant)} €</strong></td>
+        <td>${esc(r.date)}</td>
+        <td><span class="badge badge-gray">${esc(r.mode || 'auto')}</span></td>
+        <td style="color:var(--muted);font-size:.75rem;">${esc(r.note || '—')}</td>
+      </tr>
+    `).join('');
+    document.getElementById('csv-row-count').textContent = `${rows.length} ligne${rows.length > 1 ? 's' : ''} détectée${rows.length > 1 ? 's' : ''}`;
+    previewEl.classList.remove('hidden');
+
+    if (parseErrors.length) {
+      errEl.textContent = parseErrors.join(' | ');
+      errEl.classList.remove('hidden');
+    }
+
+    document.getElementById('csv-import-btn').disabled = false;
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+async function submitCsvImport() {
+  if (!_csvParsedRows.length) return;
+  const btn = document.getElementById('csv-import-btn');
+  const resultEl = document.getElementById('csv-import-result');
+  const errEl = document.getElementById('csv-import-error');
+  btn.disabled = true;
+  btn.textContent = '⏳ Import en cours...';
+  resultEl.classList.add('hidden');
+  errEl.classList.add('hidden');
+
+  const res = await apiFetch('/school/payments/import/', 'POST', { payments: _csvParsedRows });
+  btn.textContent = '✅ Valider l\'import';
+  btn.disabled = false;
+
+  if (!res || !res.ok) {
+    errEl.textContent = 'Erreur serveur lors de l\'import.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const data = await res.json();
+  const nbErrors = (data.errors || []).length;
+  resultEl.textContent = `✅ ${data.success} paiement${data.success > 1 ? 's' : ''} importé${data.success > 1 ? 's' : ''}` +
+    (nbErrors ? ` — ⚠️ ${nbErrors} erreur${nbErrors > 1 ? 's' : ''} (voir console)` : ' — 0 erreur');
+  resultEl.classList.remove('hidden');
+
+  if (nbErrors) {
+    console.warn('Erreurs import CSV:', data.errors);
+    errEl.textContent = data.errors.map(e => `Ligne ${e.index + 2} : ${e.raison}`).join(' | ');
+    errEl.classList.remove('hidden');
+  }
+
+  if (data.success > 0) {
+    toast(`${data.success} paiements importés ✓`, 'success');
+    loadSchoolPaymentsList();
+  }
+}

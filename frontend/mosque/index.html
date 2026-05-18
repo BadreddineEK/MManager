@@ -393,6 +393,7 @@
         </div>
         <div class="page-header-actions">
           <button class="btn btn-success btn-sm" onclick="exportFile('school-payments','excel')">⬇ Excel</button>
+          <button class="btn btn-secondary btn-sm" onclick="openCsvImportModal()">📥 Importer CSV</button>
           <button class="btn btn-primary" onclick="addSchoolPayment()">💳 Nouveau paiement</button>
         </div>
       </div>
@@ -2339,6 +2340,51 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('modal-monthly-recap')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modale Import CSV Paiements École ─────────────────────────────────── -->
+<div class="modal-overlay hidden" id="modal-csv-import">
+  <div class="modal" style="max-width:620px;width:95%;">
+    <div class="modal-header">
+      <h3>📥 Importer des paiements depuis un CSV</h3>
+      <button class="modal-close" onclick="closeModal('modal-csv-import')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--accent-soft);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:.83rem;color:var(--accent);">
+        <strong>Format attendu (avec en-tête) :</strong><br>
+        <code style="display:block;margin-top:6px;font-size:.8rem;color:var(--text);">famille,enfant,montant,date,mode,note</code>
+        <code style="display:block;font-size:.8rem;color:var(--muted);">AARAB Zohir & Zeneb,Kawthar,100,2025-09-01,cheque,</code>
+        <code style="display:block;font-size:.8rem;color:var(--muted);">BENFREDJ Mokhtar,Nassim,100,2025-10-01,especes,Sept 2025</code>
+        <small style="color:var(--muted);margin-top:6px;display:block;">Modes acceptés : cash / especes / cheque / chèque / virement — La colonne <em>enfant</em> est optionnelle.</small>
+      </div>
+
+      <label style="font-weight:600;">Fichier CSV</label>
+      <input type="file" id="csv-import-file" accept=".csv" style="margin-bottom:12px;"
+        onchange="previewCsvImport(this)" />
+
+      <div id="csv-preview" class="hidden" style="margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-weight:600;font-size:.9rem;">Aperçu :</span>
+          <span id="csv-row-count" class="badge badge-green"></span>
+        </div>
+        <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;">
+          <table style="width:100%;font-size:.78rem;">
+            <thead style="background:var(--bg);position:sticky;top:0;">
+              <tr><th style="padding:6px 10px;">Famille</th><th>Enfant</th><th>Montant</th><th>Date</th><th>Mode</th><th>Note</th></tr>
+            </thead>
+            <tbody id="csv-preview-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="csv-import-error" class="hidden" style="color:var(--red);font-size:.83rem;margin-bottom:8px;"></div>
+      <div id="csv-import-result" class="hidden" style="padding:10px 14px;border-radius:8px;background:var(--green-soft,#f0fdf4);color:var(--green);font-weight:600;font-size:.88rem;margin-bottom:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('modal-csv-import')">Annuler</button>
+      <button class="btn btn-primary" id="csv-import-btn" onclick="submitCsvImport()" disabled>✅ Valider l'import</button>
     </div>
   </div>
 </div>

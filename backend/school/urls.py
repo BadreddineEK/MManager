@@ -18,6 +18,7 @@ from .views_v2 import (
 
 # Vues v3 — Espace Professeur
 from .teacher_urls import teacher_urlpatterns
+from .csv_import_views import SchoolPaymentsImportView
 
 app_name = "school"
 
@@ -33,6 +34,12 @@ router.register("sessions", AttendanceSessionViewSet,  basename="session")
 router.register("periods",  GradePeriodViewSet,        basename="period")
 
 urlpatterns = router.urls + [
+    # Import CSV paiements école en masse
+    path(
+        "payments/import/",
+        SchoolPaymentsImportView.as_view(),
+        name="school-payments-import",
+    ),
     # Recu PDF pour un paiement ecole
     path(
         "payments/<int:pk>/receipt/",
