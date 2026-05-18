@@ -33,8 +33,8 @@ router.register("classes",  ClassViewSet,              basename="class")
 router.register("sessions", AttendanceSessionViewSet,  basename="session")
 router.register("periods",  GradePeriodViewSet,        basename="period")
 
-urlpatterns = router.urls + [
-    # Import CSV paiements école en masse
+urlpatterns = [
+    # Import CSV paiements école — DOIT être avant router.urls pour éviter conflict avec payments/<pk>/
     path(
         "payments/import/",
         SchoolPaymentsImportView.as_view(),
@@ -63,4 +63,4 @@ urlpatterns = router.urls + [
         ChildAbsencesView.as_view(),
         name="child-absences",
     ),
-] + teacher_urlpatterns
+] + router.urls + teacher_urlpatterns
