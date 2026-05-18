@@ -20,8 +20,9 @@ from .serializers import SchoolPaymentSerializer
 class SchoolPaymentViewSet(viewsets.ModelViewSet):
     serializer_class = SchoolPaymentSerializer
     permission_classes = [IsAuthenticated, HasMosquePermission]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = ["family", "child", "school_year", "method", "status"]
+    search_fields = ["family__primary_contact_name", "child__first_name", "note"]
     ordering_fields = ["date", "amount", "created_at"]
     ordering = ["-date"]
 

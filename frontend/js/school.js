@@ -638,9 +638,11 @@ async function loadSchoolPaymentsList() {
 
   const method = document.getElementById('sp-method-filter')?.value || '';
   const status = document.getElementById('sp-status-filter')?.value || '';
-  let url = '/school/payments/?ordering=-date';
+  const search = document.getElementById('sp-search')?.value.trim() || '';
+  let url = '/school/payments/?ordering=-date&page_size=500';
   if (method) url += `&method=${method}`;
   if (status) url += `&status=${status}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
 
   const res = await apiFetch(url);
   if (!res || !res.ok) { tbody.innerHTML = '<tr><td colspan="9">Erreur chargement</td></tr>'; return; }

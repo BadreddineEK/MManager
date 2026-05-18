@@ -1417,7 +1417,9 @@
         </div>
         <div>
           <label>Téléphone principal *</label>
-          <input type="text" id="family-phone1" placeholder="06 12 34 56 78" />
+          <input type="text" id="family-phone1" placeholder="06 12 34 56 78"
+            onblur="const v=this.value.trim();const err=document.getElementById('family-phone1-error');if(!v){err.style.display='block';}else{err.style.display='none';}" />
+          <small id="family-phone1-error" style="color:var(--red);display:none;font-size:.78rem;">⚠️ Le téléphone est obligatoire</small>
         </div>
         <div>
           <label>Téléphone secondaire</label>
