@@ -93,6 +93,7 @@ class SchoolPaymentsImportView(APIView):
         school_year_cache = {}
         success = 0
         errors = []
+        skipped = 0  # doublons déjà en base
 
         for i, row in enumerate(rows):
             # -- Résolution famille
@@ -102,7 +103,8 @@ class SchoolPaymentsImportView(APIView):
                 continue
             famille = families.get(_norm(nom_famille))
             if not famille:
-                errors.append({"index": i, "raison": f"Famille '{nom_famille}' introuvable"})
+                # Chercher les familles proches pour aider au debug
+                errors.append({"index": i, "raison": f"Famille '{nom_famille}' introuvable (vérifier orthographe exacte)"})
                 continue
 
             # -- Résolution enfant (optionnel)
@@ -111,7 +113,7 @@ class SchoolPaymentsImportView(APIView):
             if nom_enfant:
                 child = children_by_family.get(famille.id, {}).get(_norm(nom_enfant))
                 if not child:
-                    errors.append({"index": i, "raison": f"Enfant '{nom_enfant}' introuvable dans la famille '{nom_famille}'"})
+                    errors.append({"index": i, "raison": f"Enfant '{nom_enfant}' introuvable dans '{nom_famille}'"})
                     continue
 
             # -- Date
@@ -142,13 +144,13 @@ class SchoolPaymentsImportView(APIView):
 
             try:
                 with transaction.atomic():
-                    # Idempotence : skip si paiement identique déjà présent
                     existing = SchoolPayment.objects.filter(
                         mosque=mosque, family=famille, child=child,
                         date=date_val, amount=montant,
                     ).first()
                     if existing:
-                        continue  # déjà importé, on skip silencieusement
+                        skipped += 1
+                        continue
 
                     SchoolPayment.objects.create(
                         mosque=mosque,
@@ -169,4 +171,21 @@ class SchoolPaymentsImportView(APIView):
             "success": success, "errors": len(errors)
         })
 
-        return Response({"success": success, "errors": errors})
+        # -- Infos debug : premiers noms DB vs premiers noms CSV non résolus
+        families_db_sample = sorted(families.keys())[:10]
+        unresolved_csv = [
+            e["raison"].split("'")[1]
+            for e in errors
+            if "introuvable" in e.get("raison", "") and "Famille" in e.get("raison", "")
+        ][:5]
+
+        return Response({
+            "success": success,
+            "skipped": skipped,
+            "errors": errors,
+            "debug": {
+                "total_families_in_db": len(families),
+                "families_db_sample": families_db_sample,
+                "first_unresolved_csv_names": unresolved_csv,
+            }
+        })

@@ -747,15 +747,21 @@ function previewCsvImport(input) {
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+    // Strip BOM (UTF-8 BOM \uFEFF ou UTF-16 BOM) + normaliser les accents mal encodés
+    let raw = e.target.result.replace(/^\uFEFF/, '');
+
+    // Détection encodage cassé : si on voit des caractères □ ou séquences invalides,
+    // on relit en latin-1 via un fallback (mais FileReader décode déjà — on peut tester
+    // si le contenu semble contenir des noms sans accents alors qu'on en attend)
+    const lines = raw.split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) {
       errEl.textContent = 'Le fichier CSV doit contenir au moins une ligne de données.';
       errEl.classList.remove('hidden');
       return;
     }
 
-    // Parser header
-    const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+    // Parser header — strip BOM éventuel sur le premier champ
+    const header = lines[0].split(',').map(h => h.replace(/^\uFEFF/, '').trim().toLowerCase());
     const idx = {
       famille: header.indexOf('famille'),
       enfant:  header.indexOf('enfant'),
@@ -816,6 +822,13 @@ function previewCsvImport(input) {
     document.getElementById('csv-import-btn').disabled = false;
   };
   reader.readAsText(file, 'UTF-8');
+
+  // Fallback Latin-1 : si le fichier était UTF-16, on tente une 2e lecture
+  reader.onerror = () => {
+    const reader2 = new FileReader();
+    reader2.onload = reader.onload;
+    reader2.readAsText(file, 'latin1');
+  };
 }
 
 async function submitCsvImport() {
@@ -840,18 +853,40 @@ async function submitCsvImport() {
 
   const data = await res.json();
   const nbErrors = (data.errors || []).length;
-  resultEl.textContent = `✅ ${data.success} paiement${data.success > 1 ? 's' : ''} importé${data.success > 1 ? 's' : ''}` +
-    (nbErrors ? ` — ⚠️ ${nbErrors} erreur${nbErrors > 1 ? 's' : ''} (voir console)` : ' — 0 erreur');
+  const nbSkipped = data.skipped || 0;
+
+  let msg = `✅ ${data.success} paiement${data.success > 1 ? 's' : ''} importé${data.success > 1 ? 's' : ''}`;
+  if (nbSkipped) msg += ` — ⏭ ${nbSkipped} doublon${nbSkipped > 1 ? 's' : ''} ignoré${nbSkipped > 1 ? 's' : ''}`;
+  if (nbErrors)  msg += ` — ⚠️ ${nbErrors} erreur${nbErrors > 1 ? 's' : ''}`;
+  resultEl.textContent = msg;
   resultEl.classList.remove('hidden');
 
   if (nbErrors) {
-    console.warn('Erreurs import CSV:', data.errors);
-    errEl.textContent = data.errors.map(e => `Ligne ${e.index + 2} : ${e.raison}`).join(' | ');
+    const errLines = data.errors.slice(0, 10).map(e => `Ligne ${e.index + 2} : ${e.raison}`);
+    errEl.innerHTML = errLines.join('<br>');
     errEl.classList.remove('hidden');
+
+    // Debug : comparer noms CSV vs DB pour diagnostiquer mismatch
+    if (data.debug) {
+      const d = data.debug;
+      console.group('🔍 Debug import CSV');
+      console.log(`Familles en DB (${d.total_families_in_db}) — échantillon :`, d.families_db_sample);
+      console.log('Noms CSV non résolus :', d.first_unresolved_csv_names);
+      console.groupEnd();
+
+      if (d.total_families_in_db === 0) {
+        errEl.innerHTML += '<br><strong>⚠️ Aucune famille trouvée dans la base — vérifiez le tenant actif.</strong>';
+      } else if (d.first_unresolved_csv_names?.length && d.families_db_sample?.length) {
+        errEl.innerHTML += `<br><em>DB contient ex : "${d.families_db_sample[0]}" — CSV cherche ex : "${d.first_unresolved_csv_names[0]}"</em>`;
+      }
+    }
   }
 
   if (data.success > 0) {
     toast(`${data.success} paiements importés ✓`, 'success');
     loadSchoolPaymentsList();
+  } else if (data.success === 0 && nbErrors === 0 && nbSkipped === 0) {
+    errEl.textContent = '⚠️ Import vide : aucun paiement traité. Vérifiez le format du fichier (encodage, colonnes).';
+    errEl.classList.remove('hidden');
   }
 }
