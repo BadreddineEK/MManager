@@ -9,6 +9,7 @@ Regles :
 """
 from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 
 from core.permissions import HasMosquePermission
@@ -17,9 +18,16 @@ from .models import SchoolPayment
 from .serializers import SchoolPaymentSerializer
 
 
+class SchoolPaymentPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+
 class SchoolPaymentViewSet(viewsets.ModelViewSet):
     serializer_class = SchoolPaymentSerializer
     permission_classes = [IsAuthenticated, HasMosquePermission]
+    pagination_class = SchoolPaymentPagination
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = ["family", "child", "school_year", "method", "status"]
     search_fields = ["family__primary_contact_name", "child__first_name", "note"]
